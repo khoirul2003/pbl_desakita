@@ -12,7 +12,7 @@ class ApiService {
   final String _baseUrlFastApi = "https://desa-kita-cv.loca.lt";
 
   final _storage = const FlutterSecureStorage();
-  
+
   // Dio untuk request publik (login, register)
   final Dio _dioPublic = Dio();
 
@@ -42,18 +42,18 @@ class ApiService {
     );
 
     // Tambahkan interceptor ke _dioPublic juga untuk bypass loca.lt
-     _dioPublic.interceptors.add(
+    _dioPublic.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
           return handler.next(options);
-        }
-      )
+        },
+      ),
     );
   }
 
   // --- FUNGSI HELPER (INTERNAL) ---
-  
+
   Future<User?> getUserDataFromStorage() async {
     final userString = await _storage.read(key: 'user_data');
     if (userString != null) {
@@ -61,11 +61,11 @@ class ApiService {
     }
     return null;
   }
-  
+
   Future<void> _saveAuthData(Map<String, dynamic> data) async {
     final String token = data['token'];
     final User user = User.fromJson(data['user']);
-    
+
     await _storage.write(key: 'auth_token', value: token);
     await _storage.write(key: 'user_data', value: user.toJsonString());
   }
@@ -91,7 +91,10 @@ class ApiService {
 
   Future<bool> register(Map<String, dynamic> data) async {
     try {
-      final response = await _dioPublic.post('$_baseUrlLaravel/register', data: data);
+      final response = await _dioPublic.post(
+        '$_baseUrlLaravel/register',
+        data: data,
+      );
       if (response.statusCode == 201) {
         return await login(data['email'], data['password']);
       }
@@ -168,8 +171,12 @@ class ApiService {
     try {
       List<MultipartFile> fileList = [];
       for (var file in frames) {
-        fileList.add(await MultipartFile.fromFile(file.path,
-            filename: file.path.split('/').last));
+        fileList.add(
+          await MultipartFile.fromFile(
+            file.path,
+            filename: file.path.split('/').last,
+          ),
+        );
       }
       final formData = FormData.fromMap({'files': fileList});
       final response = await _dioPublic.post(
@@ -236,9 +243,12 @@ class ApiService {
       return null;
     }
   }
-  
-  Future<Warga?> updateManajemenWarga(int wargaId, Map<String, dynamic> data) async {
-     try {
+
+  Future<Warga?> updateManajemenWarga(
+    int wargaId,
+    Map<String, dynamic> data,
+  ) async {
+    try {
       final response = await _dioProtected.put(
         '$_baseUrlLaravel/v1/warga/$wargaId',
         data: data,
