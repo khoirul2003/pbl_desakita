@@ -33,17 +33,17 @@ class DatabaseSeeder extends Seeder
         DB::transaction(function () {
 
             $adminUser = \App\Models\User::create([
-                'email' => 'admin@desa.com',
+                'email' => 'admin@gmail.com',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
                 'warga_id' => null,
             ]);
-            $this->command->info('Akun Admin dibuat: admin@desa.com');
+            $this->command->info('Akun Admin dibuat: admin@gmail.com');
 
 
             $keluargaRW01 = \App\Models\Keluarga::create([
                 'no_kk' => '3201010101000001',
-                'alamat' => 'Jl. Balai Desa No. 1',
+                'alamat' => 'Jl. Balai gmail No. 1',
                 'rt' => '001',
                 'rw' => '001',
             ]);
@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
                 'tempat_lahir' => 'Jakarta',
                 'tanggal_lahir' => '1970-01-01',
                 'jenis_kelamin' => 'L',
-                'alamat_ktp' => 'Jl. Balai Desa No. 1',
+                'alamat_ktp' => 'Jl. Balai gmail No. 1',
                 'agama' => 'Islam',
                 'status_perkawinan' => 'Kawin',
                 'pekerjaan' => 'PNS',
@@ -64,12 +64,12 @@ class DatabaseSeeder extends Seeder
             ]);
             $keluargaRW01->update(['kepala_keluarga_id' => $wargaRW01->id]);
             $userRW01 = \App\Models\User::create([
-                'email' => 'rw01@desa.com',
+                'email' => 'rw01@gmail.com',
                 'password' => Hash::make('password'),
                 'role' => 'rw',
                 'warga_id' => $wargaRW01->id,
             ]);
-            $this->command->info('Akun RW 01 dibuat: rw01@desa.com');
+            $this->command->info('Akun RW 01 dibuat: rw01@gmail.com');
 
 
             $keluargaRT01 = \App\Models\Keluarga::create([
@@ -95,12 +95,12 @@ class DatabaseSeeder extends Seeder
             ]);
             $keluargaRT01->update(['kepala_keluarga_id' => $wargaRT01->id]);
             $userRT01 = \App\Models\User::create([
-                'email' => 'rt01@desa.com',
+                'email' => 'rt01@gmail.com',
                 'password' => Hash::make('password'),
                 'role' => 'rt',
                 'warga_id' => $wargaRT01->id,
             ]);
-            $this->command->info('Akun RT 001 dibuat: rt01@desa.com');
+            $this->command->info('Akun RT 001 dibuat: rt01@gmail.com');
 
 
             $keluargaRT02 = \App\Models\Keluarga::create([
@@ -126,12 +126,12 @@ class DatabaseSeeder extends Seeder
             ]);
             $keluargaRT02->update(['kepala_keluarga_id' => $wargaRT02->id]);
             $userRT02 = \App\Models\User::create([
-                'email' => 'rt02@desa.com',
+                'email' => 'rt02@gmail.com',
                 'password' => Hash::make('password'),
                 'role' => 'rt',
                 'warga_id' => $wargaRT02->id,
             ]);
-            $this->command->info('Akun RT 002 dibuat: rt02@desa.com');
+            $this->command->info('Akun RT 002 dibuat: rt02@gmail.com');
 
 
 
@@ -158,7 +158,7 @@ class DatabaseSeeder extends Seeder
             ]);
             $keluargaWarga1->update(['kepala_keluarga_id' => $warga1->id]);
             $userWarga1 = \App\Models\User::create([
-                'email' => 'budi@desa.com',
+                'email' => 'budi@gmail.com',
                 'password' => Hash::make('password'),
                 'role' => 'warga',
                 'warga_id' => $warga1->id,
@@ -179,7 +179,7 @@ class DatabaseSeeder extends Seeder
                 'keluarga_id' => $keluargaWarga1->id,
                 'status_dalam_keluarga' => 'ISTRI',
             ]);
-            $this->command->info('Akun Warga (Budi) dibuat: budi@desa.com');
+            $this->command->info('Akun Warga (Budi) dibuat: budi@gmail.com');
 
 
 

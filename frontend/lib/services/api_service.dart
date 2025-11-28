@@ -5,15 +5,16 @@ import 'package:frontend/models/user_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // INI ADALAH SATU-SATUNYA FILE SERVICE YANG ANDA BUTUHKAN
+// Mengurus Auth, Warga CRUD, dan CV/ML
 
 class ApiService {
-  // --- PROPERTI & KONFIGURASI ---
+  // --- PROPERTI & KONFIGURASI (LOCA.LT) ---
   final String _baseUrlLaravel = "https://desa-kita.loca.lt/api";
   final String _baseUrlFastApi = "https://desa-kita-cv.loca.lt";
 
   final _storage = const FlutterSecureStorage();
 
-  // Dio untuk request publik (login, register)
+  // Dio untuk request publik (login, register, login-face)
   final Dio _dioPublic = Dio();
 
   // Dio untuk request terproteksi (yang butuh token)
@@ -22,12 +23,12 @@ class ApiService {
   // --- KONSTRUKTOR ---
   ApiService() {
     _dioProtected = Dio();
+
+    // Interceptor untuk PROTECTED API (Menambahkan Token & Bypass Loca.lt)
     _dioProtected.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // 1. Tambahkan Header Bypass
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
-          // 2. Ambil token dari storage
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -41,7 +42,7 @@ class ApiService {
       ),
     );
 
-    // Tambahkan interceptor ke _dioPublic juga untuk bypass loca.lt
+    // Interceptor untuk PUBLIC API (Hanya Bypass Loca.lt)
     _dioPublic.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -119,7 +120,8 @@ class ApiService {
     try {
       final response = await _dioPublic.post(
         '$_baseUrlLaravel/login-face',
-        data: {'face_features': features},
+        // PENTING: Menggunakan jsonEncode untuk memenuhi validasi Laravel (String JSON)
+        data: {'face_features': jsonEncode(features)},
       );
       if (response.statusCode == 200 && response.data['token'] != null) {
         await _saveAuthData(response.data);
@@ -136,7 +138,8 @@ class ApiService {
     try {
       final response = await _dioProtected.post(
         '$_baseUrlLaravel/v1/profile/register-face',
-        data: {'face_features': features},
+        // PENTING: Menggunakan jsonEncode untuk memenuhi validasi Laravel (String JSON)
+        data: {'face_features': jsonEncode(features)},
       );
       return response.statusCode == 200;
     } on DioException catch (e) {
@@ -228,7 +231,8 @@ class ApiService {
     }
   }
 
-  // --- INI FUNGSI YANG ANDA BUTUHKAN ---
+  // --- FUNGSI DETAIL & EDIT (ADMIN) ---
+
   Future<Warga?> getDetailWarga(int wargaId) async {
     try {
       final response = await _dioProtected.get(
