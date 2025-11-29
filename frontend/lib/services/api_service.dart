@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:frontend/models/user_model.dart';
+import 'package:frontend/models/iuran_model.dart';
+import 'package:frontend/models/wallet_models.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// INI ADALAH SATU-SATUNYA FILE SERVICE YANG ANDA BUTUHKAN
-// Mengurus Auth, Warga CRUD, dan CV/ML
+// INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
+// Mengurus Auth, Warga CRUD, CV/ML, dan Wallet
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (LOCA.LT) ---
@@ -14,7 +16,7 @@ class ApiService {
 
   final _storage = const FlutterSecureStorage();
 
-  // Dio untuk request publik (login, register, login-face)
+  // Dio untuk request publik (login, register)
   final Dio _dioPublic = Dio();
 
   // Dio untuk request terproteksi (yang butuh token)
@@ -36,7 +38,7 @@ class ApiService {
           return handler.next(options);
         },
         onError: (DioException e, handler) {
-          print("Dio Interceptor Error: ${e.message}");
+          print("Dio Interceptor Protected Error: ${e.message}");
           return handler.next(e);
         },
       ),
@@ -276,6 +278,108 @@ class ApiService {
     } on DioException catch (e) {
       print("Error deleteWarga: ${e.response?.data}");
       return false;
+    }
+  }
+
+  // --- FUNGSI IURAN SERVICE (ADMIN) ---
+
+  Future<List<Iuran>> getManajemenIuran({String? search}) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/iuran',
+        queryParameters: {'search': search},
+      );
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final List<dynamic> data = response.data['data'];
+        // Pastikan Anda telah mengimpor Model Iuran
+        return data.map((json) => Iuran.fromJson(json)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print("Error getManajemenIuran: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<bool> createIuran(Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/iuran',
+        data: data,
+      );
+      return response.statusCode == 201;
+    } on DioException catch (e) {
+      print("Error createIuran: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> updateIuran(int iuranId, Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.put(
+        '$_baseUrlLaravel/v1/iuran/$iuranId',
+        data: data,
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error updateIuran: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> deleteIuran(int iuranId) async {
+    try {
+      final response = await _dioProtected.delete(
+        '$_baseUrlLaravel/v1/iuran/$iuranId',
+      );
+      return response.statusCode == 204;
+    } on DioException catch (e) {
+      print("Error deleteIuran: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  // --- FUNGSI DESAPAY / WALLET SERVICE ---
+
+  /// [WALLET] Mengambil Saldo dan 10 Transaksi Terakhir
+  Future<Map<String, dynamic>?> getWalletData() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/wallet/balance',
+      );
+
+      if (response.statusCode == 200 && response.data['wallet'] != null) {
+        final List<Transaction> transactions =
+            (response.data['transactions'] as List)
+                .map((json) => Transaction.fromJson(json))
+                .toList();
+
+        return {
+          'wallet': Wallet.fromJson(response.data['wallet']),
+          'transactions': transactions,
+        };
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error getWalletData: ${e.response?.data}");
+      return null;
+    }
+  }
+
+  /// [WALLET] Simulasi Top Up Saldo
+  Future<double?> topUpWallet(double amount) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/wallet/topup',
+        data: {'amount': amount},
+      );
+      if (response.statusCode == 200 && response.data['new_balance'] != null) {
+        return double.tryParse(response.data['new_balance'].toString());
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error topUpWallet: ${e.response?.data}");
+      return null;
     }
   }
 }

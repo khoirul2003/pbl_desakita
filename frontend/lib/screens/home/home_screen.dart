@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart'; // Import package chart
+import 'package:intl/intl.dart'; // Untuk format Rupiah
 
 // Sesuaikan path ini
 import 'package:frontend/models/user_model.dart';
@@ -8,7 +9,8 @@ import 'package:frontend/state/auth_provider.dart';
 import 'package:frontend/screens/login/login_screen.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/admin/manajemen_warga_screen.dart';
-import 'package:frontend/screens/profile/profile_main_screen.dart'; // Import layar Profil baru
+import 'package:frontend/screens/profile/profile_main_screen.dart';
+import 'package:frontend/screens/home/home_tab_wallet_content.dart'; // Konten Wallet/PPOB
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -111,12 +113,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Karena _setupNavigation dipanggil di initState, kita perlu watch user
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
 
     if (!authProvider.isAuthenticated || user == null || _pages.isEmpty) {
-      // Tampilkan splash screen jika data user belum dimuat atau belum ada navigasi
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
@@ -124,7 +124,16 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text("Desakita"),
         actions: [
-          // Tombol logout dipindahkan ke ProfileMainScreen
+          // Navigasi ke Halaman Profil (opsional, jika ingin akses cepat)
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              setState(() {
+                _selectedIndex =
+                    _navItems.length - 1; // Tab terakhir selalu profil
+              });
+            },
+          ),
         ],
       ),
       body: IndexedStack(index: _selectedIndex, children: _pages),
@@ -133,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).colorScheme.primary, // Warna Biru
+        selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
       ),
     );
@@ -171,18 +180,24 @@ class _HomeTabContent extends StatelessWidget {
         const SizedBox(height: 20),
         const Divider(),
 
-        // --- Tampilkan Dashboard Berdasarkan Role ---
+        // --- Tampilkan Konten Wallet/PPOB (Desapay) ---
+        HomeTabWalletContent(user: user),
+
+        const SizedBox(height: 20),
+
+        // --- Tampilkan Dashboard Berdasarkan Role (Tambahan/Laporan) ---
         _buildDashboardByRole(context, user),
+        const SizedBox(height: 40),
       ],
     );
   }
 
+  // --- Widget Dashboard Statistik & Chart ---
+
   Widget _buildDashboardByRole(BuildContext context, User user) {
-    // Admin melihat Chart
     if (user.role == 'admin') {
       return _buildAdminDashboard(context);
     }
-    // RT/RW/Warga melihat Kartu Statistik
     if (user.role == 'rt' || user.role == 'rw') {
       return _buildRtRwDashboard(context, user);
     }
@@ -193,7 +208,6 @@ class _HomeTabContent extends StatelessWidget {
   }
 
   Widget _buildRtRwDashboard(BuildContext context, User user) {
-    // TODO: Ganti data palsu ini dengan data dari API
     final String totalWarga = "45";
     final String totalKK = "15";
     final String iuranBelumLunas = "3";
@@ -213,7 +227,7 @@ class _HomeTabContent extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.2, // Membuat kartu sedikit lebih tinggi
+          childAspectRatio: 1.2,
           children: [
             _StatCard(
               icon: Icons.people,
@@ -236,7 +250,7 @@ class _HomeTabContent extends StatelessWidget {
             _StatCard(
               icon: Icons.event,
               title: "Kegiatan Aktif",
-              value: "1", // Dummy
+              value: "1",
               color: Colors.purple,
             ),
           ],
@@ -246,7 +260,6 @@ class _HomeTabContent extends StatelessWidget {
   }
 
   Widget _buildWargaDashboard(BuildContext context, User user) {
-    // TODO: Ganti data palsu ini dengan data dari API
     final String tagihanWarga = "2";
     final String totalTagihan = "Rp 150.000";
 
@@ -286,6 +299,7 @@ class _HomeTabContent extends StatelessWidget {
   }
 
   Widget _buildAdminDashboard(BuildContext context) {
+    // Data Palsu untuk Chart Admin
     final dummyFinancialData = [
       {'label': 'Jan', 'pemasukan': 1500000.0, 'pengeluaran': 800000.0},
       {'label': 'Feb', 'pemasukan': 1200000.0, 'pengeluaran': 1100000.0},
@@ -338,6 +352,8 @@ class _HomeTabContent extends StatelessWidget {
     );
   }
 }
+
+// --- WIDGET HELPER KECIL ---
 
 class _StatCard extends StatelessWidget {
   final IconData icon;
@@ -434,8 +450,10 @@ class _FinancialBarChart extends StatelessWidget {
               reservedSize: 40,
               getTitlesWidget: (double value, TitleMeta meta) {
                 if (value % 500000 == 0 && value != 0) {
+                  // Format Rupiah sederhana
+                  final formatter = NumberFormat.compact(locale: 'id');
                   return Text(
-                    "${(value / 1000000).toStringAsFixed(1)}Jt",
+                    formatter.format(value),
                     style: const TextStyle(fontSize: 10),
                   );
                 }
@@ -494,8 +512,12 @@ class _ResidentPieChart extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Row(
                   children: [
-                    Container(width: 16, height: 16, color: item['color']),
-                    const SizedBox(width: 8),
+                    Container(
+                      width: 16,
+                      height: 16,
+                      color: item['color'],
+                      margin: const EdgeInsets.only(right: 8),
+                    ),
                     Text(item['role']),
                   ],
                 ),
