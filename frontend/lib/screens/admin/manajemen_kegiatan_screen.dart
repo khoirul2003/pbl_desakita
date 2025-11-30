@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/models/kegiatan_model.dart'; // Import Model Kegiatan
-import 'package:frontend/screens/placeholder_screen.dart'; // Untuk detail
-import 'package:frontend/screens/admin/tambah_kegiatan_screen.dart'; // Import Tambah
-import 'package:frontend/screens/admin/edit_kegiatan_screen.dart'; // Import Edit
+import 'package:frontend/models/kegiatan_model.dart';
+import 'package:frontend/screens/placeholder_screen.dart';
+import 'package:frontend/screens/admin/tambah_kegiatan_screen.dart';
+import 'package:frontend/screens/admin/edit_kegiatan_screen.dart';
 
 class ManajemenKegiatanScreen extends StatefulWidget {
   const ManajemenKegiatanScreen({super.key});
@@ -30,7 +30,6 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
   }
 
   Future<void> _fetchKegiatan({String? search}) async {
-    // [1] Set loading state di awal
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -42,20 +41,18 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     try {
       final kegiatan = await apiService.getManajemenKegiatan(search: search);
 
-      // [2] Cek mounted sebelum setState di blok try
       if (!mounted) return;
       setState(() {
         _kegiatanList = kegiatan;
         _isLoading = false;
       });
     } catch (e) {
-      // [3] Cek mounted sebelum setState di blok catch
       if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = "Gagal memuat data kegiatan: $e";
       });
-      // Tampilkan SnackBar hanya jika masih mounted
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Gagal memuat data kegiatan: $e")),
@@ -91,19 +88,18 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
   Future<void> _deleteKegiatan(Kegiatan kegiatan) async {
     final bool? confirmed = await showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (_) {
         return AlertDialog(
           title: const Text("Hapus Kegiatan"),
-          content: Text(
-            "Apakah Anda yakin ingin menghapus kegiatan '${kegiatan.namaKegiatan}'?",
-          ),
+          content:
+              Text("Apakah Anda yakin ingin menghapus '${kegiatan.namaKegiatan}'?"),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => Navigator.pop(context, false),
               child: const Text("Batal"),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () => Navigator.pop(context, true),
               child: const Text("Hapus", style: TextStyle(color: Colors.red)),
             ),
           ],
@@ -112,22 +108,18 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     );
 
     if (confirmed == true) {
-      final apiService = context.read<ApiService>();
       try {
+        final apiService = context.read<ApiService>();
         final success = await apiService.deleteKegiatan(kegiatan.id);
-        // Cek mounted sebelum setState setelah proses await selesai
+
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                "Kegiatan '${kegiatan.namaKegiatan}' berhasil dihapus.",
-              ),
+              content: Text("Kegiatan '${kegiatan.namaKegiatan}' berhasil dihapus."),
               backgroundColor: Colors.green,
             ),
           );
           _fetchKegiatan(search: _searchController.text);
-        } else if (mounted) {
-          throw Exception("Gagal menghapus dari server");
         }
       } catch (e) {
         if (mounted) {
@@ -139,7 +131,9 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     }
   }
 
-  // Widget untuk Card Kegiatan
+  // ---------------------------------------------------------
+  // CARD KEGIATAN — desain modern mengikuti gambar referensi
+  // ---------------------------------------------------------
   Widget _buildKegiatanCard(Kegiatan kegiatan) {
     String scope = 'Desa';
     if (kegiatan.rt != null) {
@@ -148,136 +142,144 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
       scope = "RW ${kegiatan.rw}";
     }
 
-    // Tentukan warna berdasarkan waktu
     final bool isFinished = kegiatan.tanggalSelesai.isBefore(DateTime.now());
     final Color iconColor = isFinished ? Colors.grey : Colors.green;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: iconColor.withOpacity(0.1),
-          child: Icon(Icons.event_note, color: iconColor),
-        ),
-        title: Text(
-          kegiatan.namaKegiatan,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
+      elevation: 1.5,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(14.0),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Tanggal: ${_dateFormat.format(kegiatan.tanggalMulai)}"),
-            Text("Lokasi: ${kegiatan.lokasi}"),
-            Text(
-              "Lingkup: $scope",
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: iconColor.withOpacity(0.15),
+              child: Icon(Icons.event_note, color: iconColor, size: 28),
+            ),
+            const SizedBox(width: 14),
+
+            // --- Text Section ---
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    kegiatan.namaKegiatan,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text("Tanggal: ${_dateFormat.format(kegiatan.tanggalMulai)}"),
+                  Text("Lokasi: ${kegiatan.lokasi}"),
+                  Text(
+                    "Lingkup: $scope",
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            // Menu
+            PopupMenuButton(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == "detail") {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PlaceholderScreen(
+                        title: "Detail Kegiatan: ${kegiatan.namaKegiatan}",
+                      ),
+                    ),
+                  );
+                } else if (value == "edit") {
+                  _editKegiatan(kegiatan);
+                } else if (value == "delete") {
+                  _deleteKegiatan(kegiatan);
+                }
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: "detail",
+                  child: Row(
+                    children: [
+                      Icon(Icons.visibility, size: 20),
+                      SizedBox(width: 8),
+                      Text("Lihat Detail"),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: "edit",
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 20),
+                      SizedBox(width: 8),
+                      Text("Edit"),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: "delete",
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, size: 20, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text("Hapus", style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') {
-              _editKegiatan(kegiatan);
-            } else if (value == 'delete') {
-              _deleteKegiatan(kegiatan);
-            } else if (value == 'detail') {
-              // Navigasi ke detail kegiatan
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PlaceholderScreen(
-                    title: "Detail Kegiatan: ${kegiatan.namaKegiatan}",
-                  ),
-                ),
-              );
-            }
-          },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem<String>(
-                value: 'detail',
-                child: Row(
-                  children: [
-                    Icon(Icons.visibility, size: 20),
-                    SizedBox(width: 8),
-                    Text("Lihat Detail"),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 20),
-                    SizedBox(width: 8),
-                    Text("Edit"),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Text("Hapus", style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ];
-          },
-        ),
-        onTap: () {
-          // Aksi onTap utama ke detail kegiatan
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => PlaceholderScreen(
-                title: "Detail Kegiatan: ${kegiatan.namaKegiatan}",
-              ),
-            ),
-          );
-        },
       ),
     );
   }
 
-  // Widget untuk Header Kustom
+  // ---------------------------------------------------------
+  // SEARCH BAR + ADD BUTTON — AppBar bottom (modern clean)
+  // ---------------------------------------------------------
   Widget _buildHeader() {
-    // Tombol search dan add yang dipindahkan ke body
     return Container(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
-      color: Theme.of(context).colorScheme.primary,
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _searchController,
+              onChanged: (value) => _fetchKegiatan(search: value),
               decoration: InputDecoration(
-                hintText: "Cari Nama Kegiatan",
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                fillColor: Colors.white,
+                hintText: "Cari Nama Kegiatan...",
                 filled: true,
-                isDense: true,
+                fillColor: Colors.white,
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                  borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
               ),
-              onChanged: (query) => _fetchKegiatan(search: query),
             ),
           ),
+
           const SizedBox(width: 12),
-          // Tombol + Add
+
+          // Tombol Add
           ElevatedButton.icon(
             onPressed: _tambahKegiatan,
             icon: const Icon(Icons.add, color: Colors.black),
-            label: const Text("Add"),
+            label: const Text("Add", style: TextStyle(color: Colors.black)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.yellow,
-              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
           ),
@@ -286,68 +288,61 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     );
   }
 
+  // ---------------------------------------------------------
+  // BUILD UTAMA
+  // ---------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    // Cek apakah layar ini dapat di-pop (ditutup)
     final bool canPop = Navigator.of(context).canPop();
 
     return Scaffold(
-      // --- PERBAIKAN: Gunakan AppBar standar untuk judul & back button ---
       appBar: AppBar(
-        // Tombol back otomatis muncul jika canPop = true
-        // Jika canPop = false (berada di BottomBar), tombol back tidak muncul
-        leading: canPop
-            ? null
-            : const SizedBox(), // Tampilkan tombol back standar, atau SizedBox jika di BottomBar
-        automaticallyImplyLeading:
-            canPop, // Biarkan sistem memutuskan tombol back
+        automaticallyImplyLeading: canPop,
+        leading: canPop ? null : const SizedBox(),
         title: const Text("DesaKita - Manajemen Kegiatan"),
-        centerTitle: false,
-        // Tambahkan Judul "Desakita" di atas? Judul Desakita ada di HomeScreen.
-        // Jika Anda ingin judul yang konsisten dengan "Profil & Pengaturan", biarkan seperti ini.
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
+        elevation: 2,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60.0), // Tinggi untuk Search bar
+          preferredSize: const Size.fromHeight(70),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: _buildHeader(), // Panggil Header di sini
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: _buildHeader(),
           ),
         ),
       ),
 
-      // --- AKHIR PERBAIKAN: Gunakan AppBar standar ---
       body: Container(
-        color: Colors.grey[200],
+        color: Colors.grey[100],
         child: Column(
           children: [
-            // Header Search/Add sudah dipindah ke AppBar.bottom
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMessage.isNotEmpty
-                  ? Center(child: Text("Error: $_errorMessage"))
-                  : _kegiatanList.isEmpty
-                  ? Center(
-                      child: Text(
-                        _searchController.text.isEmpty
-                            ? "Belum ada kegiatan yang terdaftar."
-                            : "Tidak ditemukan kegiatan.",
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => _fetchKegiatan(),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8.0),
-                        itemCount: _kegiatanList.length,
-                        itemBuilder: (context, index) {
-                          return _buildKegiatanCard(_kegiatanList[index]);
-                        },
-                      ),
-                    ),
+                      ? Center(child: Text("Error: $_errorMessage"))
+                      : _kegiatanList.isEmpty
+                          ? Center(
+                              child: Text(
+                                _searchController.text.isEmpty
+                                    ? "Belum ada kegiatan yang terdaftar."
+                                    : "Tidak ditemukan kegiatan.",
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () => _fetchKegiatan(),
+                              child: ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding:
+                                    const EdgeInsets.only(top: 8, bottom: 16),
+                                itemCount: _kegiatanList.length,
+                                itemBuilder: (_, i) {
+                                  return _buildKegiatanCard(
+                                      _kegiatanList[i]);
+                                },
+                              ),
+                            ),
             ),
           ],
         ),
