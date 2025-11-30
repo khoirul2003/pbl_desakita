@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\KeuanganController;
 use App\Http\Controllers\Api\V1\KegiatanController;
 use App\Http\Controllers\Api\V1\AcaraController;
 use App\Http\Controllers\Api\V1\WargaFiturController;
+use App\Http\Controllers\Api\V1\WalletController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -28,7 +29,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     });
 
     Route::put('/profile', [AuthController::class, 'updateProfile']);
-    
+
     Route::post('/profile/register-face', [AuthController::class, 'registerFace']);
 
     Route::apiResource('/warga', WargaController::class);
@@ -38,6 +39,11 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('/kegiatan', KegiatanController::class);
     Route::apiResource('/acara', AcaraController::class);
 
+    Route::prefix('wallet')->group(function () {
+        Route::get('/balance', [WalletController::class, 'getBalanceAndTransactions']);
+        Route::post('/topup', [WalletController::class, 'topUp']);
+        Route::post('/transfer', [WalletController::class, 'transfer']);
+    });
 
     Route::prefix('fitur')->group(function () {
         Route::get('/tagihan', [WargaFiturController::class, 'getTagihan']);
