@@ -145,44 +145,58 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.only(
-        left: 16.0,
-        right: 16.0,
-        bottom: 16.0,
-        top: 8.0,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0e2f60),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
       ),
-
-      color: Theme.of(context).colorScheme.primary,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          // Search Box
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: "Cari Warga (Nama atau NIK)",
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                fillColor: Colors.white,
-                filled: true,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide.none,
+                hintText: "Cari nama atau NIK...",
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+
+                border: InputBorder.none,
+
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
                 ),
               ),
               onChanged: _onSearchChanged,
             ),
           ),
-          const SizedBox(width: 12),
 
-          ElevatedButton.icon(
-            onPressed: _tambahWarga,
-            icon: const Icon(Icons.add, color: Colors.black),
-            label: const Text("Add"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.yellow,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
+          const SizedBox(height: 14),
+
+          // Tombol Add
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _tambahWarga,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Tambah Warga"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.25),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ),
@@ -195,23 +209,26 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
     if (_errorMessage.isNotEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Text(
-            "Error: $_errorMessage\n\nPastikan server Laravel berjalan.",
+            "Error: $_errorMessage",
             textAlign: TextAlign.center,
           ),
         ),
       );
     }
+
     if (_wargaList.isEmpty) {
       return Center(
         child: Text(
           _searchController.text.isEmpty
               ? "Tidak ada data warga."
-              : "Tidak ada warga yang cocok dengan pencarian '${_searchController.text}'.",
+              : "Tidak ada kecocokan untuk '${_searchController.text}'.",
+          style: const TextStyle(color: Colors.black54),
         ),
       );
     }
@@ -219,81 +236,111 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
     return RefreshIndicator(
       onRefresh: () => _fetchWarga(search: _searchController.text),
       child: ListView.builder(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(16),
         itemCount: _wargaList.length,
         itemBuilder: (context, index) {
-          final warga = _wargaList[index];
-
-          return _buildWargaCard(warga);
+          return _buildWargaCard(_wargaList[index]);
         },
       ),
     );
   }
 
+
   Widget _buildWargaCard(Warga warga) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.grey[300],
-          child: Text(
-            warga.namaLengkap.isNotEmpty
-                ? warga.namaLengkap[0].toUpperCase()
-                : "?",
-            style: const TextStyle(color: Colors.black54),
-          ),
-        ),
-        title: Text(
-          warga.namaLengkap,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("NIK: ${warga.nik}"),
-            Text("RW: ${warga.rw} | RT: ${warga.rt}"),
+    return GestureDetector(
+      onTap: () => _goToDetail(warga),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            )
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') {
-              // Panggil fungsi Edit yang benar
-              _goToEditWarga(warga);
-            } else if (value == 'delete') {
-              _deleteWarga(warga);
-            }
-          },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 20),
-                    SizedBox(width: 8),
-                    Text("Edit"),
-                  ],
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF7FA),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: Text(
+                  warga.namaLengkap.isNotEmpty
+                      ? warga.namaLengkap[0].toUpperCase()
+                      : "?",
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.blueGrey[700],
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Text("Delete", style: TextStyle(color: Colors.red)),
-                  ],
-                ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    warga.namaLengkap,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text("NIK: ${warga.nik}",
+                      style: const TextStyle(color: Colors.black54)),
+                  Text("RW: ${warga.rw} | RT: ${warga.rt}",
+                      style: const TextStyle(color: Colors.black54)),
+                ],
               ),
-            ];
-          },
+            ),
+
+            // Menu
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') _goToEditWarga(warga);
+                if (value == 'delete') _deleteWarga(warga);
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 20),
+                      SizedBox(width: 8),
+                      Text("Edit"),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text("Delete", style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          ],
         ),
-        onTap: () {
-          // Aksi onTap utama adalah ke Detail
-          _goToDetail(warga);
-        },
       ),
     );
   }
