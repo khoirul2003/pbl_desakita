@@ -26,6 +26,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     decimalDigits: 0,
   );
 
+  // --- WARNA TEMA ---
   static const Color _accentColor = Color(0xFF3C486B);
   static const Color _cardIndicator = Color(0xFF6C4BA3);
 
@@ -43,10 +44,8 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     });
 
     final apiService = context.read<ApiService>();
-
     try {
       final iuran = await apiService.getManajemenIuran(search: search);
-
       if (!mounted) return;
       setState(() {
         _iuranList = iuran;
@@ -58,10 +57,10 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
         _isLoading = false;
         _errorMessage = "Gagal memuat data iuran";
       });
-
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Gagal memuat data iuran: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memuat data iuran: $e")),
+        );
       }
     }
   }
@@ -136,94 +135,70 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     }
   }
 
-  Widget _buildModernHeader() {
-    final now = DateTime.now();
-    final monthYear = DateFormat('MMMM, yyyy', 'en_US').format(now);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Hello, Admin!',
-                    style: TextStyle(
-                      color: _accentColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    monthYear,
-                    style: TextStyle(
-                      color: _accentColor.withOpacity(0.6),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-              Material(
-                color: _accentColor,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: InkWell(
-                  onTap: _tambahIuran,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.add, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text('Add', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                )
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (query) => _fetchIuran(search: query),
-              decoration: InputDecoration(
-                hintText: 'Cari jenis iuran',
-                prefixIcon:
-                    Icon(Icons.search, color: _accentColor.withOpacity(0.8)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              ),
-            ),
-          ),
-        ],
+  // --- HEADER BARU ---
+Widget _buildHeader() {
+  return Container(
+    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+    decoration: const BoxDecoration(
+      color: Color(0xFF0E2F60),
+      borderRadius: BorderRadius.only(
+        bottomLeft: Radius.circular(24),
+        bottomRight: Radius.circular(24),
       ),
-    );
-  }
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Judul halaman
+        const Text(
+          "Halaman Iuran",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Search
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (query) => _fetchIuran(search: query),
+            decoration: InputDecoration(
+              hintText: "Cari jenis iuran...",
+              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _tambahIuran,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text("Tambah Iuran"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.25),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildIuranCard(Iuran iuran) {
     String scope = 'Desa';
@@ -239,8 +214,8 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) =>
-                  PlaceholderScreen(title: "Kelola Tagihan: ${iuran.namaIuran}"),
+              builder: (_) => PlaceholderScreen(
+                  title: "Kelola Tagihan: ${iuran.namaIuran}"),
             ),
           );
         },
@@ -258,8 +233,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                   )
                 ],
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -307,8 +281,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => PlaceholderScreen(
-                              title:
-                                  "Kelola Tagihan: ${iuran.namaIuran}",
+                              title: "Kelola Tagihan: ${iuran.namaIuran}",
                             ),
                           ),
                         );
@@ -339,8 +312,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete,
-                                color: Colors.red, size: 20),
+                            Icon(Icons.delete, color: Colors.red, size: 20),
                             SizedBox(width: 8),
                             Text("Hapus Jenis",
                                 style: TextStyle(color: Colors.red)),
@@ -377,95 +349,28 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool canPop = Navigator.of(context).canPop();
-
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-
-        /// 🔥 PERUBAHAN UTAMA → Hilangkan ikon menu
-        leading: canPop
-            ? BackButton(color: Colors.black)
-            : const SizedBox.shrink(),
-
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        title: const Text('', style: TextStyle(color: Colors.black)),
-        toolbarHeight: 72,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
-          child: _buildModernHeader(),
-        ),
-      ),
       body: Column(
         children: [
+          _buildHeader(),
           Expanded(
             child: _isLoading
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 12),
-                        Text('Memuat iuran...'),
-                      ],
-                    ),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : _errorMessage.isNotEmpty
                     ? Center(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.error_outline,
-                                  size: 56, color: _accentColor),
-                              const SizedBox(height: 12),
-                              Text(_errorMessage,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 15)),
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    _fetchIuran(search: _searchController.text),
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: _accentColor),
-                                child: const Text('Coba lagi'),
-                              )
-                            ],
-                          ),
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(_errorMessage),
                         ),
                       )
                     : _iuranList.isEmpty
                         ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.inbox,
-                                      size: 56,
-                                      color: _accentColor.withOpacity(0.9)),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    _searchController.text.isEmpty
-                                        ? 'Belum ada jenis iuran yang terdaftar.'
-                                        : 'Tidak ditemukan jenis iuran.',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(fontSize: 15),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    onPressed: _tambahIuran,
-                                    style: ElevatedButton.styleFrom(
-                                        backgroundColor: _accentColor),
-                                    child: const Text('Buat iuran baru'),
-                                  )
-                                ],
-                              ),
+                            child: Text(
+                              _searchController.text.isEmpty
+                                  ? 'Belum ada jenis iuran yang terdaftar.'
+                                  : 'Tidak ditemukan jenis iuran.',
+                              textAlign: TextAlign.center,
                             ),
                           )
                         : RefreshIndicator(
@@ -473,7 +378,8 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                                 _fetchIuran(search: _searchController.text),
                             color: _accentColor,
                             child: ListView.builder(
-                              padding: const EdgeInsets.only(top: 12, bottom: 24),
+                              padding:
+                                  const EdgeInsets.only(top: 12, bottom: 24),
                               itemCount: _iuranList.length,
                               itemBuilder: (context, index) =>
                                   _buildIuranCard(_iuranList[index]),
