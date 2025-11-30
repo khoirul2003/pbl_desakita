@@ -19,13 +19,13 @@ class WalletController extends Controller
      */
     public function getBalanceAndTransactions(Request $request)
     {
-        $warga = Auth::user()->warga;
+        $warga = Auth::user()->warga()->with('wallet')->first();
 
-        if (!$warga) {
+        if (!$warga || !$warga->wallet) {
             return response()->json(['message' => 'Akun warga tidak terdaftar.'], 404);
         }
 
-        $wallet = Wallet::where('warga_id', $warga->id)->first();
+        $wallet = $warga->wallet;
 
         // Riwayat transaksi (sebagai pengirim atau penerima)
         $transactions = Transaction::where(function ($query) use ($warga) {
