@@ -119,7 +119,7 @@ class _LoginFaceScreenState extends State<LoginFaceScreen> {
         _feedbackMessage = "Tahan... Memindai wajah Anda...";
       });
 
-      for (int i = 0; i < 6; i++) {
+      for (int i = 0; i < 10; i++) {
         final XFile imageFile = await _controller!.takePicture();
         frames.add(File(imageFile.path));
         if (i == 3) {
