@@ -497,4 +497,6 @@ class ApiService {
       return null;
     }
   }
+
+  Future addKegiatan(Map<String, String> data) async {}
 }
