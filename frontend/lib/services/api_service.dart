@@ -2,12 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:frontend/models/user_model.dart';
+import 'package:frontend/models/wallet_models.dart';
+import 'package:frontend/models/iuran_model.dart';
+import 'package:frontend/models/kegiatan_model.dart';
+import 'package:frontend/models/acara_model.dart'; // Tambahkan untuk Manajemen Acara
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// INI ADALAH SATU-SATUNYA FILE SERVICE YANG ANDA BUTUHKAN
+// INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
+// Mengurus Auth, Warga CRUD, CV/ML, Iuran, Kegiatan, Acara, dan Wallet.
 
 class ApiService {
-  // --- PROPERTI & KONFIGURASI ---
+  // --- PROPERTI & KONFIGURASI (LOCA.LT) ---
   final String _baseUrlLaravel = "https://desa-kita.loca.lt/api";
   final String _baseUrlFastApi = "https://desa-kita-cv.loca.lt";
 
@@ -22,12 +27,12 @@ class ApiService {
   // --- KONSTRUKTOR ---
   ApiService() {
     _dioProtected = Dio();
+
+    // Interceptor untuk PROTECTED API (Menambahkan Token & Bypass Loca.lt)
     _dioProtected.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // 1. Tambahkan Header Bypass
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
-          // 2. Ambil token dari storage
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -35,13 +40,13 @@ class ApiService {
           return handler.next(options);
         },
         onError: (DioException e, handler) {
-          print("Dio Interceptor Error: ${e.message}");
+          print("Dio Interceptor Protected Error: ${e.message}");
           return handler.next(e);
         },
       ),
     );
 
-    // Tambahkan interceptor ke _dioPublic juga untuk bypass loca.lt
+    // Interceptor untuk PUBLIC API (Hanya Bypass Loca.lt)
     _dioPublic.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -119,7 +124,8 @@ class ApiService {
     try {
       final response = await _dioPublic.post(
         '$_baseUrlLaravel/login-face',
-        data: {'face_features': features},
+        // PENTING: Menggunakan jsonEncode untuk memenuhi validasi Laravel (String JSON)
+        data: {'face_features': jsonEncode(features)},
       );
       if (response.statusCode == 200 && response.data['token'] != null) {
         await _saveAuthData(response.data);
@@ -136,7 +142,8 @@ class ApiService {
     try {
       final response = await _dioProtected.post(
         '$_baseUrlLaravel/v1/profile/register-face',
-        data: {'face_features': features},
+        // PENTING: Menggunakan jsonEncode untuk memenuhi validasi Laravel (String JSON)
+        data: {'face_features': jsonEncode(features)},
       );
       return response.statusCode == 200;
     } on DioException catch (e) {
@@ -228,7 +235,6 @@ class ApiService {
     }
   }
 
-  // --- INI FUNGSI YANG ANDA BUTUHKAN ---
   Future<Warga?> getDetailWarga(int wargaId) async {
     try {
       final response = await _dioProtected.get(
@@ -272,6 +278,221 @@ class ApiService {
     } on DioException catch (e) {
       print("Error deleteWarga: ${e.response?.data}");
       return false;
+    }
+  }
+
+  // --- FUNGSI IURAN SERVICE (ADMIN) ---
+
+  Future<List<Iuran>> getManajemenIuran({String? search}) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/iuran',
+        queryParameters: {'search': search},
+      );
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => Iuran.fromJson(json)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print("Error getManajemenIuran: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<bool> createIuran(Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/iuran',
+        data: data,
+      );
+      return response.statusCode == 201;
+    } on DioException catch (e) {
+      print("Error createIuran: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> updateIuran(int iuranId, Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.put(
+        '$_baseUrlLaravel/v1/iuran/$iuranId',
+        data: data,
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error updateIuran: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> deleteIuran(int iuranId) async {
+    try {
+      final response = await _dioProtected.delete(
+        '$_baseUrlLaravel/v1/iuran/$iuranId',
+      );
+      return response.statusCode == 204;
+    } on DioException catch (e) {
+      print("Error deleteIuran: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  // --- FUNGSI KEGIATAN SERVICE (ADMIN) ---
+
+  Future<List<Kegiatan>> getManajemenKegiatan({String? search}) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/kegiatan',
+        queryParameters: {'search': search},
+      );
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => Kegiatan.fromJson(json)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print("Error getManajemenKegiatan: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<bool> createKegiatan(Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/kegiatan',
+        data: data,
+      );
+      return response.statusCode == 201;
+    } on DioException catch (e) {
+      print("Error createKegiatan: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> updateKegiatan(int kegiatanId, Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.put(
+        '$_baseUrlLaravel/v1/kegiatan/$kegiatanId',
+        data: data,
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error updateKegiatan: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> deleteKegiatan(int kegiatanId) async {
+    try {
+      final response = await _dioProtected.delete(
+        '$_baseUrlLaravel/v1/kegiatan/$kegiatanId',
+      );
+      return response.statusCode == 204;
+    } on DioException catch (e) {
+      print("Error deleteKegiatan: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  // --- FUNGSI ACARA SERVICE (ADMIN) ---
+
+  Future<List<Acara>> getManajemenAcara({String? search}) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/acara',
+        queryParameters: {'search': search},
+      );
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => Acara.fromJson(json)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print("Error getManajemenAcara: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<bool> createAcara(Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/acara',
+        data: data,
+      );
+      return response.statusCode == 201;
+    } on DioException catch (e) {
+      print("Error createAcara: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> updateAcara(int acaraId, Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.put(
+        '$_baseUrlLaravel/v1/acara/$acaraId',
+        data: data,
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error updateAcara: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> deleteAcara(int acaraId) async {
+    try {
+      final response = await _dioProtected.delete(
+        '$_baseUrlLaravel/v1/acara/$acaraId',
+      );
+      return response.statusCode == 204;
+    } on DioException catch (e) {
+      print("Error deleteAcara: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  // --- FUNGSI DESAPAY / WALLET SERVICE ---
+
+  /// [WALLET] Mengambil Saldo dan 10 Transaksi Terakhir
+  Future<Map<String, dynamic>?> getWalletData() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/wallet/balance',
+      );
+
+      if (response.statusCode == 200 && response.data['wallet'] != null) {
+        final List<Transaction> transactions =
+            (response.data['transactions'] as List)
+                .map((json) => Transaction.fromJson(json))
+                .toList();
+
+        return {
+          'wallet': Wallet.fromJson(response.data['wallet']),
+          'transactions': transactions,
+        };
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error getWalletData: ${e.response?.data}");
+      return null;
+    }
+  }
+
+  /// [WALLET] Simulasi Top Up Saldo
+  Future<double?> topUpWallet(double amount) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/wallet/topup',
+        data: {'amount': amount},
+      );
+      if (response.statusCode == 200 && response.data['new_balance'] != null) {
+        return double.tryParse(response.data['new_balance'].toString());
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error topUpWallet: ${e.response?.data}");
+      return null;
     }
   }
 }
