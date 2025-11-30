@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart'; // Import package chart
+import 'package:intl/intl.dart'; // Untuk format Rupiah
 
 // Sesuaikan path ini
-import 'package:frontend/models/user_model.dart'; // Perlu User Model
+import 'package:frontend/models/user_model.dart';
 import 'package:frontend/state/auth_provider.dart';
 import 'package:frontend/screens/login/login_screen.dart';
-import 'package:frontend/screens/wajah/register_face_screen.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
-// --- (BARU) Import layar manajemen warga ---
+// --- Import Layar Manajemen ---
 import 'package:frontend/screens/admin/manajemen_warga_screen.dart';
+import 'package:frontend/screens/admin/manajemen_iuran_screen.dart'; // Import Iuran
+import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart'; // Import Kegiatan
+// --- Akhir Import Layar Manajemen ---
+import 'package:frontend/screens/profile/profile_main_screen.dart';
+import 'package:frontend/screens/home/home_tab_wallet_content.dart'; // Konten Wallet/PPOB
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,72 +33,80 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Kita perlu AuthProvider untuk setup navigasi berdasarkan role
-    // Kita tidak bisa 'watch' di initState, jadi kita 'read'
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    _setupNavigation(authProvider.user);
+    // PENTING: Panggil _setupNavigation setelah widget pertama dibuat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      _setupNavigation(authProvider.user);
+    });
   }
 
   void _setupNavigation(User? user) {
     if (user == null) return;
 
-    // Halaman "Home" (Dashboard) selalu ada di index 0
-    List<Widget> pages = [_HomeTabContent(user: user)];
+    List<Widget> pages = [
+      _HomeTabContent(user: user), // Tab 0: Dashboard/Home
+    ];
     List<BottomNavigationBarItem> navItems = [
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
     ];
 
-    // Tentukan sisa menu berdasarkan role
-    if (user.role == 'admin') {
+    // Tentukan sisa 3 menu berdasarkan role
+    if (user.role == 'admin' || user.role == 'rt' || user.role == 'rw') {
+      // ADMIN/RT/RW
       pages.addAll([
-        // --- (PERUBAHAN) Ganti PlaceholderScreen ---
-        const ManajemenWargaScreen(), // <-- DARI: const PlaceholderScreen(title: "Manajemen Warga"),
-        const PlaceholderScreen(title: "Manajemen Iuran"),
-        const PlaceholderScreen(title: "Manajemen Keuangan"),
+        // Tab 1: Warga (Manajemen Warga)
+        user.role == 'admin'
+            ? const ManajemenWargaScreen() // Admin: Warga CRUD
+            : const PlaceholderScreen(
+                title: "Data Warga & Keluarga",
+              ), // RT/RW: Placeholder
+        // Tab 2: Iuran (Manajemen Iuran)
+        user.role == 'admin' || user.role == 'rw' || user.role == 'rt'
+            ? const ManajemenIuranScreen() // Semua level manajemen bisa akses
+            : const PlaceholderScreen(title: "Manajemen Iuran"),
+
+        // Tab 3: Kegiatan (Gabungan Kegiatan dan Acara)
+        user.role == 'admin' || user.role == 'rw' || user.role == 'rt'
+            ? const ManajemenKegiatanScreen() // Semua level manajemen bisa akses
+            : const PlaceholderScreen(title: "Manajemen Kegiatan"),
+
+        // Tab 4: Profile (Pusat Menu Manajemen)
+        const ProfileMainScreen(),
       ]);
+
       navItems.addAll([
         const BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Warga'),
         const BottomNavigationBarItem(icon: Icon(Icons.paid), label: 'Iuran'),
         const BottomNavigationBarItem(
-          icon: Icon(Icons.account_balance_wallet),
-          label: 'Keuangan',
-        ),
-      ]);
-    } else if (user.role == 'rt' || user.role == 'rw') {
-      pages.addAll([
-        const PlaceholderScreen(title: "Data Warga"),
-        const PlaceholderScreen(title: "Kelola Iuran"),
-        const PlaceholderScreen(title: "Laporan Keuangan"),
-      ]);
-      navItems.addAll([
+          icon: Icon(Icons.event),
+          label: 'Kegiatan',
+        ), // Digunakan untuk Kegiatan/Acara
         const BottomNavigationBarItem(
-          icon: Icon(Icons.people_outline),
-          label: 'Warga',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.paid_outlined),
-          label: 'Iuran',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.assessment_outlined),
-          label: 'Keuangan',
+          icon: Icon(Icons.person_outline),
+          label: 'Profil',
         ),
       ]);
     } else {
-      // Role 'warga'
+      // WARGA BIASA
       pages.addAll([
+        // Tab 1: Keluarga
+        const PlaceholderScreen(title: "Data Keluarga Saya"),
+
+        // Tab 2: Tagihan Iuran
         const PlaceholderScreen(title: "Tagihan Iuran"),
-        const PlaceholderScreen(title: "Kegiatan Desa"),
-        const PlaceholderScreen(title: "Profil Saya"),
+
+        // Tab 3: Profile (Pusat Menu Warga)
+        const ProfileMainScreen(),
       ]);
+
       navItems.addAll([
         const BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long),
-          label: 'Tagihan',
+          icon: Icon(Icons.family_restroom),
+          label: 'Keluarga',
         ),
         const BottomNavigationBarItem(
-          icon: Icon(Icons.event_available),
-          label: 'Kegiatan',
+          icon: Icon(Icons.receipt_long),
+          label: 'Iuran',
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
@@ -105,6 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _pages = pages;
       _navItems = navItems;
+      // KOREKSI: Reset selected index agar tidak error jika navigasi berubah
+      _selectedIndex = 0;
     });
   }
 
@@ -119,46 +134,39 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
 
-    // Jika (karena alasan aneh) user null, kembali ke login
-    if (!authProvider.isAuthenticated || user == null) {
-      return const LoginScreen();
+    if (!authProvider.isAuthenticated || user == null || _pages.isEmpty) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
-        // Judul AppBar berubah sesuai tab yang dipilih
         title: const Text("Desakita"),
         actions: [
+          // Navigasi ke Halaman Profil (opsional, jika ingin akses cepat)
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: "Logout",
-            onPressed: () async {
-              await authProvider.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              setState(() {
+                _selectedIndex =
+                    _navItems.length - 1; // Tab terakhir selalu profil
+              });
             },
           ),
         ],
       ),
-      // IndexedStack menjaga state setiap halaman saat berpindah tab
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         items: _navItems,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        // Ini penting agar label selalu terlihat
         type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey,
       ),
     );
   }
 }
-
-// --- (BARU) Widget Terpisah untuk Konten Tab "Home" ---
-// Ini berisi konten yang sebelumnya ada di body ListView
+// --- WIDGET UNTUK KONTEN TAB HOME ---
 
 class _HomeTabContent extends StatelessWidget {
   final User user;
@@ -188,33 +196,22 @@ class _HomeTabContent extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
         const SizedBox(height: 20),
-        // Tombol untuk atur login wajah
-        OutlinedButton.icon(
-          icon: const Icon(Icons.face_retouching_natural),
-          label: const Text("Atur Login Wajah"),
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const RegisterFaceScreen()),
-            );
-          },
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
         const Divider(),
 
-        // --- (PERUBAHAN) Tampilkan Dashboard Berdasarkan Role ---
+        // --- Tampilkan Konten Wallet/PPOB (Desapay) ---
+        HomeTabWalletContent(user: user),
+
+        const SizedBox(height: 20),
+
+        // --- Tampilkan Dashboard Berdasarkan Role (Tambahan/Laporan) ---
         _buildDashboardByRole(context, user),
+        const SizedBox(height: 40),
       ],
     );
   }
 
-  // (BARU) Helper untuk memilih dashboard yang sesuai
+  // --- Widget Dashboard Statistik & Chart ---
+
   Widget _buildDashboardByRole(BuildContext context, User user) {
     if (user.role == 'admin') {
       return _buildAdminDashboard(context);
@@ -225,13 +222,10 @@ class _HomeTabContent extends StatelessWidget {
     if (user.role == 'warga') {
       return _buildWargaDashboard(context, user);
     }
-    return const SizedBox.shrink(); // Kosong jika tidak ada role
+    return const SizedBox.shrink();
   }
 
-  /// (BARU) Widget untuk menampilkan Kartu Statistik RT/RW
   Widget _buildRtRwDashboard(BuildContext context, User user) {
-    // TODO: Ganti data palsu ini dengan data dari API
-    // Buat endpoint baru di Laravel: GET /api/v1/dashboard-stats
     final String totalWarga = "45";
     final String totalKK = "15";
     final String iuranBelumLunas = "3";
@@ -251,7 +245,7 @@ class _HomeTabContent extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.2, // Membuat kartu sedikit lebih tinggi
+          childAspectRatio: 1.2,
           children: [
             _StatCard(
               icon: Icons.people,
@@ -274,7 +268,7 @@ class _HomeTabContent extends StatelessWidget {
             _StatCard(
               icon: Icons.event,
               title: "Kegiatan Aktif",
-              value: "1", // Dummy
+              value: "1",
               color: Colors.purple,
             ),
           ],
@@ -283,9 +277,7 @@ class _HomeTabContent extends StatelessWidget {
     );
   }
 
-  /// (BARU) Widget untuk menampilkan Kartu Statistik Warga
   Widget _buildWargaDashboard(BuildContext context, User user) {
-    // TODO: Ganti data palsu ini dengan data dari API
     final String tagihanWarga = "2";
     final String totalTagihan = "Rp 150.000";
 
@@ -294,7 +286,7 @@ class _HomeTabContent extends StatelessWidget {
       children: [
         const SizedBox(height: 20),
         Text(
-          "Ringkasan Akun Saya",
+          "Ringkasan Tagihan",
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
@@ -324,10 +316,8 @@ class _HomeTabContent extends StatelessWidget {
     );
   }
 
-  /// (TIDAK BERUBAH) Widget untuk menampilkan chart dashboard admin
   Widget _buildAdminDashboard(BuildContext context) {
-    // ... (kode chart admin yang sudah ada) ...
-    // TODO: Ganti data palsu ini dengan data dari API
+    // Data Palsu untuk Chart Admin
     final dummyFinancialData = [
       {'label': 'Jan', 'pemasukan': 1500000.0, 'pengeluaran': 800000.0},
       {'label': 'Feb', 'pemasukan': 1200000.0, 'pengeluaran': 1100000.0},
@@ -345,7 +335,10 @@ class _HomeTabContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        Text("Ringkasan Data", style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          "Ringkasan Data (Admin)",
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 16),
         // Chart Keuangan
         SizedBox(
@@ -378,7 +371,8 @@ class _HomeTabContent extends StatelessWidget {
   }
 }
 
-// --- (BARU) Widget Kartu Statistik ---
+// --- WIDGET HELPER KECIL ---
+
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -418,9 +412,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// --- (Widget Chart: Tidak Berubah) ---
 class _FinancialBarChart extends StatelessWidget {
-  // ... (kode chart yang sudah ada) ...
   final List<Map<String, dynamic>> data;
   const _FinancialBarChart({required this.data});
 
@@ -475,10 +467,11 @@ class _FinancialBarChart extends StatelessWidget {
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (double value, TitleMeta meta) {
-                // Sederhanakan label (misal: 1000000 -> 1Jt)
                 if (value % 500000 == 0 && value != 0) {
+                  // Format Rupiah sederhana
+                  final formatter = NumberFormat.compact(locale: 'id');
                   return Text(
-                    "${(value / 1000000).toStringAsFixed(1)}Jt",
+                    formatter.format(value),
                     style: const TextStyle(fontSize: 10),
                   );
                 }
@@ -495,7 +488,6 @@ class _FinancialBarChart extends StatelessWidget {
 }
 
 class _ResidentPieChart extends StatelessWidget {
-  // ... (kode chart yang sudah ada) ...
   final List<Map<String, dynamic>> data;
   const _ResidentPieChart({required this.data});
 
@@ -538,8 +530,12 @@ class _ResidentPieChart extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Row(
                   children: [
-                    Container(width: 16, height: 16, color: item['color']),
-                    const SizedBox(width: 8),
+                    Container(
+                      width: 16,
+                      height: 16,
+                      color: item['color'],
+                      margin: const EdgeInsets.only(right: 8),
+                    ),
                     Text(item['role']),
                   ],
                 ),

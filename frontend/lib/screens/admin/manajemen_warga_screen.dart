@@ -4,6 +4,8 @@ import 'package:frontend/services/api_service.dart';
 import 'package:frontend/screens/admin/tambah_warga_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/screens/admin/detail_warga_screen.dart';
+// --- (WAJIB) Import layar edit ---
+import 'package:frontend/screens/admin/edit_warga_screen.dart';
 
 class ManajemenWargaScreen extends StatefulWidget {
   const ManajemenWargaScreen({super.key});
@@ -25,7 +27,6 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
   }
 
   Future<void> _fetchWarga({String? search}) async {
-    
     setState(() {
       _isLoading = true;
       _errorMessage = "";
@@ -72,9 +73,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
     }
   }
 
-  
   Future<void> _deleteWarga(Warga warga) async {
-    
     final bool? confirmed = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -85,11 +84,11 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false), 
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text("Batal"),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true), 
+              onPressed: () => Navigator.of(context).pop(true),
               child: const Text("Hapus", style: TextStyle(color: Colors.red)),
             ),
           ],
@@ -97,7 +96,6 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
       },
     );
 
-    
     if (confirmed == true) {
       final apiService = context.read<ApiService>();
       try {
@@ -109,7 +107,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          
+
           _fetchWarga(search: _searchController.text);
         } else {
           throw Exception("Gagal menghapus dari server");
@@ -124,14 +122,27 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
     }
   }
 
-  
-  void _editWarga(Warga warga) {
+  // --- (PERUBAHAN) Fungsi untuk navigasi ke Detail ---
+  void _goToDetail(Warga warga) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => DetailWargaScreen(wargaAwal: warga)),
     );
   }
 
-  
+  // --- (BARU) Fungsi untuk navigasi ke Edit ---
+  Future<void> _goToEditWarga(Warga warga) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EditWargaScreen(warga: warga),
+        fullscreenDialog: true,
+      ),
+    );
+    // Jika 'true' dikembalikan, refresh list
+    if (result == true) {
+      _fetchWarga(search: _searchController.text);
+    }
+  }
+
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.only(
@@ -140,11 +151,10 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
         bottom: 16.0,
         top: 8.0,
       ),
-      
+
       color: Theme.of(context).colorScheme.primary,
       child: Row(
         children: [
-          
           Expanded(
             child: TextField(
               controller: _searchController,
@@ -163,7 +173,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          
+
           ElevatedButton.icon(
             onPressed: _tambahWarga,
             icon: const Icon(Icons.add, color: Colors.black),
@@ -181,13 +191,11 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
     );
   }
 
-  
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_errorMessage.isNotEmpty) {
-      
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -199,7 +207,6 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
       );
     }
     if (_wargaList.isEmpty) {
-      
       return Center(
         child: Text(
           _searchController.text.isEmpty
@@ -209,22 +216,20 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
       );
     }
 
-    
     return RefreshIndicator(
       onRefresh: () => _fetchWarga(search: _searchController.text),
       child: ListView.builder(
-        padding: const EdgeInsets.all(8.0), 
+        padding: const EdgeInsets.all(8.0),
         itemCount: _wargaList.length,
         itemBuilder: (context, index) {
           final warga = _wargaList[index];
-          
+
           return _buildWargaCard(warga);
         },
       ),
     );
   }
 
-  
   Widget _buildWargaCard(Warga warga) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
@@ -232,8 +237,13 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: ListTile(
         leading: CircleAvatar(
-          
-          child: Text(warga.namaLengkap[0].toUpperCase()),
+          backgroundColor: Colors.grey[300],
+          child: Text(
+            warga.namaLengkap.isNotEmpty
+                ? warga.namaLengkap[0].toUpperCase()
+                : "?",
+            style: const TextStyle(color: Colors.black54),
+          ),
         ),
         title: Text(
           warga.namaLengkap,
@@ -249,7 +259,8 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'edit') {
-              _editWarga(warga);
+              // Panggil fungsi Edit yang benar
+              _goToEditWarga(warga);
             } else if (value == 'delete') {
               _deleteWarga(warga);
             }
@@ -280,8 +291,8 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
           },
         ),
         onTap: () {
-          
-          _editWarga(warga);
+          // Aksi onTap utama adalah ke Detail
+          _goToDetail(warga);
         },
       ),
     );
@@ -290,17 +301,16 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
-      body: Column(
-        children: [
-          
-          _buildHeader(),
-          
-          Expanded(child: _buildBody()),
-        ],
+      body: Container(
+        color: Colors.grey[200],
+        child: Column(
+          children: [
+            _buildHeader(),
+
+            Expanded(child: _buildBody()),
+          ],
+        ),
       ),
-      
-      
     );
   }
 }

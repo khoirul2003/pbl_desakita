@@ -1,14 +1,13 @@
 import 'dart:convert';
+import 'package:frontend/models/wallet_models.dart'; // Import model Wallet dan Transaction
 
-
-
-
+// Helper untuk mengubah JSON ke Objek Dart
 
 class User {
   final int id;
   final String email;
   final String role;
-  final Warga? warga; 
+  final Warga? warga; // Data warga bisa jadi null
 
   User({required this.id, required this.email, required this.role, this.warga});
 
@@ -17,24 +16,24 @@ class User {
       id: json['id'],
       email: json['email'],
       role: json['role'],
-      
+      // Cek jika data 'warga' ada
       warga: json['warga'] != null ? Warga.fromJson(json['warga']) : null,
     );
   }
 
-  
-  String toJsonString() => json.encode(_toJson());
-  Map<String, dynamic> _toJson() => {
+  // Helper untuk menyimpan/mengambil dari Secure Storage
+  String toJsonString() => json.encode(toJsonMap());
+  Map<String, dynamic> toJsonMap() => {
     'id': id,
     'email': email,
     'role': role,
-    'warga': warga?._toJson(),
+    'warga': warga?.toJsonMap(),
   };
 
   factory User.fromJsonString(String str) => User.fromJson(json.decode(str));
 }
 
-
+// --- Versi Lengkap Class Warga ---
 
 class Warga {
   final int id;
@@ -43,8 +42,7 @@ class Warga {
   final String rt;
   final String rw;
   final String? tempatLahir;
-  final String?
-  tanggalLahir; 
+  final String? tanggalLahir; // Menggunakan String (YYYY-MM-DD)
   final String? jenisKelamin;
   final String? alamatKtp;
   final String? agama;
@@ -54,11 +52,12 @@ class Warga {
   final int? keluargaId;
   final String? statusDalamKeluarga;
   final String? noHp;
-  final String? fotoKtp; 
+  final String? fotoKtp; // URL/Path ke foto
 
-  
+  // Relasi yang di-load dari API Detail / Eager Loading
   final Keluarga? keluarga;
-  final User? user; 
+  final User? user; // Untuk melihat email/role yang terhubung
+  final Wallet? wallet; // (BARU) Relasi ke E-Wallet
 
   Warga({
     required this.id,
@@ -78,10 +77,9 @@ class Warga {
     this.statusDalamKeluarga,
     this.noHp,
     this.fotoKtp,
-
-    
     this.keluarga,
     this.user,
+    this.wallet, // (BARU)
   });
 
   factory Warga.fromJson(Map<String, dynamic> json) {
@@ -106,15 +104,17 @@ class Warga {
       noHp: json['no_hp'],
       fotoKtp: json['foto_ktp'],
 
-      
+      // Mem-parse relasi jika ada
       keluarga: json['keluarga'] != null
           ? Keluarga.fromJson(json['keluarga'])
           : null,
       user: json['user'] != null ? User.fromJson(json['user']) : null,
+      // (BARU) Parsing Wallet
+      wallet: json['wallet'] != null ? Wallet.fromJson(json['wallet']) : null,
     );
   }
 
-  Map<String, dynamic> _toJson() => {
+  Map<String, dynamic> toJsonMap() => {
     'id': id,
     'nik': nik,
     'nama_lengkap': namaLengkap,
@@ -132,14 +132,13 @@ class Warga {
     'status_dalam_keluarga': statusDalamKeluarga,
     'no_hp': noHp,
     'foto_ktp': fotoKtp,
-    
-    'keluarga': keluarga?._toJson(),
-    'user': user?._toJson(),
+    'keluarga': keluarga?.toJsonMap(),
+    'user': user?.toJsonMap(),
+    'wallet': wallet?.toJsonMap(),
   };
 }
 
-
-
+// --- Class untuk Keluarga ---
 
 class Keluarga {
   final int id;
@@ -148,8 +147,6 @@ class Keluarga {
   final String rt;
   final String rw;
   final int? kepalaKeluargaId;
-  
-  
 
   Keluarga({
     required this.id,
@@ -158,18 +155,9 @@ class Keluarga {
     required this.rt,
     required this.rw,
     this.kepalaKeluargaId,
-    
   });
 
   factory Keluarga.fromJson(Map<String, dynamic> json) {
-    
-    
-    
-    
-    
-    
-    
-
     return Keluarga(
       id: json['id'],
       noKk: json['no_kk'],
@@ -179,17 +167,15 @@ class Keluarga {
       kepalaKeluargaId: json['kepala_keluarga_id'] != null
           ? int.tryParse(json['kepala_keluarga_id'].toString())
           : null,
-      
     );
   }
 
-  Map<String, dynamic> _toJson() => {
+  Map<String, dynamic> toJsonMap() => {
     'id': id,
     'no_kk': noKk,
     'alamat': alamat,
     'rt': rt,
     'rw': rw,
     'kepala_keluarga_id': kepalaKeluargaId,
-    
   };
 }

@@ -2,8 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-
+// Sesuaikan path ini
 import 'package:frontend/state/auth_provider.dart';
+// import 'package:frontend/screens/home/home_screen.dart'; // Hapus: Tidak perlu lagi
 
 class RegisterFaceScreen extends StatefulWidget {
   const RegisterFaceScreen({super.key});
@@ -17,11 +18,11 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    
+    // Ambil gambar dari kamera depan
     final XFile? image = await _picker.pickImage(
       source: ImageSource.camera,
       preferredCameraDevice: CameraDevice.front,
-      imageQuality: 80, 
+      imageQuality: 80, // Kompresi gambar
     );
 
     if (image != null) {
@@ -41,21 +42,23 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    
+    // Panggil fungsi di provider
     final String? error = await authProvider.registerFace(_imageFile!);
 
     if (mounted) {
       if (error == null) {
-        
+        // Sukses
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Wajah berhasil terdaftar!"),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(); 
+        Navigator.of(
+          context,
+        ).pop(); // Kembali ke halaman sebelumnya (ProfileMainScreen)
       } else {
-        
+        // Gagal
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error), backgroundColor: Colors.red),
         );
@@ -85,14 +88,14 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
             ),
             const SizedBox(height: 24),
 
-            
+            // Preview Gambar
             Center(
               child: Container(
                 width: 250,
                 height: 250,
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(125), 
+                  borderRadius: BorderRadius.circular(125), // Lingkaran
                   border: Border.all(
                     color: Theme.of(context).colorScheme.primary,
                     width: 3,
@@ -111,7 +114,7 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
             ),
             const SizedBox(height: 24),
 
-            
+            // Tombol Ambil Foto
             OutlinedButton.icon(
               icon: const Icon(Icons.camera_alt),
               label: Text(_imageFile == null ? "Buka Kamera" : "Ambil Ulang"),
@@ -119,7 +122,7 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
             ),
             const SizedBox(height: 16),
 
-            
+            // Tombol Simpan
             ElevatedButton.icon(
               icon: isLoading
                   ? const SizedBox(
