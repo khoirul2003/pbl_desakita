@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Database\Seeder; // KOREKSI: Gunakan namespace Laravel yang benar
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Keluarga;
@@ -8,7 +8,7 @@ use App\Models\Warga;
 use App\Models\User;
 use App\Models\Iuran;
 use App\Models\Wallet;
-use App\Models\Transaction; // Tambahkan jika Anda menggunakan transaksi di seeder
+use App\Models\Transaction;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Pindahkan $this ke variabel lokal agar bisa diakses di dalam closure
         $command = $this->command;
 
         // ------------------------------------
@@ -25,7 +24,6 @@ class DatabaseSeeder extends Seeder
         // ------------------------------------
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
-        // Kosongkan semua tabel utama
         Warga::truncate();
         Keluarga::truncate();
         User::truncate();
@@ -34,62 +32,67 @@ class DatabaseSeeder extends Seeder
         \App\Models\Keuangan::truncate();
         \App\Models\Kegiatan::truncate();
         \App\Models\Acara::truncate();
-        Wallet::truncate(); // Hapus Wallet juga
+        Wallet::truncate();
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         DB::transaction(function () use ($command) {
+
             // ------------------------------------
-            // 1. AKUN UTAMA & DATA DUMMY ADMIN (UNTUK WALLET)
+            // 1. DATA ADMIN (4 AKUN)
             // ------------------------------------
+            $adminAccounts = [];
+            for ($i = 1; $i <= 4; $i++) {
+                $kk = str_pad($i, 16, '0', STR_PAD_LEFT);
+                $nik = str_pad($i, 16, '1', STR_PAD_LEFT);
+                $email = "admin{$i}@gmail.com";
 
-            // Buat Keluarga Dummy untuk Admin
-            $keluargaAdmin = Keluarga::create([
-                'no_kk' => '0000000000000000',
-                'alamat' => 'Kantor Desa',
-                'rt' => '000',
-                'rw' => '000',
-            ]);
+                $keluarga = Keluarga::create([
+                    'no_kk' => $kk,
+                    'alamat' => 'Kantor Desa - Admin ' . $i,
+                    'rt' => '000',
+                    'rw' => '000',
+                ]);
 
-            // Buat Warga Dummy untuk Admin
-            $wargaAdmin = Warga::create([
-                'nik' => '0000000000000000',
-                'nama_lengkap' => 'Administrator Desa',
-                'tempat_lahir' => 'Sistem',
-                'tanggal_lahir' => '2023-01-01',
-                'jenis_kelamin' => 'L',
-                'alamat_ktp' => 'Kantor Desa',
-                'agama' => 'Sistem',
-                'status_perkawinan' => 'Sistem',
-                'pekerjaan' => 'Sistem Administrator',
-                'rt' => '000',
-                'rw' => '000',
-                'keluarga_id' => $keluargaAdmin->id, // Hubungkan ke Keluarga Dummy
-                'status_dalam_keluarga' => 'KEPALA_KELUARGA',
-            ]);
-            $keluargaAdmin->update(['kepala_keluarga_id' => $wargaAdmin->id]);
+                $warga = Warga::create([
+                    'nik' => $nik,
+                    'nama_lengkap' => 'Administrator ' . $i,
+                    'tempat_lahir' => 'Sistem',
+                    'tanggal_lahir' => '2023-01-01',
+                    'jenis_kelamin' => 'L',
+                    'alamat_ktp' => 'Kantor Desa',
+                    'agama' => 'Sistem',
+                    'status_perkawinan' => 'Sistem',
+                    'pekerjaan' => 'Admin Sistem',
+                    'rt' => '000',
+                    'rw' => '000',
+                    'keluarga_id' => $keluarga->id,
+                    'status_dalam_keluarga' => 'KEPALA_KELUARGA',
+                ]);
+                $keluarga->update(['kepala_keluarga_id' => $warga->id]);
 
-            // Akun User Admin
-            $adminUser = User::create([
-                'email' => 'admin@gmail.com',
-                'password' => Hash::make('password'),
-                'role' => 'admin',
-                'warga_id' => $wargaAdmin->id, // Hubungkan ke Warga Dummy
-            ]);
-            $command->info('Akun Admin dibuat: admin@gmail.com (Hub. Warga: Admin Desa)');
-
+                $user = User::create([
+                    'email' => $email,
+                    'password' => Hash::make('password'),
+                    'role' => 'admin',
+                    'warga_id' => $warga->id,
+                ]);
+                $adminAccounts[] = $user;
+                $command->info("Akun Admin {$i} dibuat: {$email}");
+            }
+            $adminUser = $adminAccounts[0]; // Jadikan Admin 1 sebagai user default untuk Keuangan
 
             // ------------------------------------
             // 2. AKUN RW 01
             // ------------------------------------
             $keluargaRW01 = Keluarga::create([
-                'no_kk' => '3201010101000001',
+                'no_kk' => '3201010101000005',
                 'alamat' => 'Jl. Balai gmail No. 1',
                 'rt' => '001',
                 'rw' => '001',
             ]);
             $wargaRW01 = Warga::create([
-                'nik' => '3201010101900001',
+                'nik' => '3201010101900005',
                 'nama_lengkap' => 'Bapak RW 01',
                 'tempat_lahir' => 'Jakarta',
                 'tanggal_lahir' => '1970-01-01',
@@ -117,13 +120,13 @@ class DatabaseSeeder extends Seeder
             // 3. AKUN RT 001
             // ------------------------------------
             $keluargaRT01 = Keluarga::create([
-                'no_kk' => '3201010101000002',
+                'no_kk' => '3201010101000006',
                 'alamat' => 'Jl. Gang RT 01 No. 1',
                 'rt' => '001',
                 'rw' => '001',
             ]);
             $wargaRT01 = Warga::create([
-                'nik' => '3201010101900002',
+                'nik' => '3201010101900006',
                 'nama_lengkap' => 'Bapak RT 001',
                 'tempat_lahir' => 'Bandung',
                 'tanggal_lahir' => '1980-01-01',
@@ -148,50 +151,16 @@ class DatabaseSeeder extends Seeder
 
 
             // ------------------------------------
-            // 4. AKUN RT 002
-            // ------------------------------------
-            $keluargaRT02 = Keluarga::create([
-                'no_kk' => '3201010101000003',
-                'alamat' => 'Jl. Gang RT 02 No. 1',
-                'rt' => '002',
-                'rw' => '001',
-            ]);
-            $wargaRT02 = Warga::create([
-                'nik' => '3201010101900003',
-                'nama_lengkap' => 'Bapak RT 002',
-                'tempat_lahir' => 'Surabaya',
-                'tanggal_lahir' => '1985-01-01',
-                'jenis_kelamin' => 'L',
-                'alamat_ktp' => 'Jl. Gang RT 02 No. 1',
-                'agama' => 'Kristen',
-                'status_perkawinan' => 'Kawin',
-                'pekerjaan' => 'Karyawan Swasta',
-                'rt' => '002',
-                'rw' => '001',
-                'keluarga_id' => $keluargaRT02->id,
-                'status_dalam_keluarga' => 'KEPALA_KELUARGA',
-            ]);
-            $keluargaRT02->update(['kepala_keluarga_id' => $wargaRT02->id]);
-            $userRT02 = User::create([
-                'email' => 'rt02@gmail.com',
-                'password' => Hash::make('password'),
-                'role' => 'rt',
-                'warga_id' => $wargaRT02->id,
-            ]);
-            $command->info('Akun RT 002 dibuat: rt02@gmail.com');
-
-
-            // ------------------------------------
-            // 5. WARGA BIASA (RT 001)
+            // 4. WARGA BIASA (RT 001)
             // ------------------------------------
             $keluargaWarga1 = Keluarga::create([
-                'no_kk' => '3201010101000004',
+                'no_kk' => '3201010101000007',
                 'alamat' => 'Jl. Gang RT 01 No. 10',
                 'rt' => '001',
                 'rw' => '001',
             ]);
             $warga1 = Warga::create([
-                'nik' => '3201010101900004',
+                'nik' => '3201010101900007',
                 'nama_lengkap' => 'Budi Gunawan',
                 'tempat_lahir' => 'Medan',
                 'tanggal_lahir' => '1990-01-01',
@@ -214,7 +183,7 @@ class DatabaseSeeder extends Seeder
             ]);
 
             Warga::create([
-                'nik' => '3201010101900005',
+                'nik' => '3201010101900008',
                 'nama_lengkap' => 'Siti Aminah',
                 'tempat_lahir' => 'Medan',
                 'tanggal_lahir' => '1992-01-01',

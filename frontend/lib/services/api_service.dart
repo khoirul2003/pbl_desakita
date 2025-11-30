@@ -14,7 +14,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class ApiService {
   // --- PROPERTI & KONFIGURASI (LOCA.LT) ---
   final String _baseUrlLaravel = "https://1fb0831adfd7.ngrok-free.app/api";
+
   final String _baseUrlFastApi = "https://c8c5591c47a3.ngrok-free.app";
+
 
   final _storage = const FlutterSecureStorage();
 
