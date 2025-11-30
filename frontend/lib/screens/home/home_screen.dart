@@ -8,7 +8,11 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/state/auth_provider.dart';
 import 'package:frontend/screens/login/login_screen.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
+// --- Import Layar Manajemen ---
 import 'package:frontend/screens/admin/manajemen_warga_screen.dart';
+import 'package:frontend/screens/admin/manajemen_iuran_screen.dart'; // Import Iuran
+import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart'; // Import Kegiatan
+// --- Akhir Import Layar Manajemen ---
 import 'package:frontend/screens/profile/profile_main_screen.dart';
 import 'package:frontend/screens/home/home_tab_wallet_content.dart'; // Konten Wallet/PPOB
 
@@ -50,21 +54,33 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user.role == 'admin' || user.role == 'rt' || user.role == 'rw') {
       // ADMIN/RT/RW
       pages.addAll([
-        // Tab 1: Warga (Manajemen/Data Warga)
+        // Tab 1: Warga (Manajemen Warga)
         user.role == 'admin'
-            ? const ManajemenWargaScreen()
-            : const PlaceholderScreen(title: "Data Warga & Keluarga"),
+            ? const ManajemenWargaScreen() // Admin: Warga CRUD
+            : const PlaceholderScreen(
+                title: "Data Warga & Keluarga",
+              ), // RT/RW: Placeholder
+        // Tab 2: Iuran (Manajemen Iuran)
+        user.role == 'admin' || user.role == 'rw' || user.role == 'rt'
+            ? const ManajemenIuranScreen() // Semua level manajemen bisa akses
+            : const PlaceholderScreen(title: "Manajemen Iuran"),
 
-        // Tab 2: Iuran (Manajemen/Tagihan Iuran)
-        const PlaceholderScreen(title: "Manajemen Iuran"),
+        // Tab 3: Kegiatan (Gabungan Kegiatan dan Acara)
+        user.role == 'admin' || user.role == 'rw' || user.role == 'rt'
+            ? const ManajemenKegiatanScreen() // Semua level manajemen bisa akses
+            : const PlaceholderScreen(title: "Manajemen Kegiatan"),
 
-        // Tab 3: Profile (Pusat Menu Manajemen)
+        // Tab 4: Profile (Pusat Menu Manajemen)
         const ProfileMainScreen(),
       ]);
 
       navItems.addAll([
         const BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Warga'),
         const BottomNavigationBarItem(icon: Icon(Icons.paid), label: 'Iuran'),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.event),
+          label: 'Kegiatan',
+        ), // Digunakan untuk Kegiatan/Acara
         const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           label: 'Profil',
@@ -73,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       // WARGA BIASA
       pages.addAll([
-        // Tab 1: Keluarga (List data keluarga)
+        // Tab 1: Keluarga
         const PlaceholderScreen(title: "Data Keluarga Saya"),
 
         // Tab 2: Tagihan Iuran
@@ -102,6 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _pages = pages;
       _navItems = navItems;
+      // KOREKSI: Reset selected index agar tidak error jika navigasi berubah
+      _selectedIndex = 0;
     });
   }
 
