@@ -5,16 +5,15 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/models/kegiatan_model.dart';
-import 'package:frontend/models/acara_model.dart'; // Tambahkan untuk Manajemen Acara
+import 'package:frontend/models/acara_model.dart'; 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
-// Mengurus Auth, Warga CRUD, CV/ML, Iuran, Kegiatan, Acara, dan Wallet.
+
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (LOCA.LT) ---
-  final String _baseUrlLaravel = "https://1fb0831adfd7.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://desa-kita-cv.loca.lt";
+  final String _baseUrlLaravel = "https://561c7fb6707d.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://fd86637114be.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 
