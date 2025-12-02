@@ -11,7 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 
 class ApiService {
-  // --- PROPERTI & KONFIGURASI (LOCA.LT) ---
+
   final String _baseUrlLaravel = "https://561c7fb6707d.ngrok-free.app/api";
   final String _baseUrlFastApi = "https://fd86637114be.ngrok-free.app";
 
@@ -27,7 +27,6 @@ class ApiService {
   ApiService() {
     _dioProtected = Dio();
 
-    // Interceptor untuk PROTECTED API (Menambahkan Token & Bypass Loca.lt)
     _dioProtected.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -494,4 +493,6 @@ class ApiService {
       return null;
     }
   }
+
+  Future addKegiatan(Map<String, String> data) async {}
 }
