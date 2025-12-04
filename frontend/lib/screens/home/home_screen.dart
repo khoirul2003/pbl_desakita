@@ -49,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     List<Widget> pages = [_HomeTabContent(user: user)];
     List<BottomNavigationBarItem> navItems = [
+      // PERBAIKAN: IconData dibungkus dengan Icon()
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
     ];
 
@@ -72,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
 
       navItems.addAll([
+        // PERBAIKAN: IconData dibungkus dengan Icon()
         const BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Warga'),
         const BottomNavigationBarItem(icon: Icon(Icons.paid), label: 'Iuran'),
         const BottomNavigationBarItem(
@@ -97,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
 
       navItems.addAll([
+        // PERBAIKAN: IconData dibungkus dengan Icon()
         const BottomNavigationBarItem(
           icon: Icon(Icons.family_restroom),
           label: 'Keluarga',
@@ -134,14 +137,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Menggunakan Scaffold dengan AppBar minimalis (opsional, karena Home Tab biasanya full screen)
-    // Kita hapus AppBar di sini, dan menggunakan Custom Header di _HomeTabContent jika perlu.
-    // Namun, jika AppBar global diperlukan, kita sesuaikan:
     return Scaffold(
       backgroundColor: _backgroundColor, // Latar belakang abu-abu muda
       appBar: AppBar(
         title: const Text("DesaKita"),
-        // Menggunakan primary color yang sudah didefinisikan
+        // centerTitle: true DIHAPUS agar judul berada di samping kiri
         backgroundColor: _primaryColor, 
         foregroundColor: Colors.white,
         elevation: 0, // Menghilangkan shadow karena kita ingin tampilan yang bersih
@@ -298,7 +298,9 @@ class _HomeTabContent extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.2,
+          // RASIO DIPERBAIKI: Nilai yang lebih kecil (misal 0.9) membuat kartu lebih tinggi
+          childAspectRatio: 0.9, 
+          // -----------------------------------------------------------------------
           children: [
             _StatCard(
               icon: Icons.people_alt_rounded,
@@ -355,7 +357,9 @@ class _HomeTabContent extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.2,
+          // RASIO DIPERBAIKI: Nilai yang lebih kecil membuat kartu lebih tinggi
+          childAspectRatio: 0.9, 
+          // -----------------------------------------------------------------------
           children: [
             _StatCard(
               icon: Icons.receipt_long,
@@ -451,7 +455,8 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 32, color: color), // Ikon sedikit dikecilkan
-          const Spacer(),
+          // PERBAIKAN: Ganti Spacer dengan SizedBox
+          const SizedBox(height: 16), // Memberikan ruang vertikal tetap
           Text(
             value,
             style: Theme.of(
@@ -461,6 +466,8 @@ class _StatCard extends StatelessWidget {
               color: color, // Menggunakan warna card untuk nilai
             ),
           ),
+          // PERBAIKAN: Memberikan ruang vertikal tetap
+          const SizedBox(height: 4), 
           Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.grey[600],
           )),
