@@ -119,70 +119,79 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
     }
   }
 
-  // --- HEADER HALAMAN WARGA ---
-Widget _buildHeader() {
-  return Container(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-    decoration: const BoxDecoration(
-      color: Color(0xFF0E2F60), // Warna utama header
-      borderRadius: BorderRadius.only(
-        bottomLeft: Radius.circular(24),
-        bottomRight: Radius.circular(24),
+  // --- HEADER HALAMAN WARGA YANG DIMODIFIKASI ---
+  Widget _buildHeader() {
+    return Container(
+      // Padding atas disesuaikan: MediaQuery.of(context).padding.top + 8
+      padding: EdgeInsets.fromLTRB(
+        20, 
+        MediaQuery.of(context).padding.top + 8, // Mengambil padding sistem dan menambahkan 8
+        20, 
+        16
       ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Judul halaman
-        const Text(
-          "Halaman Warga",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0E2F60), // Warna utama header
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
-        const SizedBox(height: 12),
-        // Search
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: TextField(
-            controller: _searchController,
-            onChanged: (query) => _fetchWarga(search: query),
-            decoration: InputDecoration(
-              hintText: "Cari nama atau NIK...",
-              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _tambahWarga,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text("Tambah Warga"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.25),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Judul halaman
+          Center(
+            child: const Text(
+              "Halaman Warga",
+              style: TextStyle(
+                color: Colors.white,
+                // Ukuran diubah menjadi 20 (sama dengan Profil & Pengaturan)
+                fontSize: 20, 
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 12),
+          // Search
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (query) => _fetchWarga(search: query),
+              decoration: InputDecoration(
+                hintText: "Cari nama atau NIK...",
+                prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _tambahWarga,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Tambah Warga"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.25),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // BODY
   Widget _buildBody() {
