@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/services/api_service.dart';
+import 'package:flutter/services.dart'; // Untuk FilteringTextInputFormatter
 
-// SCREEN BARU: Mirip TambahKegiatanScreen
 class TambahAcaraScreen extends StatefulWidget {
   const TambahAcaraScreen({super.key});
 
@@ -18,6 +18,9 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
   final _lokasiController = TextEditingController();
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
+  final _biayaController = TextEditingController(
+    text: '0',
+  ); // Controller Biaya (default 0)
 
   DateTime? _tanggalMulai;
   TimeOfDay? _waktuMulai;
@@ -34,6 +37,7 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
     _lokasiController.dispose();
     _rtController.dispose();
     _rwController.dispose();
+    _biayaController.dispose();
     super.dispose();
   }
 
@@ -47,7 +51,6 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
     DateTime initialDate = DateTime.now();
     TimeOfDay initialTime = TimeOfDay.now();
 
-    // Set initial values
     if (isMulai) {
       if (_tanggalMulai != null) initialDate = _tanggalMulai!;
       if (_waktuMulai != null) initialTime = _waktuMulai!;
@@ -118,15 +121,33 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
       _isLoading = true;
     });
 
+    // Ambil Biaya
+    final double? totalBiaya = double.tryParse(_biayaController.text);
+    if (totalBiaya == null || totalBiaya < 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Total Biaya harus berupa angka positif."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     final apiService = context.read<ApiService>();
     final Map<String, dynamic> data = {
-      'nama_acara': _namaController.text, // Perhatikan nama field di sini
+      'nama_acara': _namaController.text,
       'deskripsi': _deskripsiController.text,
       'tanggal_mulai': tglMulai.toIso8601String(),
       'tanggal_selesai': tglSelesai.toIso8601String(),
       'lokasi': _lokasiController.text,
       'rt': _rtController.text.isNotEmpty ? _rtController.text : null,
       'rw': _rwController.text.isNotEmpty ? _rwController.text : null,
+      'total_biaya': totalBiaya, // <-- Kirim total biaya
     };
 
     try {
@@ -144,8 +165,13 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // Tampilkan pesan error yang lebih informatif jika dari server
+        String errorMessage = e.toString().contains('403')
+            ? 'Akses Ditolak. Pastikan RT/RW sesuai otoritas Anda.'
+            : 'Error: ${e.toString()}';
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -195,7 +221,29 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
               ),
               const SizedBox(height: 24),
 
-              Text("Jadwal", style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                "Pendanaan dan Jadwal",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+
+              // Field Biaya
+              TextFormField(
+                controller: _biayaController,
+                decoration: const InputDecoration(
+                  labelText: "Total Biaya (Rp)",
+                  prefixText: 'Rp ',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (v) {
+                  final amount = double.tryParse(v ?? '0');
+                  if (amount == null || amount < 0) {
+                    return "Biaya harus angka positif.";
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 16),
 
               // Tanggal & Waktu Mulai
@@ -270,7 +318,7 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
     );
   }
 
-  // Widget Helper untuk menampilkan tanggal dan waktu (SAMA PERSIS DENGAN KEGIATAN)
+  // Widget Helper untuk menampilkan tanggal dan waktu
   Widget _buildDateTimeRow(
     BuildContext context,
     String label,
@@ -280,7 +328,7 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
   ) {
     final String dateText = date == null
         ? 'Pilih Tanggal'
-        : _dateFormat.format(date);
+        : DateFormat('yyyy-MM-dd').format(date);
     final String timeText = time == null ? 'Pilih Waktu' : time.format(context);
 
     return InkWell(

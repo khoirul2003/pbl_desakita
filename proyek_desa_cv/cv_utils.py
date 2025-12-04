@@ -93,8 +93,7 @@ def check_liveness(image_bytes_list: list[bytes]):
         try:
             frame = _bytes_to_image(image_bytes)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            
-            # Deteksi wajah menggunakan Haar Cascade
+
             faces_cv = face_detector_cv.detectMultiScale(
                 gray,
                 scaleFactor=1.1,
@@ -137,7 +136,6 @@ def check_liveness(image_bytes_list: list[bytes]):
             logging.warning(f"Liveness frame error: {e}")
             continue
 
-    # Cek sekali lagi di akhir loop
     if blink_counter >= EAR_CONSEC_FRAMES:
         logging.info("Liveness check BERHASIL: Kedipan terdeteksi di akhir.")
         return True, "Blink detected."

@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/screens/admin/edit_iuran_screen.dart';
-import 'package:frontend/screens/placeholder_screen.dart';
+import 'package:frontend/screens/placeholder_screen.dart'; // Untuk tombol Lihat Tagihan
 
 // --- DEFINISI WARNA PROSCAN ---
 const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
@@ -61,7 +61,7 @@ class _DetailIuranScreenState extends State<DetailIuranScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              "Simulasi: Tagihan untuk ${_iuran.namaIuran} berhasil dibuat.",
+              "Simulasi: Tagihan untuk ${_iuran.namaIuran} (Bulan Ini) berhasil dibuat!",
             ),
             backgroundColor: _primaryColor,
           ),
