@@ -188,3 +188,49 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 16),
 
                               // Password Input
+                              const Text("password", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 5),
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: _isObscure,
+                                decoration: InputDecoration(
+                                  hintText: "please input your password",
+                                  hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                  filled: true,
+                                  fillColor: const Color(0xFFEBEFF5),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _isObscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                      color: Colors.black54,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isObscure = !_isObscure;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty || value.length < 8) {
+                                    return "Password minimal 8 karakter";
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 30),
+
+                              // LOGIN BUTTON
+                              SizedBox(
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: _submitLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryBlue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
