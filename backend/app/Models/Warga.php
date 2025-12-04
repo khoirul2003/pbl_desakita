@@ -72,4 +72,9 @@ class Warga extends Model
     {
         return $this->hasMany(TagihanIuran::class, 'warga_id');
     }
+
+    public function wallet() // <--- PASTIKAN FUNGSI INI ADA
+    {
+        return $this->hasOne(Wallet::class, 'warga_id');
+    }
 }
