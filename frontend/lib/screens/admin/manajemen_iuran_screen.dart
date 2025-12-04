@@ -32,8 +32,8 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     _fetchIuran();
   }
 
+  // --- LOGIKA PROGRAM (TIDAK BERUBAH) ---
   Future<void> _fetchIuran({String? search}) async {
-    // Cek mounted sebelum setState
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -135,41 +135,66 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
       }
     }
   }
+  // --- AKHIR LOGIKA PROGRAM ---
 
-  // Widget untuk Header Kustom (Hanya berisi Search dan Add)
+  // =========================================================
+  // 👇 MODIFIKASI UI/LAYOUT: _buildHeader TANPA JUDUL
+  // =========================================================
   Widget _buildHeader() {
     return Container(
-      // Padding vertikal 8.0, horizontal 0.0 (sudah dihandle AppBar)
-      child: Row(
+      // Padding vertikal dikurangi karena judul dihapus
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0e2f60), // Warna biru tua
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          // JUDUL "IURAN" DIHAPUS
+
+          // Search Box
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: "Cari Jenis Iuran",
+                hintStyle: TextStyle(color: Colors.grey[600]),
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                fillColor: Colors.white,
-                filled: true,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide.none,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
                 ),
               ),
               onChanged: (query) => _fetchIuran(search: query),
             ),
           ),
-          const SizedBox(width: 12),
-          // Tombol + Add
-          ElevatedButton.icon(
-            onPressed: _tambahIuran,
-            icon: const Icon(Icons.add, color: Colors.black),
-            label: const Text("Add"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.yellow,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
+
+          const SizedBox(height: 14),
+
+          // Tombol + Add (Full Width)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _tambahIuran,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Tambah Jenis Iuran"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.25), // Latar belakang transparan
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ),
@@ -178,177 +203,196 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     );
   }
 
-  // Widget untuk Card Iuran
+  // =========================================================
+  // 👇 MODIFIKASI UI/LAYOUT: _buildIuranCard (Sama seperti modifikasi sebelumnya)
+  // =========================================================
   Widget _buildIuranCard(Iuran iuran) {
-    String scope = 'Desa';
-    if (iuran.rt != null) {
-      scope = "RT ${iuran.rt} / RW ${iuran.rw}";
-    } else if (iuran.rw != null) {
-      scope = "RW ${iuran.rw}";
+    String detailScope = '';
+
+    if (iuran.rt != null && iuran.rt != '000') {
+      detailScope = "(RT ${iuran.rt} / RW ${iuran.rw})";
+    } else if (iuran.rw != null && iuran.rw != '000') {
+      detailScope = "(RW ${iuran.rw})";
+    } else {
+      detailScope = "(DESA)";
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(
-            context,
-          ).colorScheme.secondary.withOpacity(0.1),
-          child: Icon(
-            iuran.tipe == 'PER_KELUARGA' ? Icons.house : Icons.person,
-            color: Theme.of(context).colorScheme.primary,
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PlaceholderScreen(
+              title: "Kelola Tagihan: ${iuran.namaIuran}",
+            ),
           ),
-        ),
-        title: Text(
-          iuran.namaIuran,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Jumlah: ${_rupiahFormatter.format(iuran.jumlah)}"),
-            Text("Tipe: ${iuran.tipe.replaceAll('_', ' ')} (${scope})"),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            )
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') {
-              _editIuran(iuran);
-            } else if (value == 'delete') {
-              _deleteIuran(iuran);
-            } else if (value == 'tagihan') {
-              // Navigasi ke layar manajemen tagihan iuran
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PlaceholderScreen(
-                    title: "Kelola Tagihan: ${iuran.namaIuran}",
-                  ),
-                ),
-              );
-            }
-          },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem<String>(
-                value: 'tagihan',
-                child: Row(
-                  children: [
-                    Icon(Icons.list_alt, size: 20),
-                    SizedBox(width: 8),
-                    Text("Kelola Tagihan"),
-                  ],
-                ),
+        child: Row(
+          children: [
+            // Avatar/Icon
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF7FA), 
+                borderRadius: BorderRadius.circular(14),
               ),
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 20),
-                    SizedBox(width: 8),
-                    Text("Edit Jenis"),
-                  ],
+              child: Center(
+                child: Icon(
+                  iuran.tipe == 'PER_KELUARGA' ? Icons.house : Icons.person,
+                  color: Theme.of(context).colorScheme.primary, 
+                  size: 24,
                 ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Text("Hapus Jenis", style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ];
-          },
-        ),
-        onTap: () {
-          // Aksi onTap utama ke kelola tagihan
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => PlaceholderScreen(
-                title: "Kelola Tagihan: ${iuran.namaIuran}",
               ),
             ),
-          );
+
+            const SizedBox(width: 16),
+
+            // Info Iuran
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    iuran.namaIuran,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Jumlah: ${_rupiahFormatter.format(iuran.jumlah)}",
+                    style: const TextStyle(color: Colors.black54)),
+                  Text(
+                    "Tipe: ${iuran.tipe.replaceAll('_', ' ')} ${detailScope}",
+                    style: const TextStyle(color: Colors.black54)),
+                ],
+              ),
+            ),
+
+            // Menu Popup (LOGIKA TIDAK BERUBAH)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') {
+                  _editIuran(iuran);
+                } else if (value == 'delete') {
+                  _deleteIuran(iuran);
+                } else if (value == 'tagihan') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PlaceholderScreen(
+                        title: "Kelola Tagihan: ${iuran.namaIuran}",
+                      ),
+                    ),
+                  );
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem<String>(
+                    value: 'tagihan',
+                    child: Row(
+                      children: [
+                        Icon(Icons.list_alt, size: 20),
+                        SizedBox(width: 8),
+                        Text("Kelola Tagihan"),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 20),
+                        SizedBox(width: 8),
+                        Text("Edit Jenis"),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Text("Hapus Jenis", style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ];
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =========================================================
+  // 👇 BARU: Widget _buildBody (Listview/Loading/Error)
+  // =========================================================
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage.isNotEmpty) {
+      return Center(child: Text("Error: $_errorMessage"));
+    }
+
+    if (_iuranList.isEmpty) {
+      return Center(
+        child: Text(
+          _searchController.text.isEmpty
+              ? "Belum ada jenis iuran yang terdaftar."
+              : "Tidak ditemukan jenis iuran.",
+          style: const TextStyle(color: Colors.black54),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _fetchIuran,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: _iuranList.length,
+        itemBuilder: (context, index) {
+          return _buildIuranCard(_iuranList[index]);
         },
       ),
     );
   }
 
+  // =========================================================
+  // 👇 MODIFIKASI: Mengganti struktur Scaffold/AppBar
+  // =========================================================
   @override
   Widget build(BuildContext context) {
-    // Cek apakah layar ini dapat di-pop (ditutup)
-    final bool canPop = Navigator.of(context).canPop();
-
     return Scaffold(
-      // --- PERBAIKAN: Gunakan AppBar standar untuk judul Desakita ---
-      appBar: AppBar(
-        // Tombol back standar (otomatis muncul jika canPop)
-        automaticallyImplyLeading: canPop,
-        title: const Text(
-          "Desakita",
-        ), // Judul utama aplikasi (seperti di Profil)
-        centerTitle: false,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-
-        // Ganti leading jika berada di BottomBar (untuk tombol menu)
-        leading: canPop
-            ? null // Biarkan otomatis (back)
-            : IconButton(
-                // Tombol menu/judul kustom jika di BottomBar
-                icon: const Icon(Icons.menu), // Placeholder menu
-                onPressed: () {
-                  // Aksi untuk membuka drawer atau sejenisnya
-                },
-              ),
-
-        // Bagian Bawah AppBar untuk menampung Search dan Add
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60.0),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: _buildHeader(), // Panggil Header (hanya Search/Add)
-          ),
-        ),
-      ),
-
-      // --- AKHIR PERBAIKAN: Gunakan AppBar standar ---
       body: Container(
-        color: Colors.grey[200],
+        color: Colors.grey[200], // Background body
         child: Column(
           children: [
-            // Konten utama list iuran
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _errorMessage.isNotEmpty
-                  ? Center(child: Text("Error: $_errorMessage"))
-                  : _iuranList.isEmpty
-                  ? Center(
-                      child: Text(
-                        _searchController.text.isEmpty
-                            ? "Belum ada jenis iuran yang terdaftar."
-                            : "Tidak ditemukan jenis iuran.",
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _fetchIuran,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8.0),
-                        itemCount: _iuranList.length,
-                        itemBuilder: (context, index) {
-                          return _buildIuranCard(_iuranList[index]);
-                        },
-                      ),
-                    ),
-            ),
+            // Header kustom (Search + Tombol Add TANPA JUDUL)
+            _buildHeader(), 
+
+            // Body (List Iuran)
+            Expanded(child: _buildBody()),
           ],
         ),
       ),

@@ -28,6 +28,7 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
     _fetchAcara();
   }
 
+  // --- LOGIKA PROGRAM (TIDAK BERUBAH) ---
   Future<void> _fetchAcara({String? search}) async {
     // Cek mounted sebelum setState
     if (!mounted) return;
@@ -133,8 +134,76 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
       }
     }
   }
+  // --- AKHIR LOGIKA PROGRAM ---
 
-  // Widget untuk Card Acara
+  // =========================================================
+  // 👇 MODIFIKASI UI/LAYOUT: _buildHeader (Gaya Gambar 2, TANPA JUDUL)
+  // =========================================================
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0e2f60), // Warna biru tua
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // JUDUL DIHAPUS
+
+          // Search Box
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "Cari Nama Acara",
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+              ),
+              onChanged: (query) => _fetchAcara(search: query),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Tombol + Add (Full Width)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _tambahAcara,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Tambah Acara"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.25), // Latar belakang transparan
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================================================
+  // 👇 MODIFIKASI UI/LAYOUT: _buildAcaraCard (Gaya Gambar 2)
+  // =========================================================
   Widget _buildAcaraCard(Acara acara) {
     String scope = 'Desa';
     if (acara.rt != null) {
@@ -145,208 +214,186 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
 
     // Tentukan warna berdasarkan waktu
     final bool isFinished = acara.tanggalSelesai.isBefore(DateTime.now());
+    // Warna icon disesuaikan dengan tema biru/putih dan abu-abu jika selesai
     final Color iconColor = isFinished
         ? Colors.grey
-        : Colors.redAccent; // Acara cenderung merah/ungu
+        : const Color(0xFF0e2f60); // Menggunakan warna primary/biru
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: iconColor.withOpacity(0.1),
-          child: Icon(Icons.celebration, color: iconColor),
+    return GestureDetector(
+      onTap: () {
+        // Aksi onTap utama ke detail acara (LOGIKA TIDAK BERUBAH)
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                PlaceholderScreen(title: "Detail Acara: ${acara.namaAcara}"),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            )
+          ],
         ),
-        title: Text(
-          acara.namaAcara,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text("Tanggal: ${_dateFormat.format(acara.tanggalMulai)}"),
-            Text("Lokasi: ${acara.lokasi}"),
-            Text(
-              "Lingkup: $scope",
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            // Avatar/Icon
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1), // Background avatar
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: Icon(Icons.celebration, color: iconColor, size: 24),
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Info Acara
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    acara.namaAcara,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text("Tanggal: ${_dateFormat.format(acara.tanggalMulai)}",
+                      style: const TextStyle(color: Colors.black54)),
+                  Text("Lokasi: ${acara.lokasi}",
+                      style: const TextStyle(color: Colors.black54)),
+                  Text(
+                    "Lingkup: $scope",
+                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+
+            // Menu Popup (LOGIKA TIDAK BERUBAH)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') {
+                  _editAcara(acara);
+                } else if (value == 'delete') {
+                  _deleteAcara(acara);
+                } else if (value == 'detail') {
+                  // Navigasi ke detail acara
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PlaceholderScreen(
+                        title: "Detail Acara: ${acara.namaAcara}",
+                      ),
+                    ),
+                  );
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem<String>(
+                    value: 'detail',
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility, size: 20),
+                        SizedBox(width: 8),
+                        Text("Lihat Detail"),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 20),
+                        SizedBox(width: 8),
+                        Text("Edit"),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Text("Hapus", style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ];
+              },
             ),
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') {
-              _editAcara(acara);
-            } else if (value == 'delete') {
-              _deleteAcara(acara);
-            } else if (value == 'detail') {
-              // Navigasi ke detail acara
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PlaceholderScreen(
-                    title: "Detail Acara: ${acara.namaAcara}",
-                  ),
-                ),
-              );
-            }
-          },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem<String>(
-                value: 'detail',
-                child: Row(
-                  children: [
-                    Icon(Icons.visibility, size: 20),
-                    SizedBox(width: 8),
-                    Text("Lihat Detail"),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 20),
-                    SizedBox(width: 8),
-                    Text("Edit"),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Text("Hapus", style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ];
-          },
+      ),
+    );
+  }
+
+  // =========================================================
+  // 👇 BARU: Widget _buildBody (Listview/Loading/Error)
+  // =========================================================
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage.isNotEmpty) {
+      return Center(child: Text("Error: $_errorMessage"));
+    }
+
+    if (_acaraList.isEmpty) {
+      return Center(
+        child: Text(
+          _searchController.text.isEmpty
+              ? "Belum ada acara yang terdaftar."
+              : "Tidak ditemukan acara.",
+          style: const TextStyle(color: Colors.black54),
         ),
-        onTap: () {
-          // Aksi onTap utama ke detail acara
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) =>
-                  PlaceholderScreen(title: "Detail Acara: ${acara.namaAcara}"),
-            ),
-          );
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _fetchAcara(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0), // Padding disesuaikan
+        itemCount: _acaraList.length,
+        itemBuilder: (context, index) {
+          return _buildAcaraCard(_acaraList[index]);
         },
       ),
     );
   }
 
-  // Widget untuk Header Kustom
-  Widget _buildHeader() {
-    return Container(
-      // Padding vertikal 8.0, horizontal 0.0 (sudah dihandle AppBar)
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: "Cari Nama Acara",
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                fillColor: Colors.white,
-                filled: true,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: (query) => _fetchAcara(search: query),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Tombol + Add
-          ElevatedButton.icon(
-            onPressed: _tambahAcara,
-            icon: const Icon(Icons.add, color: Colors.black),
-            label: const Text("Add"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.yellow,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // =========================================================
+  // 👇 MODIFIKASI: Mengganti struktur Scaffold/AppBar
+  // =========================================================
   @override
   Widget build(BuildContext context) {
-    // Cek apakah layar ini dapat di-pop (ditutup)
-    final bool canPop = Navigator.of(context).canPop();
-
     return Scaffold(
-      // Gunakan AppBar standar untuk judul & back button
-      appBar: AppBar(
-        // Tombol back standar (otomatis muncul jika canPop)
-        automaticallyImplyLeading: canPop,
-        title: const Text("Manajemen Acara"), // Judul spesifik untuk layar ini
-        centerTitle: false,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-
-        // Ganti leading jika berada di BottomBar (untuk tombol menu)
-        leading: canPop
-            ? null // Biarkan otomatis (back)
-            : IconButton(
-                // Tombol menu/judul kustom jika di BottomBar
-                icon: const Icon(Icons.menu), // Placeholder menu
-                onPressed: () {
-                  // Aksi untuk membuka drawer atau sejenisnya
-                },
-              ),
-
-        // Bagian Bawah AppBar untuk menampung Search dan Add
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60.0),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: _buildHeader(), // Panggil Header (hanya Search/Add)
-          ),
-        ),
-      ),
-
       body: Container(
-        color: Colors.grey[200],
+        color: Colors.grey[200], // Background body
         child: Column(
           children: [
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _errorMessage.isNotEmpty
-                  ? Center(child: Text("Error: $_errorMessage"))
-                  : _acaraList.isEmpty
-                  ? Center(
-                      child: Text(
-                        _searchController.text.isEmpty
-                            ? "Belum ada acara yang terdaftar."
-                            : "Tidak ditemukan acara.",
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => _fetchAcara(),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8.0),
-                        itemCount: _acaraList.length,
-                        itemBuilder: (context, index) {
-                          return _buildAcaraCard(_acaraList[index]);
-                        },
-                      ),
-                    ),
-            ),
+            // Header kustom (Search + Tombol Add TANPA JUDUL)
+            _buildHeader(), 
+
+            // Body (List Acara)
+            Expanded(child: _buildBody()),
           ],
         ),
       ),

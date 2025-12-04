@@ -40,6 +40,8 @@ class Kegiatan {
     );
   }
 
+  get scope => null;
+
   Map<String, dynamic> toJsonMap() => {
     'id': id,
     'nama_kegiatan': namaKegiatan,
