@@ -9,6 +9,7 @@ class Acara {
   final String lokasi;
   final String? rt;
   final String? rw;
+  final double totalBiaya; // Biaya untuk pendanaan
   final int? createdByUserId;
 
   Acara({
@@ -20,13 +21,14 @@ class Acara {
     required this.lokasi,
     this.rt,
     this.rw,
+    required this.totalBiaya,
     this.createdByUserId,
   });
 
   factory Acara.fromJson(Map<String, dynamic> json) {
     return Acara(
       id: json['id'],
-      namaAcara: json['nama_acara'], // Perhatikan nama field dari Laravel
+      namaAcara: json['nama_acara'],
       deskripsi: json['deskripsi'],
       // Parsing String ISO 8601 menjadi DateTime
       tanggalMulai: DateTime.parse(json['tanggal_mulai']),
@@ -34,6 +36,8 @@ class Acara {
       lokasi: json['lokasi'],
       rt: json['rt'],
       rw: json['rw'],
+      // PENTING: Konversi total_biaya dari String (Decimal) ke Double
+      totalBiaya: double.tryParse(json['total_biaya'].toString()) ?? 0.0,
       createdByUserId: json['created_by_user_id'] != null
           ? int.tryParse(json['created_by_user_id'].toString())
           : null,
@@ -44,12 +48,12 @@ class Acara {
     'id': id,
     'nama_acara': namaAcara,
     'deskripsi': deskripsi,
-    // Konversi kembali ke format String untuk pengiriman API
     'tanggal_mulai': tanggalMulai.toIso8601String(),
     'tanggal_selesai': tanggalSelesai.toIso8601String(),
     'lokasi': lokasi,
     'rt': rt,
     'rw': rw,
+    'total_biaya': totalBiaya,
     'created_by_user_id': createdByUserId,
   };
 }

@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/screens/admin/edit_iuran_screen.dart';
-import 'package:frontend/screens/placeholder_screen.dart';
+import 'package:frontend/screens/placeholder_screen.dart'; // Untuk tombol Lihat Tagihan
 
 class DetailIuranScreen extends StatefulWidget {
   final Iuran iuran;
@@ -38,28 +38,38 @@ class _DetailIuranScreenState extends State<DetailIuranScreen> {
         fullscreenDialog: true,
       ),
     );
-    // Jika 'true' dikembalikan, kita asumsikan data sudah diupdate di sana
-    // dan kita perlu refresh list di manajemen iuran.
+    // Jika 'true' dikembalikan, ini berarti data di-update.
+    // Kita harus refresh data di layar manajemen iuran.
+    if (result == true && mounted) {
+      // Kita anggap _iuran sudah diupdate melalui state management di layar edit
+      // Di sini kita hanya pop dan biarkan layar manajemen iuran me-refresh listnya.
+      Navigator.of(context).pop(true);
+    }
   }
 
-  // TODO: FUNGSI GENERATE TAGIHAN (API BARU DI LARAVEL)
+  // FUNGSI GENERATE TAGIHAN BULANAN (Simulasi)
   Future<void> _generateTagihan() async {
-    // Ini membutuhkan endpoint POST /api/v1/iuran/{id}/generate-tagihan di Laravel.
-    // Kita simulasikan dulu.
+    // API yang harus dibuat di Laravel: POST /api/v1/iuran/{id}/generate-tagihan
+
     setState(() {
       _isGenerating = true;
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 1)); // Simulasi API call
+      // --- SIMULASI PEMANGGILAN API ---
+      // final apiService = context.read<ApiService>();
+      // final success = await apiService.generateTagihan(_iuran.id);
+
+      await Future.delayed(const Duration(seconds: 2)); // Simulasi API call
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              "Simulasi: Tagihan untuk ${_iuran.namaIuran} berhasil dibuat.",
+              "Simulasi: Tagihan untuk ${_iuran.namaIuran} (Bulan Ini) berhasil dibuat!",
             ),
             backgroundColor: Colors.blue,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
