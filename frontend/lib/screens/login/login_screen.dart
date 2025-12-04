@@ -141,3 +141,49 @@ class _LoginScreenState extends State<LoginScreen> {
                               offset: const Offset(0, 5),
                             )
                           ],
+                    ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                "Login",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 25),
+
+                              // Username Input
+                              const Text("username", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 5),
+                              TextFormField(
+                                controller: _emailController,
+                                decoration: InputDecoration(
+                                  hintText: "please input your username",
+                                  hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                  filled: true,
+                                  fillColor: const Color(0xFFEBEFF5),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  suffixIcon: const Icon(Icons.person_outline, color: Colors.black54),
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty || !value.contains('@')) {
+                                    return "Masukkan email yang valid";
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 16),
+
+                          
