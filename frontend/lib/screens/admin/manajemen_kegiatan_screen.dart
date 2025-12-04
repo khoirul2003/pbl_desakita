@@ -6,6 +6,8 @@ import 'package:frontend/models/kegiatan_model.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/admin/tambah_kegiatan_screen.dart';
 import 'package:frontend/screens/admin/edit_kegiatan_screen.dart';
+// Import Detail Kegiatan Screen yang baru
+import 'package:frontend/screens/admin/detail_kegiatan_screen.dart'; 
 
 class ManajemenKegiatanScreen extends StatefulWidget {
   const ManajemenKegiatanScreen({super.key});
@@ -96,13 +98,13 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     }
   }
   
+  // --- FUNGSI NAVIGASI KE DETAIL KEGIATAN ---
   void _goToDetailKegiatan(Kegiatan kegiatan) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PlaceholderScreen(
-          title: "Detail Kegiatan: ${kegiatan.namaKegiatan}",
-        ),
+        // Menggunakan DetailKegiatanScreen
+        builder: (_) => DetailKegiatanScreen(kegiatan: kegiatan),
       ),
     );
   }
@@ -168,7 +170,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
-        onTap: () => _goToDetailKegiatan(kegiatan),
+        onTap: () => _goToDetailKegiatan(kegiatan), // Navigasi ke Detail (onTap)
         child: Stack(
           children: [
             Container(
@@ -221,25 +223,15 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
                   PopupMenuButton(
                     icon: const Icon(Icons.more_vert),
                     onSelected: (value) {
-                      if (value == "detail") {
-                        _goToDetailKegiatan(kegiatan);
-                      } else if (value == "edit") {
+                      if (value == "edit") {
                         _editKegiatan(kegiatan);
                       } else if (value == "delete") {
                         _deleteKegiatan(kegiatan);
                       }
+                      // Opsi "detail" sudah dihapus
                     },
                     itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: "detail",
-                        child: Row(
-                          children: [
-                            Icon(Icons.visibility, size: 20),
-                            SizedBox(width: 8),
-                            Text("Lihat Detail"),
-                          ],
-                        ),
-                      ),
+                      // Opsi 'detail' dihapus dari daftar menu
                       const PopupMenuItem(
                         value: "edit",
                         child: Row(
