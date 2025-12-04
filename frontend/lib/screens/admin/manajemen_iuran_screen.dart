@@ -211,13 +211,9 @@ Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
+        // Menghilangkan aksi navigasi ke PlaceholderScreen di onTap
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => PlaceholderScreen(
-                  title: "Kelola Tagihan: ${iuran.namaIuran}"),
-            ),
-          );
+          // Aksi onTap dikosongkan atau bisa diisi dengan aksi lain jika diperlukan
         },
         child: Stack(
           children: [
@@ -277,27 +273,12 @@ Widget _buildHeader() {
                         _editIuran(iuran);
                       } else if (value == 'delete') {
                         _deleteIuran(iuran);
-                      } else if (value == 'tagihan') {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => PlaceholderScreen(
-                              title: "Kelola Tagihan: ${iuran.namaIuran}",
-                            ),
-                          ),
-                        );
                       }
+                      // Opsi 'tagihan' telah dihapus, sehingga tidak ada lagi else if (value == 'tagihan')
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'tagihan',
-                        child: Row(
-                          children: [
-                            Icon(Icons.list_alt, size: 20),
-                            SizedBox(width: 8),
-                            Text("Kelola Tagihan"),
-                          ],
-                        ),
-                      ),
+                      // Opsi 'Kelola Tagihan' telah dihapus dari sini
+
                       const PopupMenuItem(
                         value: 'edit',
                         child: Row(
