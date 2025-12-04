@@ -11,6 +11,12 @@ import 'package:frontend/screens/admin/manajemen_iuran_screen.dart'; // Manajeme
 import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart'; // Manajemen Kegiatan
 import 'package:frontend/screens/admin/manajemen_acara_screen.dart'; // Manajemen Acara (BARU)
 
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
+const Color _successColor = Color(0xFF28A745); // Hijau
+
 class ProfileMainScreen extends StatelessWidget {
   const ProfileMainScreen({super.key});
 
@@ -30,109 +36,200 @@ class ProfileMainScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Profil & Pengaturan")),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
+      backgroundColor: _backgroundColor,
+      body: Column(
         children: [
-          _buildProfileCard(context, user),
-          const SizedBox(height: 20),
+          _buildCustomHeader(context),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+              children: [
+                _buildProfileCard(context, user),
+                const SizedBox(height: 30),
 
-          Text(
-            "Akses Fitur Cepat",
-            style: Theme.of(context).textTheme.titleLarge,
+                Text(
+                  "Akses Fitur Cepat",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: _primaryColor,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Mengelompokkan menu di dalam satu Card/Container besar (opsional, tapi lebih bersih)
+                _buildCardWrapper(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: menuItems.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+                      return Column(
+                        children: [
+                          _buildMenuItem(context, item),
+                          // Tambahkan Divider kecuali pada item terakhir (sebelum Logout)
+                          if (index < menuItems.length - 1)
+                            const Divider(height: 1, thickness: 1, indent: 20, endIndent: 20),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-
-          ...menuItems.map((item) => _buildMenuItem(context, item)).toList(),
+        ],
+      ),
+    );
+  }
+  
+  // --- WIDGET BANTUAN: CARD WRAPPER DENGAN SHADOW PROSCAN ---
+  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16, // Shadow menonjol dan lembut
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: child,
+    );
+  }
+  
+  // --- WIDGET: CUSTOM HEADER PROSCAN ---
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            "Profil & Pengaturan",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
   }
 
+  // --- WIDGET: CARD PROFIL YANG DIMODIFIKASI ---
   Widget _buildProfileCard(BuildContext context, User user) {
     final String? balance = user.warga?.wallet?.balance.toStringAsFixed(0);
     final String formattedBalance = balance != null
         ? "Rp ${NumberFormat.currency(locale: 'id', symbol: '', decimalDigits: 0).format(double.parse(balance))}"
         : "Rp 0";
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Text(
-                user.warga?.namaLengkap.isNotEmpty == true
-                    ? user.warga!.namaLengkap[0].toUpperCase()
-                    : user.email[0].toUpperCase(),
-                style: const TextStyle(fontSize: 36, color: Colors.white),
-              ),
+    
+    // Mengganti Card standar dengan Card Wrapper ProScan
+    return _buildCardWrapper(
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 36, // Sedikit dikecilkan
+            backgroundColor: _primaryColor.withOpacity(0.1),
+            child: Text(
+              user.warga?.namaLengkap.isNotEmpty == true
+                  ? user.warga!.namaLengkap[0].toUpperCase()
+                  : user.email[0].toUpperCase(),
+              style: const TextStyle(fontSize: 30, color: _primaryColor, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.warga?.namaLengkap ?? "Pengguna Desa",
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.warga?.namaLengkap ?? "Pengguna Desa",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: _primaryColor,
                   ),
-                  Text(
-                    "Role: ${user.role.toUpperCase()}",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  "Role: ${user.role.toUpperCase()}",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
                   ),
-                  if (user.warga != null)
-                    Text(
-                      "RT ${user.warga!.rt} / RW ${user.warga!.rw}",
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  if (balance != null)
-                    Text(
+                ),
+                if (user.warga != null)
+                  Text(
+                    "RT ${user.warga!.rt} / RW ${user.warga!.rw}",
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                if (balance != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
                       "Saldo: $formattedBalance",
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: _successColor, // Hijau terang
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
+  // --- WIDGET: MENU ITEM YANG DIMODIFIKASI ---
   Widget _buildMenuItem(BuildContext context, Map<String, dynamic> item) {
     final bool isDanger = item['color'] == Colors.red;
 
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.symmetric(vertical: 6.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        leading: Icon(item['icon'] as IconData, color: item['color'] as Color),
-        title: Text(
-          item['title'] as String,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isDanger ? Colors.red : null,
-          ),
+    // Menghilangkan Card per item karena sudah di-wrap di Column besar
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: Icon(item['icon'] as IconData, color: item['color'] as Color),
+      title: Text(
+        item['title'] as String,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          color: isDanger ? Colors.red.shade700 : Colors.black87,
         ),
-        trailing: isDanger
-            ? null
-            : const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          item['onTap'](context);
-        },
       ),
+      trailing: isDanger
+          ? null
+          : const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+      onTap: () {
+        item['onTap'](context);
+      },
     );
   }
 
@@ -155,7 +252,7 @@ class ProfileMainScreen extends StatelessWidget {
     items.add({
       'title': 'Ganti Password/Profil',
       'icon': Icons.security,
-      'color': Colors.blue,
+      'color': _primaryColor, // Menggunakan Primary Color
       'onTap': (BuildContext context) => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) =>
@@ -168,8 +265,8 @@ class ProfileMainScreen extends StatelessWidget {
     if (user.role != 'warga') {
       items.add({
         'title': 'Laporan Keuangan',
-        'icon': Icons.account_balance_wallet,
-        'color': Colors.green,
+        'icon': Icons.account_balance_wallet_rounded,
+        'color': _successColor, // Hijau
         // --- Koneksi ke Laporan Keuangan ---
         'onTap': (BuildContext context) => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const ManajemenKeuanganScreen()),
@@ -192,7 +289,7 @@ class ProfileMainScreen extends StatelessWidget {
       items.add({
         'title': 'Data Keluarga Saya',
         'icon': Icons.family_restroom,
-        'color': Colors.indigo,
+        'color': _accentColor, // Aksen Biru
         'onTap': (BuildContext context) => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) =>
