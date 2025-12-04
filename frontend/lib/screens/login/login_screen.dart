@@ -234,3 +234,51 @@ class _LoginScreenState extends State<LoginScreen> {
                                     backgroundColor: primaryBlue,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(30),
+                    ),
+                                    elevation: 2,
+                                  ),
+                                  child: const Text(
+                                    "LOGIN",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  
+                  // Footer Links
+                  const SizedBox(height: 25),
+                  
+                  const Text(
+                    "Login dengan Wajah", 
+                    style: TextStyle(color: Colors.white60, fontSize: 12)
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Tombol Icon Wajah
+                  InkWell(
+                    onTap: _goToFaceLogin,
+                    customBorder: const CircleBorder(),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        color: Colors.white.withOpacity(0.1), 
+                      ),
+                      child: const Icon(
+                        Icons.face_retouching_natural,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+
