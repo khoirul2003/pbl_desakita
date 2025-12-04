@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/models/acara_model.dart'; // Import Model Acara
-import 'package:frontend/screens/placeholder_screen.dart'; // Untuk detail
-import 'package:frontend/screens/admin/tambah_acara_screen.dart'; // Import Tambah
-import 'package:frontend/screens/admin/edit_acara_screen.dart'; // Import Edit
+import 'package:frontend/models/acara_model.dart'; 
+import 'package:frontend/screens/placeholder_screen.dart';
+import 'package:frontend/screens/admin/tambah_acara_screen.dart'; 
+import 'package:frontend/screens/admin/edit_acara_screen.dart'; 
 
 class ManajemenAcaraScreen extends StatefulWidget {
   const ManajemenAcaraScreen({super.key});
 
   @override
-  State<ManajemenAcaraScreen> createState() => _ManajemenAcaraScreenState();
+  State<ManajemenAcaraScreen> createState() =>
+      _ManajemenAcaraScreenState();
 }
 
 class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
@@ -21,6 +22,7 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   final DateFormat _dateFormat = DateFormat('dd MMM yyyy, HH:mm');
+  final NumberFormat _rupiahFormatter = NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0);
 
   @override
   void initState() {
@@ -40,23 +42,23 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
 
     try {
       final acara = await apiService.getManajemenAcara(search: search);
-
+      
       if (!mounted) return;
       setState(() {
         _acaraList = acara;
         _isLoading = false;
       });
+
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = "Gagal memuat data acara: $e";
       });
-      // Tampilkan SnackBar hanya jika masih mounted
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Gagal memuat data acara: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memuat data acara: $e")),
+        );
       }
     }
   }
@@ -112,11 +114,12 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
       final apiService = context.read<ApiService>();
       try {
         final success = await apiService.deleteAcara(acara.id);
-        // Cek mounted sebelum setState setelah proses await selesai
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Acara '${acara.namaAcara}' berhasil dihapus."),
+              content: Text(
+                "Acara '${acara.namaAcara}' berhasil dihapus.",
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -143,11 +146,8 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
       scope = "RW ${acara.rw}";
     }
 
-    // Tentukan warna berdasarkan waktu
     final bool isFinished = acara.tanggalSelesai.isBefore(DateTime.now());
-    final Color iconColor = isFinished
-        ? Colors.grey
-        : Colors.redAccent; // Acara cenderung merah/ungu
+    final Color iconColor = isFinished ? Colors.grey : Colors.redAccent; 
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
@@ -166,10 +166,11 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Tanggal: ${_dateFormat.format(acara.tanggalMulai)}"),
-            Text("Lokasi: ${acara.lokasi}"),
+            Text("Lokasi: ${acara.lokasi} ($scope)"),
+            // Tampilkan Biaya
             Text(
-              "Lingkup: $scope",
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              "Biaya: ${_rupiahFormatter.format(acara.totalBiaya)}",
+              style: const TextStyle(fontSize: 14, color: Colors.red),
             ),
           ],
         ),
@@ -229,8 +230,9 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
           // Aksi onTap utama ke detail acara
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) =>
-                  PlaceholderScreen(title: "Detail Acara: ${acara.namaAcara}"),
+              builder: (_) => PlaceholderScreen(
+                title: "Detail Acara: ${acara.namaAcara}",
+              ),
             ),
           );
         },
@@ -241,7 +243,7 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
   // Widget untuk Header Kustom
   Widget _buildHeader() {
     return Container(
-      // Padding vertikal 8.0, horizontal 0.0 (sudah dihandle AppBar)
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Expanded(
@@ -266,12 +268,13 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
           ElevatedButton.icon(
             onPressed: _tambahAcara,
             icon: const Icon(Icons.add, color: Colors.black),
-            label: const Text("Add"),
+            label: const Text("Add", style: TextStyle(color: Colors.black)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.yellow,
               foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
           ),
@@ -284,68 +287,54 @@ class _ManajemenAcaraScreenState extends State<ManajemenAcaraScreen> {
   Widget build(BuildContext context) {
     // Cek apakah layar ini dapat di-pop (ditutup)
     final bool canPop = Navigator.of(context).canPop();
-
+    
     return Scaffold(
-      // Gunakan AppBar standar untuk judul & back button
       appBar: AppBar(
-        // Tombol back standar (otomatis muncul jika canPop)
         automaticallyImplyLeading: canPop,
-        title: const Text("Manajemen Acara"), // Judul spesifik untuk layar ini
+        title: const Text("Manajemen Acara"),
         centerTitle: false,
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
-
-        // Ganti leading jika berada di BottomBar (untuk tombol menu)
-        leading: canPop
-            ? null // Biarkan otomatis (back)
-            : IconButton(
-                // Tombol menu/judul kustom jika di BottomBar
-                icon: const Icon(Icons.menu), // Placeholder menu
-                onPressed: () {
-                  // Aksi untuk membuka drawer atau sejenisnya
-                },
-              ),
-
+        elevation: 2,
+        
         // Bagian Bawah AppBar untuk menampung Search dan Add
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60.0),
+          preferredSize: const Size.fromHeight(70.0), 
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: _buildHeader(), // Panggil Header (hanya Search/Add)
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: _buildHeader(),
           ),
         ),
       ),
-
+      
       body: Container(
-        color: Colors.grey[200],
+        color: Colors.grey[100],
         child: Column(
           children: [
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMessage.isNotEmpty
-                  ? Center(child: Text("Error: $_errorMessage"))
-                  : _acaraList.isEmpty
-                  ? Center(
-                      child: Text(
-                        _searchController.text.isEmpty
-                            ? "Belum ada acara yang terdaftar."
-                            : "Tidak ditemukan acara.",
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => _fetchAcara(),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8.0),
-                        itemCount: _acaraList.length,
-                        itemBuilder: (context, index) {
-                          return _buildAcaraCard(_acaraList[index]);
-                        },
-                      ),
-                    ),
+                      ? Center(child: Text("Error: $_errorMessage"))
+                      : _acaraList.isEmpty
+                          ? Center(
+                              child: Text(
+                                _searchController.text.isEmpty
+                                    ? "Belum ada acara yang terdaftar."
+                                    : "Tidak ditemukan acara.",
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () => _fetchAcara(),
+                              child: ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.only(top: 8, bottom: 16),
+                                itemCount: _acaraList.length,
+                                itemBuilder: (context, index) {
+                                  return _buildAcaraCard(_acaraList[index]);
+                                },
+                              ),
+                            ),
             ),
           ],
         ),

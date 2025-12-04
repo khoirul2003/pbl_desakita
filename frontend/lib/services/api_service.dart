@@ -5,15 +5,17 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/models/kegiatan_model.dart';
-import 'package:frontend/models/acara_model.dart'; 
+import 'package:frontend/models/acara_model.dart';
+import 'package:frontend/models/keuangan_model.dart'; // Import Keuangan Model
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-
+// INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
+// Mengurus Auth, Warga CRUD, CV/ML, Iuran, Kegiatan, Acara, dan Wallet.
 
 class ApiService {
-
-  final String _baseUrlLaravel = "https://561c7fb6707d.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://fd86637114be.ngrok-free.app";
+  // --- PROPERTI & KONFIGURASI (LOCA.LT) ---
+  final String _baseUrlLaravel = "https://3006b3bc1d45.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://1f18cc5d2b9a.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 
@@ -27,6 +29,7 @@ class ApiService {
   ApiService() {
     _dioProtected = Dio();
 
+    // Interceptor untuk PROTECTED API (Menambahkan Token & Bypass Loca.lt)
     _dioProtected.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -450,6 +453,22 @@ class ApiService {
     }
   }
 
+  // --- FUNGSI KEUANGAN SERVICE (ADMIN) ---
+
+  Future<List<Keuangan>> getManajemenKeuangan() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/keuangan');
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => Keuangan.fromJson(json)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print("Error getManajemenKeuangan: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
   // --- FUNGSI DESAPAY / WALLET SERVICE ---
 
   /// [WALLET] Mengambil Saldo dan 10 Transaksi Terakhir
@@ -493,6 +512,4 @@ class ApiService {
       return null;
     }
   }
-
-  Future addKegiatan(Map<String, String> data) async {}
 }

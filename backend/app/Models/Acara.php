@@ -20,6 +20,7 @@ class Acara extends Model
         'lokasi',
         'rt',
         'rw',
+        'total_biaya',
         'created_by_user_id',
     ];
 

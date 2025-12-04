@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/models/acara_model.dart'; // Import Model Acara
+import 'package:frontend/models/acara_model.dart';
+import 'package:flutter/services.dart'; // Untuk FilteringTextInputFormatter
 
-// SCREEN BARU: Mirip EditKegiatanScreen
 class EditAcaraScreen extends StatefulWidget {
   final Acara acara;
   const EditAcaraScreen({super.key, required this.acara});
@@ -20,6 +20,7 @@ class _EditAcaraScreenState extends State<EditAcaraScreen> {
   late TextEditingController _lokasiController;
   late TextEditingController _rtController;
   late TextEditingController _rwController;
+  late TextEditingController _biayaController; // Controller Biaya
 
   DateTime? _tanggalMulai;
   TimeOfDay? _waktuMulai;
@@ -28,7 +29,6 @@ class _EditAcaraScreenState extends State<EditAcaraScreen> {
 
   bool _isLoading = false;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
-  // final DateFormat _timeFormat = DateFormat('HH:mm'); // Tidak digunakan di sini
 
   @override
   void initState() {
@@ -39,6 +39,10 @@ class _EditAcaraScreenState extends State<EditAcaraScreen> {
     _lokasiController = TextEditingController(text: acara.lokasi);
     _rtController = TextEditingController(text: acara.rt);
     _rwController = TextEditingController(text: acara.rw);
+    // Inisialisasi Biaya
+    _biayaController = TextEditingController(
+      text: acara.totalBiaya.toStringAsFixed(0),
+    );
 
     // Inisialisasi Tanggal dan Waktu
     _tanggalMulai = acara.tanggalMulai;
@@ -54,6 +58,7 @@ class _EditAcaraScreenState extends State<EditAcaraScreen> {
     _lokasiController.dispose();
     _rtController.dispose();
     _rwController.dispose();
+    _biayaController.dispose(); // Dispose Biaya
     super.dispose();
   }
 
@@ -127,15 +132,33 @@ class _EditAcaraScreenState extends State<EditAcaraScreen> {
       _isLoading = true;
     });
 
+    // Ambil Biaya
+    final double? totalBiaya = double.tryParse(_biayaController.text);
+    if (totalBiaya == null || totalBiaya < 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Total Biaya harus berupa angka positif."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     final apiService = context.read<ApiService>();
     final Map<String, dynamic> data = {
-      'nama_acara': _namaController.text, // Perhatikan nama field di sini
+      'nama_acara': _namaController.text,
       'deskripsi': _deskripsiController.text,
       'tanggal_mulai': tglMulai.toIso8601String(),
       'tanggal_selesai': tglSelesai.toIso8601String(),
       'lokasi': _lokasiController.text,
       'rt': _rtController.text.isNotEmpty ? _rtController.text : null,
       'rw': _rwController.text.isNotEmpty ? _rwController.text : null,
+      'total_biaya': totalBiaya, // <-- KIRIM Biaya
     };
 
     try {
@@ -204,7 +227,29 @@ class _EditAcaraScreenState extends State<EditAcaraScreen> {
               ),
               const SizedBox(height: 24),
 
-              Text("Jadwal", style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                "Pendanaan dan Jadwal",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+
+              // Field Biaya
+              TextFormField(
+                controller: _biayaController,
+                decoration: const InputDecoration(
+                  labelText: "Total Biaya (Rp)",
+                  prefixText: 'Rp ',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (v) {
+                  final amount = double.tryParse(v ?? '0');
+                  if (amount == null || amount < 0) {
+                    return "Biaya harus angka positif.";
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 16),
 
               // Tanggal & Waktu Mulai
@@ -287,10 +332,9 @@ class _EditAcaraScreenState extends State<EditAcaraScreen> {
     TimeOfDay? time,
     VoidCallback onTap,
   ) {
-    final DateFormat dateFormat = DateFormat('dd MMM yyyy');
     final String dateText = date == null
         ? 'Pilih Tanggal'
-        : dateFormat.format(date);
+        : DateFormat('yyyy-MM-dd').format(date);
     final String timeText = time == null ? 'Pilih Waktu' : time.format(context);
 
     return InkWell(
