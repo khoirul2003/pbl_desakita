@@ -6,6 +6,8 @@ import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/admin/tambah_iuran_screen.dart';
 import 'package:frontend/screens/admin/edit_iuran_screen.dart';
+// 1. IMPOR DETAIL IURAN SCREEN
+import 'package:frontend/screens/admin/detail_iuran_screen.dart'; // <--- PASTIKAN PATH INI BENAR
 
 class ManajemenIuranScreen extends StatefulWidget {
   const ManajemenIuranScreen({super.key});
@@ -89,6 +91,18 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     }
   }
 
+  // --- FUNGSI BARU: NAVIGASI KE DETAIL IURAN ---
+  void _goToDetailIuran(Iuran iuran) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DetailIuranScreen(iuran: iuran),
+      ),
+    );
+    // Refresh data setelah kembali dari halaman detail (jika ada perubahan)
+    _fetchIuran(search: _searchController.text);
+  }
+
+
   Future<void> _deleteIuran(Iuran iuran) async {
     final bool? confirmed = await showDialog(
       context: context,
@@ -136,69 +150,69 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
   }
 
   // --- HEADER BARU ---
-Widget _buildHeader() {
-  return Container(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-    decoration: const BoxDecoration(
-      color: Color(0xFF0E2F60),
-      borderRadius: BorderRadius.only(
-        bottomLeft: Radius.circular(24),
-        bottomRight: Radius.circular(24),
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Judul halaman
-        const Text(
-          "Halaman Iuran",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0E2F60),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
-        const SizedBox(height: 12),
-        // Search
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: TextField(
-            controller: _searchController,
-            onChanged: (query) => _fetchIuran(search: query),
-            decoration: InputDecoration(
-              hintText: "Cari jenis iuran...",
-              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Judul halaman
+          const Text(
+            "Halaman Iuran",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _tambahIuran,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text("Tambah Iuran"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.25),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+          const SizedBox(height: 12),
+          // Search
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (query) => _fetchIuran(search: query),
+              decoration: InputDecoration(
+                hintText: "Cari jenis iuran...",
+                prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _tambahIuran,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Tambah Iuran"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.25),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildIuranCard(Iuran iuran) {
     String scope = 'Desa';
@@ -211,9 +225,9 @@ Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
-        // Menghilangkan aksi navigasi ke PlaceholderScreen di onTap
+        // 2. MODIFIKASI ONTAP UNTUK NAVIGASI KE DETAIL
         onTap: () {
-          // Aksi onTap dikosongkan atau bisa diisi dengan aksi lain jika diperlukan
+          _goToDetailIuran(iuran); // <--- Memanggil fungsi navigasi baru
         },
         child: Stack(
           children: [
