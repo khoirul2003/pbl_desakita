@@ -185,7 +185,6 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
                     radius: 22,
@@ -293,7 +292,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     final bool canPop = Navigator.of(context).canPop();
 
     return Container(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 16),
       decoration: const BoxDecoration(
         color: _headerColor,
         borderRadius: BorderRadius.only(
@@ -321,7 +320,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
                   const SizedBox(width: 0),
                 Expanded(
                   child: Text(
-                    "Manajemen Kegiatan",
+                    "Halaman Kegiatan",
                     textAlign: canPop ? TextAlign.left : TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -344,7 +343,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
                 controller: _searchController,
                 onChanged: (query) => _fetchKegiatan(search: query),
                 decoration: InputDecoration(
-                  hintText: "Cari Nama Kegiatan...",
+                  hintText: "Cari nama kegiatan...",
                   prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
                   border: InputBorder.none,
                   contentPadding:
