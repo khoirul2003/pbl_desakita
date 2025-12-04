@@ -9,6 +9,10 @@ import 'package:frontend/screens/admin/edit_iuran_screen.dart';
 // 1. IMPOR DETAIL IURAN SCREEN
 import 'package:frontend/screens/admin/detail_iuran_screen.dart'; // <--- PASTIKAN PATH INI BENAR
 
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua (Digunakan untuk Header & Indikator)
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+
 class ManajemenIuranScreen extends StatefulWidget {
   const ManajemenIuranScreen({super.key});
 
@@ -28,9 +32,9 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     decimalDigits: 0,
   );
 
-  // --- WARNA TEMA ---
-  static const Color _accentColor = Color(0xFF3C486B);
-  static const Color _cardIndicator = Color(0xFF6C4BA3);
+  // --- WARNA TEMA (Disesuaikan) ---
+  // static const Color _accentColor = Color(0xFF3C486B); // Diambil dari atas
+  static const Color _cardIndicator = _primaryColor; // Menggunakan warna Primary (Biru Tua)
 
   @override
   void initState() {
@@ -160,7 +164,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
         16
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF0E2F60),
+        color: _primaryColor, // Menggunakan warna Primary
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -256,7 +260,9 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: _accentColor.withOpacity(0.1),
+                    // Mengganti warna latar belakang avatar menjadi _primaryColor.withOpacity(0.1) jika diperlukan, 
+                    // saat ini menggunakan _accentColor yang nilainya mirip.
+                    backgroundColor: _accentColor.withOpacity(0.1), 
                     child: Icon(
                       iuran.tipe == 'PER_KELUARGA'
                           ? Icons.house
@@ -290,22 +296,20 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                     ),
                   ),
                   PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: Colors.grey),
                     onSelected: (value) {
                       if (value == 'edit') {
                         _editIuran(iuran);
                       } else if (value == 'delete') {
                         _deleteIuran(iuran);
                       }
-                      // Opsi 'tagihan' telah dihapus, sehingga tidak ada lagi else if (value == 'tagihan')
                     },
                     itemBuilder: (context) => [
-                      // Opsi 'Kelola Tagihan' telah dihapus dari sini
-
                       const PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit, size: 20),
+                            Icon(Icons.edit, size: 20, color: _primaryColor),
                             SizedBox(width: 8),
                             Text("Edit Jenis"),
                           ],
@@ -327,6 +331,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                 ],
               ),
             ),
+            // INDIKATOR SISI KIRI MENGGUNAKAN WARNA PRIMARY
             Positioned(
               left: 0,
               top: 8,
@@ -334,7 +339,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
               child: Container(
                 width: 6,
                 decoration: BoxDecoration(
-                  color: _cardIndicator,
+                  color: _cardIndicator, // Menggunakan Biru Tua
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     bottomLeft: Radius.circular(12),
@@ -359,7 +364,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
           _buildHeader(),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(color: _primaryColor))
                 : _errorMessage.isNotEmpty
                     ? Center(
                         child: Padding(
@@ -379,7 +384,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                         : RefreshIndicator(
                             onRefresh: () =>
                                 _fetchIuran(search: _searchController.text),
-                            color: _accentColor,
+                            color: _primaryColor,
                             child: ListView.builder(
                               padding:
                                   const EdgeInsets.only(top: 12, bottom: 24),

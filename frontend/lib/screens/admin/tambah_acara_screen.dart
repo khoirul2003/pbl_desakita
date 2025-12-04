@@ -4,6 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:flutter/services.dart'; // Untuk FilteringTextInputFormatter
 
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+
 class TambahAcaraScreen extends StatefulWidget {
   const TambahAcaraScreen({super.key});
 
@@ -29,6 +34,20 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
 
   bool _isLoading = false;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+
+  // Custom Input Decoration (Sama seperti Edit Warga)
+  final InputDecoration _inputDecoration = InputDecoration(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12), // Sudut membulat
+      borderSide: BorderSide.none, // Menghilangkan border default
+    ),
+    filled: true,
+    fillColor: Colors.white, // Latar belakang input field putih
+    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+    hintStyle: const TextStyle(color: Colors.grey),
+    labelStyle: const TextStyle(color: _accentColor),
+  );
+
 
   @override
   void dispose() {
@@ -58,18 +77,33 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
       if (_tanggalSelesai != null) initialDate = _tanggalSelesai!;
       if (_waktuSelesai != null) initialTime = _waktuSelesai!;
     }
+    
+    // Menggunakan tema kustom untuk Date Picker
+    final ThemeData datePickerTheme = ThemeData.light().copyWith(
+      colorScheme: const ColorScheme.light(
+        primary: _primaryColor, 
+        onPrimary: Colors.white,
+        surface: Colors.white,
+        onSurface: Colors.black,
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: _primaryColor),
+      ),
+    );
 
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+      builder: (context, child) => Theme(data: datePickerTheme, child: child!),
     );
 
     if (pickedDate != null) {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: initialTime,
+        builder: (context, child) => Theme(data: datePickerTheme, child: child!),
       );
 
       if (pickedTime != null) {
@@ -183,142 +217,67 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Tambah Acara Baru")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                "Detail Acara",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _namaController,
-                decoration: const InputDecoration(labelText: "Nama Acara"),
-                validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _deskripsiController,
-                decoration: const InputDecoration(
-                  labelText: "Deskripsi Lengkap",
-                ),
-                maxLines: 4,
-                validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _lokasiController,
-                decoration: const InputDecoration(labelText: "Lokasi"),
-                validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-              ),
-              const SizedBox(height: 24),
-
-              Text(
-                "Pendanaan dan Jadwal",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-
-              // Field Biaya
-              TextFormField(
-                controller: _biayaController,
-                decoration: const InputDecoration(
-                  labelText: "Total Biaya (Rp)",
-                  prefixText: 'Rp ',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) {
-                  final amount = double.tryParse(v ?? '0');
-                  if (amount == null || amount < 0) {
-                    return "Biaya harus angka positif.";
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Tanggal & Waktu Mulai
-              _buildDateTimeRow(
-                context,
-                "Mulai:",
-                _tanggalMulai,
-                _waktuMulai,
-                () => _selectDateTime(context, true),
-              ),
-              const SizedBox(height: 16),
-
-              // Tanggal & Waktu Selesai
-              _buildDateTimeRow(
-                context,
-                "Selesai:",
-                _tanggalSelesai,
-                _waktuSelesai,
-                () => _selectDateTime(context, false),
-              ),
-
-              const SizedBox(height: 24),
-
-              Text(
-                "Lingkup Acara",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _rtController,
-                      decoration: const InputDecoration(
-                        labelText: "RT (Opsional)",
-                      ),
-                      keyboardType: TextInputType.number,
-                      maxLength: 3,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _rwController,
-                      decoration: const InputDecoration(
-                        labelText: "RW (Opsional)",
-                      ),
-                      keyboardType: TextInputType.number,
-                      maxLength: 3,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitAcara,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text("SIMPAN ACARA"),
-              ),
-            ],
+  // --- WIDGET: CUSTOM HEADER PROSCAN ---
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
           ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            "Tambah Acara Baru",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET: SECTION TITLE ---
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: _primaryColor, 
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
         ),
       ),
     );
   }
 
-  // Widget Helper untuk menampilkan tanggal dan waktu
+
+  // Widget Helper untuk menampilkan tanggal dan waktu (Diperbarui dengan gaya ProScan)
   Widget _buildDateTimeRow(
     BuildContext context,
     String label,
@@ -328,27 +287,190 @@ class _TambahAcaraScreenState extends State<TambahAcaraScreen> {
   ) {
     final String dateText = date == null
         ? 'Pilih Tanggal'
-        : DateFormat('yyyy-MM-dd').format(date);
+        : DateFormat('dd MMM yyyy').format(date);
     final String timeText = time == null ? 'Pilih Waktu' : time.format(context);
 
     return InkWell(
       onTap: _isLoading ? null : onTap,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.transparent), // Border transparan agar sama dengan TextFormField
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(dateText, style: const TextStyle(fontSize: 16)),
-            Text(timeText, style: const TextStyle(fontSize: 16)),
-            const Icon(Icons.calendar_today, size: 20),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 12, color: _accentColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$dateText | $timeText", 
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
+                ),
+              ],
+            ),
+            const Icon(Icons.calendar_month_rounded, size: 24, color: _primaryColor),
           ],
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      body: Column(
+        children: [
+          _buildCustomHeader(context),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // --- Bagian Detail Acara ---
+                    _buildSectionTitle(context, "Detail Acara"),
+                    
+                    TextFormField(
+                      controller: _namaController,
+                      decoration: _inputDecoration.copyWith(labelText: "Nama Acara"),
+                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _deskripsiController,
+                      decoration: _inputDecoration.copyWith(
+                        labelText: "Deskripsi Lengkap",
+                      ),
+                      maxLines: 4,
+                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _lokasiController,
+                      decoration: _inputDecoration.copyWith(labelText: "Lokasi"),
+                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // --- Pendanaan dan Jadwal ---
+                    _buildSectionTitle(context, "Pendanaan dan Jadwal"),
+
+                    // Field Biaya
+                    TextFormField(
+                      controller: _biayaController,
+                      decoration: _inputDecoration.copyWith(
+                        
+                        prefixText: 'Rp ',
+                        prefixStyle: const TextStyle(fontWeight: FontWeight.bold, color: _primaryColor),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (v) {
+                        final amount = double.tryParse(v ?? '');
+                        if (amount == null || amount < 0) {
+                          return "Biaya harus angka positif.";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Tanggal & Waktu Mulai
+                    _buildDateTimeRow(
+                      context,
+                      "Tanggal & Waktu Mulai",
+                      _tanggalMulai,
+                      _waktuMulai,
+                      () => _selectDateTime(context, true),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Tanggal & Waktu Selesai
+                    _buildDateTimeRow(
+                      context,
+                      "Tanggal & Waktu Selesai",
+                      _tanggalSelesai,
+                      _waktuSelesai,
+                      () => _selectDateTime(context, false),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // --- Lingkup Acara ---
+                    _buildSectionTitle(context, "Lingkup Acara"),
+                    
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _rtController,
+                            decoration: _inputDecoration.copyWith(
+                              labelText: "RT (Opsional)",
+                              counterText: "",
+                            ),
+                            keyboardType: TextInputType.number,
+                            maxLength: 3,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _rwController,
+                            decoration: _inputDecoration.copyWith(
+                              labelText: "RW (Opsional)",
+                              counterText: "",
+                            ),
+                            keyboardType: TextInputType.number,
+                            maxLength: 3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    // --- Tombol SIMPAN ---
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _submitAcara,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              "SIMPAN ACARA",
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

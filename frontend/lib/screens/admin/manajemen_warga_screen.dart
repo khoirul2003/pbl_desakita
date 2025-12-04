@@ -19,9 +19,10 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
   String _errorMessage = "";
   final TextEditingController _searchController = TextEditingController();
 
-  // WARNA AKSES
-  static const Color _accentColor = Color(0xFF0e2f60);
-  static const Color _cardIndicator = Color(0xFF6C4BA3);
+  // WARNA AKSES (DIRENAME AGAR JELAS, TAPI NILAI TETAP BIRU TUA)
+  static const Color _primaryColor = Color(0xFF0e2f60); 
+  // WARNA INDIKATOR DIUBAH KE PRIMARY COLOR
+  static const Color _cardIndicator = _primaryColor; 
 
   @override
   void initState() {
@@ -195,7 +196,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
 
   // BODY
   Widget _buildBody() {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return const Center(child: CircularProgressIndicator(color: _primaryColor));
     if (_errorMessage.isNotEmpty) return Center(child: Text("Error: $_errorMessage"));
 
     if (_wargaList.isEmpty) {
@@ -211,6 +212,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
 
     return RefreshIndicator(
       onRefresh: () => _fetchWarga(search: _searchController.text),
+      color: _primaryColor,
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 12, bottom: 24),
         itemCount: _wargaList.length,
@@ -240,8 +242,12 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: _accentColor.withOpacity(0.1),
-                    child: Text(inisial, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _accentColor)),
+                    // Menggunakan _primaryColor untuk warna latar belakang avatar
+                    backgroundColor: _primaryColor.withOpacity(0.1),
+                    child: Text(
+                      inisial, 
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _primaryColor)
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -257,6 +263,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
                     ),
                   ),
                   PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: Colors.grey),
                     onSelected: (value) {
                       if (value == 'edit') _goToEditWarga(warga);
                       if (value == 'delete') _deleteWarga(warga);
@@ -264,7 +271,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
                     itemBuilder: (context) => [
                       const PopupMenuItem(
                         value: 'edit',
-                        child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text("Edit")]),
+                        child: Row(children: [Icon(Icons.edit, size: 20, color: _primaryColor), SizedBox(width: 8), Text("Edit")]),
                       ),
                       const PopupMenuItem(
                         value: 'delete',
@@ -275,6 +282,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
                 ],
               ),
             ),
+            // INDIKATOR SISI KIRI MENGGUNAKAN _cardIndicator (YANG SEKARANG _primaryColor)
             Positioned(
               left: 0,
               top: 8,
@@ -282,7 +290,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
               child: Container(
                 width: 6,
                 decoration: BoxDecoration(
-                  color: _cardIndicator,
+                  color: _cardIndicator, // Menggunakan warna primary
                   borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12), topRight: Radius.circular(6), bottomRight: Radius.circular(6)),
                 ),
               ),
