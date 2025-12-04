@@ -221,25 +221,13 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
                   PopupMenuButton(
                     icon: const Icon(Icons.more_vert),
                     onSelected: (value) {
-                      if (value == "detail") {
-                        _goToDetailKegiatan(kegiatan);
-                      } else if (value == "edit") {
+                      if (value == "edit") {
                         _editKegiatan(kegiatan);
                       } else if (value == "delete") {
                         _deleteKegiatan(kegiatan);
                       }
                     },
                     itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: "detail",
-                        child: Row(
-                          children: [
-                            Icon(Icons.visibility, size: 20),
-                            SizedBox(width: 8),
-                            Text("Lihat Detail"),
-                          ],
-                        ),
-                      ),
                       const PopupMenuItem(
                         value: "edit",
                         child: Row(
