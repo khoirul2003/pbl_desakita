@@ -4,11 +4,12 @@ import 'package:frontend/state/auth_provider.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:frontend/screens/wajah/register_face_screen.dart';
-import 'package:frontend/screens/wajah/login_face_screen.dart';
-import 'package:frontend/screens/admin/manajemen_iuran_screen.dart';
-import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart';
-import 'package:frontend/screens/admin/manajemen_acara_screen.dart';
+import 'package:frontend/screens/wajah/register_face_screen.dart'; // Untuk Atur Wajah
+// --- Import Layar Manajemen yang Benar ---
+import 'package:frontend/screens/admin/manajemen_keuangan_screen.dart'; // Laporan Keuangan
+import 'package:frontend/screens/admin/manajemen_iuran_screen.dart'; // Manajemen Iuran
+import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart'; // Manajemen Kegiatan
+import 'package:frontend/screens/admin/manajemen_acara_screen.dart'; // Manajemen Acara (BARU)
 
 class ProfileMainScreen extends StatelessWidget {
   const ProfileMainScreen({super.key});
@@ -22,6 +23,7 @@ class ProfileMainScreen extends StatelessWidget {
       return const Center(child: Text("Data pengguna tidak ditemukan."));
     }
 
+    // List menu yang muncul di kartu
     final List<Map<String, dynamic>> menuItems = _buildMenuItems(
       user,
       authProvider,
@@ -51,7 +53,7 @@ class ProfileMainScreen extends StatelessWidget {
     final String? balance = user.warga?.wallet?.balance.toStringAsFixed(0);
     final String formattedBalance = balance != null
         ? "Rp ${NumberFormat.currency(locale: 'id', symbol: '', decimalDigits: 0).format(double.parse(balance))}"
-        : "";
+        : "Rp 0";
 
     return Card(
       elevation: 4,
@@ -140,6 +142,7 @@ class ProfileMainScreen extends StatelessWidget {
   ) {
     List<Map<String, dynamic>> items = [];
 
+    // --- Menu Umum (Pengaturan Pribadi) ---
     items.add({
       'title': 'Atur Login Wajah',
       'icon': Icons.face_retouching_natural,
@@ -161,17 +164,18 @@ class ProfileMainScreen extends StatelessWidget {
       ),
     });
 
+    // --- Menu Manajemen (Hanya untuk Admin/RT/RW) ---
     if (user.role != 'warga') {
       items.add({
         'title': 'Laporan Keuangan',
         'icon': Icons.account_balance_wallet,
         'color': Colors.green,
+        // --- Koneksi ke Laporan Keuangan ---
         'onTap': (BuildContext context) => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const PlaceholderScreen(title: "Laporan Keuangan"),
-          ),
+          MaterialPageRoute(builder: (_) => const ManajemenKeuanganScreen()),
         ),
       });
+
       items.add({
         'title': 'Manajemen Iuran',
         'icon': Icons.receipt_long,
@@ -180,6 +184,7 @@ class ProfileMainScreen extends StatelessWidget {
           context,
         ).push(MaterialPageRoute(builder: (_) => const ManajemenIuranScreen())),
       });
+
       items.add({
         'title': 'Manajemen Kegiatan',
         'icon': Icons.event,
@@ -188,16 +193,19 @@ class ProfileMainScreen extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const ManajemenKegiatanScreen()),
         ),
       });
+
       items.add({
         'title': 'Manajemen Acara',
         'icon': Icons.celebration,
         'color': Colors.redAccent,
+        // --- Koneksi ke Manajemen Acara ---
         'onTap': (BuildContext context) => Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const ManajemenAcaraScreen())),
       });
     }
 
+    // --- Menu Khusus Warga ---
     if (user.role == 'warga') {
       items.add({
         'title': 'Data Keluarga Saya',
@@ -212,6 +220,7 @@ class ProfileMainScreen extends StatelessWidget {
       });
     }
 
+    // --- Menu Logout di akhir list ---
     items.add({
       'title': 'Logout',
       'icon': Icons.logout,

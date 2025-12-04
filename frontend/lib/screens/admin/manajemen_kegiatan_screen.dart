@@ -22,6 +22,11 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   final DateFormat _dateFormat = DateFormat('dd MMM yyyy, HH:mm');
+  final NumberFormat _rupiahFormatter = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -52,7 +57,6 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
         _isLoading = false;
         _errorMessage = "Gagal memuat data kegiatan: $e";
       });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Gagal memuat data kegiatan: $e")),
@@ -91,8 +95,9 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
       builder: (_) {
         return AlertDialog(
           title: const Text("Hapus Kegiatan"),
-          content:
-              Text("Apakah Anda yakin ingin menghapus '${kegiatan.namaKegiatan}'?"),
+          content: Text(
+            "Apakah Anda yakin ingin menghapus '${kegiatan.namaKegiatan}'?",
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -115,7 +120,9 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Kegiatan '${kegiatan.namaKegiatan}' berhasil dihapus."),
+              content: Text(
+                "Kegiatan '${kegiatan.namaKegiatan}' berhasil dihapus.",
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -131,9 +138,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     }
   }
 
-  // ---------------------------------------------------------
-  // CARD KEGIATAN — desain modern mengikuti gambar referensi
-  // ---------------------------------------------------------
+  // CARD KEGIATAN
   Widget _buildKegiatanCard(Kegiatan kegiatan) {
     String scope = 'Desa';
     if (kegiatan.rt != null) {
@@ -175,10 +180,11 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text("Tanggal: ${_dateFormat.format(kegiatan.tanggalMulai)}"),
-                  Text("Lokasi: ${kegiatan.lokasi}"),
+                  Text("Lokasi: ${kegiatan.lokasi} ($scope)"),
+                  // Tampilkan Biaya
                   Text(
-                    "Lingkup: $scope",
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    "Biaya: ${_rupiahFormatter.format(kegiatan.totalBiaya)}",
+                    style: const TextStyle(fontSize: 14, color: Colors.red),
                   ),
                 ],
               ),
@@ -242,9 +248,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     );
   }
 
-  // ---------------------------------------------------------
-  // SEARCH BAR + ADD BUTTON — AppBar bottom (modern clean)
-  // ---------------------------------------------------------
+  // SEARCH BAR + ADD BUTTON — AppBar bottom
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.only(bottom: 12),
@@ -267,7 +271,6 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
               ),
             ),
           ),
-
           const SizedBox(width: 12),
 
           // Tombol Add
@@ -288,9 +291,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
     );
   }
 
-  // ---------------------------------------------------------
   // BUILD UTAMA
-  // ---------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final bool canPop = Navigator.of(context).canPop();
@@ -299,15 +300,17 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: canPop,
         leading: canPop ? null : const SizedBox(),
-        title: const Text("DesaKita - Manajemen Kegiatan"),
+        title: const Text("Manajemen Kegiatan"),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 2,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(70),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 4.0,
+            ),
             child: _buildHeader(),
           ),
         ),
@@ -321,28 +324,26 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMessage.isNotEmpty
-                      ? Center(child: Text("Error: $_errorMessage"))
-                      : _kegiatanList.isEmpty
-                          ? Center(
-                              child: Text(
-                                _searchController.text.isEmpty
-                                    ? "Belum ada kegiatan yang terdaftar."
-                                    : "Tidak ditemukan kegiatan.",
-                              ),
-                            )
-                          : RefreshIndicator(
-                              onRefresh: () => _fetchKegiatan(),
-                              child: ListView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding:
-                                    const EdgeInsets.only(top: 8, bottom: 16),
-                                itemCount: _kegiatanList.length,
-                                itemBuilder: (_, i) {
-                                  return _buildKegiatanCard(
-                                      _kegiatanList[i]);
-                                },
-                              ),
-                            ),
+                  ? Center(child: Text("Error: $_errorMessage"))
+                  : _kegiatanList.isEmpty
+                  ? Center(
+                      child: Text(
+                        _searchController.text.isEmpty
+                            ? "Belum ada kegiatan yang terdaftar."
+                            : "Tidak ditemukan kegiatan.",
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () => _fetchKegiatan(),
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(top: 8, bottom: 16),
+                        itemCount: _kegiatanList.length,
+                        itemBuilder: (_, i) {
+                          return _buildKegiatanCard(_kegiatanList[i]);
+                        },
+                      ),
+                    ),
             ),
           ],
         ),

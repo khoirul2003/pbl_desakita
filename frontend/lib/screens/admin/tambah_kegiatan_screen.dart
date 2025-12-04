@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/services/api_service.dart';
+import 'package:flutter/services.dart'; // Untuk FilteringTextInputFormatter
 
 class TambahKegiatanScreen extends StatefulWidget {
   const TambahKegiatanScreen({super.key});
@@ -17,6 +18,9 @@ class _TambahKegiatanScreenState extends State<TambahKegiatanScreen> {
   final _lokasiController = TextEditingController();
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
+  final _biayaController = TextEditingController(
+    text: '0',
+  ); // <-- BARU: Controller Biaya (default 0)
 
   DateTime? _tanggalMulai;
   TimeOfDay? _waktuMulai;
@@ -25,7 +29,6 @@ class _TambahKegiatanScreenState extends State<TambahKegiatanScreen> {
 
   bool _isLoading = false;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
-  final DateFormat _timeFormat = DateFormat('HH:mm');
 
   @override
   void dispose() {
@@ -34,6 +37,7 @@ class _TambahKegiatanScreenState extends State<TambahKegiatanScreen> {
     _lokasiController.dispose();
     _rtController.dispose();
     _rwController.dispose();
+    _biayaController.dispose(); // Dispose Biaya
     super.dispose();
   }
 
@@ -47,7 +51,6 @@ class _TambahKegiatanScreenState extends State<TambahKegiatanScreen> {
     DateTime initialDate = DateTime.now();
     TimeOfDay initialTime = TimeOfDay.now();
 
-    // Set initial values
     if (isMulai) {
       if (_tanggalMulai != null) initialDate = _tanggalMulai!;
       if (_waktuMulai != null) initialTime = _waktuMulai!;
@@ -118,16 +121,33 @@ class _TambahKegiatanScreenState extends State<TambahKegiatanScreen> {
       _isLoading = true;
     });
 
+    // Ambil Biaya
+    final double? totalBiaya = double.tryParse(_biayaController.text);
+    if (totalBiaya == null || totalBiaya < 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Total Biaya harus berupa angka positif."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     final apiService = context.read<ApiService>();
     final Map<String, dynamic> data = {
       'nama_kegiatan': _namaController.text,
       'deskripsi': _deskripsiController.text,
-      // Format API Laravel: YYYY-MM-DD HH:MM:SS
       'tanggal_mulai': tglMulai.toIso8601String(),
       'tanggal_selesai': tglSelesai.toIso8601String(),
       'lokasi': _lokasiController.text,
       'rt': _rtController.text.isNotEmpty ? _rtController.text : null,
       'rw': _rwController.text.isNotEmpty ? _rwController.text : null,
+      'total_biaya': totalBiaya, // <-- KIRIM Biaya
     };
 
     try {
@@ -196,7 +216,29 @@ class _TambahKegiatanScreenState extends State<TambahKegiatanScreen> {
               ),
               const SizedBox(height: 24),
 
-              Text("Jadwal", style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                "Pendanaan dan Jadwal",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+
+              // Field Biaya
+              TextFormField(
+                controller: _biayaController,
+                decoration: const InputDecoration(
+                  labelText: "Total Biaya (Rp)",
+                  prefixText: 'Rp ',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (v) {
+                  final amount = double.tryParse(v ?? '0');
+                  if (amount == null || amount < 0) {
+                    return "Biaya harus angka positif.";
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 16),
 
               // Tanggal & Waktu Mulai
