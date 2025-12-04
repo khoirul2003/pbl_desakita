@@ -281,4 +281,68 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+          const SizedBox(height: 20),
+                  
+                   TextButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      );
+                    },
+                    child: const Text(
+                      "Belum punya akun? Daftar", 
+                      style: TextStyle(color: Colors.white70)
+                    ),
+                  ),
+                  const SizedBox(height: 30), 
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// PERBAIKAN 3: Painter yang diperbarui (FullScreenWavePainter)
+// Painter ini sekarang menggambar satu blok utuh berwarna biru dari 
+// tengah layar sampai ke paling bawah.
+class FullScreenWavePainter extends CustomPainter {
+  final Color color;
+
+  FullScreenWavePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    
+    // Titik awal gelombang (Kiri, sekitar 38% dari atas layar)
+    path.moveTo(0, size.height * 0.38); 
+    
+    // Membuat kurva gelombang
+    path.quadraticBezierTo(
+      size.width * 0.25, size.height * 0.28, // Control point naik
+      size.width * 0.5, size.height * 0.38   // Titik tengah
+    );
+    path.quadraticBezierTo(
+      size.width * 0.75, size.height * 0.48, // Control point turun
+      size.width, size.height * 0.38         // Titik akhir kanan
+    );
+
+    // Menutup path ke pojok kanan bawah dan kiri bawah
+    path.lineTo(size.width, size.height); 
+    path.lineTo(0, size.height);          
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
