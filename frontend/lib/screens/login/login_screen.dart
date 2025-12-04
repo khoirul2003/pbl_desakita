@@ -93,3 +93,51 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Icon(Icons.shopping_basket_outlined, size: 50, color: primaryBlue),
                       const SizedBox(width: 10),
+  Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Rukun",
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: primaryBlue,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "App",
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: primaryBlue,
+                              height: 1,
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+
+                  // FORM CARD SECTION
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, child) {
+                      if (auth.isLoading) {
+                        return const Center(child: CircularProgressIndicator(color: Colors.white));
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 24),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            )
+                          ],
