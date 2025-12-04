@@ -193,26 +193,14 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
       scope = "RW ${iuran.rw}";
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(
-            context,
-          ).colorScheme.secondary.withOpacity(0.1),
-          child: Icon(
-            iuran.tipe == 'PER_KELUARGA' ? Icons.house : Icons.person,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        title: Text(
-          iuran.namaIuran,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: GestureDetector(
+        // Menghilangkan aksi navigasi ke PlaceholderScreen di onTap
+        onTap: () {
+          // Aksi onTap dikosongkan atau bisa diisi dengan aksi lain jika diperlukan
+        },
+        child: Stack(
           children: [
             Text("Jumlah: ${_rupiahFormatter.format(iuran.jumlah)}"),
             Text("Tipe: ${iuran.tipe.replaceAll('_', ' ')} (${scope})"),
@@ -231,21 +219,42 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                   builder: (_) => PlaceholderScreen(
                     title: "Kelola Tagihan: ${iuran.namaIuran}",
                   ),
-                ),
-              );
-            }
-          },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem<String>(
-                value: 'tagihan',
-                child: Row(
-                  children: [
-                    Icon(Icons.list_alt, size: 20),
-                    SizedBox(width: 8),
-                    Text("Kelola Tagihan"),
-                  ],
-                ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editIuran(iuran);
+                      } else if (value == 'delete') {
+                        _deleteIuran(iuran);
+                      }
+                      // Opsi 'tagihan' telah dihapus, sehingga tidak ada lagi else if (value == 'tagihan')
+                    },
+                    itemBuilder: (context) => [
+                      // Opsi 'Kelola Tagihan' telah dihapus dari sini
+
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 20),
+                            SizedBox(width: 8),
+                            Text("Edit Jenis"),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red, size: 20),
+                            SizedBox(width: 8),
+                            Text("Hapus Jenis",
+                                style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                ],
               ),
               const PopupMenuItem<String>(
                 value: 'edit',

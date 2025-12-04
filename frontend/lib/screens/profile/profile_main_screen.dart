@@ -177,24 +177,6 @@ class ProfileMainScreen extends StatelessWidget {
       });
 
       items.add({
-        'title': 'Manajemen Iuran',
-        'icon': Icons.receipt_long,
-        'color': Colors.orange,
-        'onTap': (BuildContext context) => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const ManajemenIuranScreen())),
-      });
-
-      items.add({
-        'title': 'Manajemen Kegiatan',
-        'icon': Icons.event,
-        'color': Colors.purple,
-        'onTap': (BuildContext context) => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ManajemenKegiatanScreen()),
-        ),
-      });
-
-      items.add({
         'title': 'Manajemen Acara',
         'icon': Icons.celebration,
         'color': Colors.redAccent,
