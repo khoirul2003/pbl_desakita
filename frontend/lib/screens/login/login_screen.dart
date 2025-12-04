@@ -45,3 +45,51 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Terjadi kesalahan: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _goToFaceLogin() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LoginFaceScreen()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color primaryBlue = const Color(0xFF0D2E5F); 
+    final Color cardColor = const Color(0xFFD0D6E2); 
+
+    return Scaffold(
+      // PERBAIKAN 1: Ubah background scaffold jadi Putih
+      // Ini menghilangkan kebutuhan akan Container putih di atas yang menyebabkan garis
+      backgroundColor: Colors.white, 
+      body: Stack(
+        children: [
+          // PERBAIKAN 2: Gunakan CustomPaint yang mengisi layar penuh (Positioned.fill)
+          // Painter ini akan menggambar blok Biru dari bawah ke tengah (Wave)
+          // Tanpa tumpukan container, garis putih dijamin hilang.
+          Positioned.fill(
+            child: CustomPaint(
+              painter: FullScreenWavePainter(color: primaryBlue),
+            ),
+          ),
+
+          // Konten Utama (Logo & Form)
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 60),
+                  
+                  // LOGO SECTION 
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.shopping_basket_outlined, size: 50, color: primaryBlue),
+                      const SizedBox(width: 10),
