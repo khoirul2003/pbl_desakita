@@ -6,6 +6,13 @@ import 'package:frontend/services/api_service.dart';
 import 'package:frontend/state/auth_provider.dart';
 import 'package:dio/dio.dart'; // Diperlukan untuk DioException
 
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _successColor = Color(0xFF28A745); // Hijau untuk Status Saldo
+const Color _dangerColor = Colors.red; // Merah untuk Debit/Pengeluaran
+
 class PulsaProduct {
   final int id;
   final String label;
@@ -33,6 +40,20 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
     symbol: 'Rp',
     decimalDigits: 0,
   );
+  
+  // Custom Input Decoration (Gaya ProScan)
+  final InputDecoration _inputDecoration = InputDecoration(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+    labelStyle: const TextStyle(color: _accentColor),
+    prefixStyle: const TextStyle(fontWeight: FontWeight.bold, color: _primaryColor),
+  );
+
 
   // Data Pulsa Simulasi (Ganti dengan API Call jika ada)
   final List<PulsaProduct> _pulsaOptions = [
@@ -51,7 +72,6 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
   // Memastikan Saldo Terload
   Future<void> _checkAndRefreshBalance() async {
     final authProvider = context.read<AuthProvider>();
-    // Memuat ulang data user/wallet dari server
     await authProvider.tryAutoLogin();
   }
 
@@ -63,9 +83,20 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
 
   double get totalAmount => (_selectedProduct?.harga ?? 0.0) + _transactionFee;
 
+  void _selectQuickAmount(PulsaProduct product) {
+    setState(() {
+      _selectedProduct = product;
+    });
+  }
+
   // Fungsi Pembayaran
   Future<void> _submitPayment() async {
     if (!_formKey.currentState!.validate() || _selectedProduct == null) {
+      if (_selectedProduct == null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Harap pilih nominal pulsa.")),
+        );
+      }
       return;
     }
 
@@ -136,129 +167,89 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Ambil saldo saat ini dari provider
-    final walletBalance =
-        context.watch<AuthProvider>().user?.warga?.wallet?.balance ?? 0.0;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("Pembelian Pulsa")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // --- 1. Input Nomor Telepon ---
-              Text(
-                "Nomor Telepon Tujuan",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _numberController,
-                decoration: const InputDecoration(
-                  labelText: "Contoh: 081234567890",
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) =>
-                    v!.length < 9 ? "Masukkan nomor telepon yang valid." : null,
-              ),
-              const SizedBox(height: 30),
-
-              // --- 2. Pilihan Nominal ---
-              Text(
-                "Pilih Nominal Pulsa",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10.0,
-                runSpacing: 10.0,
-                children: _pulsaOptions.map((product) {
-                  final isSelected = product.id == _selectedProduct?.id;
-                  return ChoiceChip(
-                    label: Text(product.label),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedProduct = selected ? product : null;
-                      });
-                    },
-                    selectedColor: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.2),
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    elevation: 1,
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 30),
-
-              // --- 3. Konfirmasi & Pembayaran ---
-              Text(
-                "Rincian Pembayaran",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-
-              _buildRincianRow("Nominal Pulsa", _selectedProduct?.harga ?? 0.0),
-              _buildRincianRow(
-                "Biaya Admin Desapay",
-                _transactionFee,
-                isFee: true,
-              ),
-              const Divider(),
-              _buildRincianRow("TOTAL DIBAYAR", totalAmount, isTotal: true),
-
-              const SizedBox(height: 20),
-
-              Text(
-                "Saldo Anda: ${_rupiahFormatter.format(walletBalance)}",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: walletBalance < totalAmount
-                      ? Colors.red
-                      : Colors.green.shade700,
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              ElevatedButton.icon(
-                onPressed:
-                    (_isLoading ||
-                        _selectedProduct == null ||
-                        walletBalance < totalAmount)
-                    ? null
-                    : _submitPayment,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.payment),
-                label: Text(
-                  _isLoading ? "MEMPROSES..." : "BAYAR DENGAN DESAPAY",
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
-            ],
+  // --- WIDGET: CUSTOM HEADER PROSCAN ---
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
           ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            "Pembelian Pulsa",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET: CARD RINCIAN PEMBAYARAN ---
+  Widget _buildRincianCard(double walletBalance) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              "Rincian Pembayaran",
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: _primaryColor,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Isi Rincian
+            _buildRincianRow("Nominal Pulsa", _selectedProduct?.harga ?? 0.0),
+            _buildRincianRow("Biaya Admin Desapay", _transactionFee, isFee: true),
+            const Divider(),
+            _buildRincianRow("TOTAL DIBAYAR", totalAmount, isTotal: true),
+            
+            const SizedBox(height: 20),
+            
+            // Saldo Saat Ini
+            Text(
+              "Saldo Anda: ${_rupiahFormatter.format(walletBalance)}",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: walletBalance < totalAmount
+                    ? Colors.red
+                    : _successColor,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -279,6 +270,7 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
             label,
             style: TextStyle(
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: isTotal ? _primaryColor : (isFee ? Colors.grey[700] : Colors.black87),
             ),
           ),
           Text(
@@ -288,8 +280,141 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
               color: isFee
                   ? Colors.grey
                   : (isTotal
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.black),
+                      ? _primaryColor
+                      : Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final walletBalance =
+        context.watch<AuthProvider>().user?.warga?.wallet?.balance ?? 0.0;
+
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      body: Column(
+        children: [
+          _buildCustomHeader(context),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // --- 1. Input Nomor Telepon ---
+                    Text(
+                      "Nomor Telepon Tujuan",
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: _primaryColor,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _numberController,
+                      decoration: _inputDecoration.copyWith(
+                        labelText: "Contoh: 081234567890",
+                        prefixIcon: const Icon(Icons.phone, color: _primaryColor),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (v) =>
+                          v!.length < 9 ? "Masukkan nomor telepon yang valid." : null,
+                    ),
+                    const SizedBox(height: 30),
+
+                    // --- 2. Pilihan Nominal ---
+                    Text(
+                      "Pilih Nominal Pulsa",
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: _primaryColor,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10.0,
+                      runSpacing: 10.0,
+                      children: _pulsaOptions.map((product) {
+                        final isSelected = product.id == _selectedProduct?.id;
+                        final displayAmount = product.label;
+                        
+                        // *** PERBAIKAN: Mengganti ActionChip dengan ChoiceChip ***
+                        return ChoiceChip(
+                          label: Text(displayAmount),
+                          // Gunakan properti selected yang tersedia pada ChoiceChip
+                          selected: isSelected, 
+                          onSelected: (selected) {
+                            if (!_isLoading) {
+                                _selectQuickAmount(product);
+                            }
+                          },
+                          // Styling ChoiceChip agar sesuai ProScan
+                          selectedColor: _primaryColor,
+                          disabledColor: Colors.white,
+                          backgroundColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : _accentColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          side: BorderSide(
+                            color: isSelected
+                                ? _primaryColor
+                                : Colors.grey.shade300,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 2,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // --- 3. Konfirmasi & Pembayaran ---
+                    // Menggunakan Card Rincian yang sudah disesuaikan
+                    _buildRincianCard(walletBalance),
+
+                    const SizedBox(height: 30),
+
+                    ElevatedButton.icon(
+                      onPressed: (_isLoading ||
+                              _selectedProduct == null ||
+                              walletBalance < totalAmount)
+                          ? null
+                          : _submitPayment,
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.payment),
+                      label: Text(
+                        _isLoading ? "MEMPROSES..." : "BAYAR DENGAN DESAPAY",
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Catatan: Ini adalah simulasi Top Up. Tidak ada integrasi Payment Gateway nyata.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
