@@ -13,8 +13,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
-  final String _baseUrlLaravel = "https://3006b3bc1d45.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://1f18cc5d2b9a.ngrok-free.app";
+  final String _baseUrlLaravel = " https://697adcd5cd47.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://07ee0188de7c.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 
@@ -555,7 +555,7 @@ class ApiService {
     } on DioException catch (e) {
       print("Error transferDesapay: ${e.message}");
       // Re-throw exception agar TransferScreen dapat menangkap error spesifik (misal 422 Saldo tidak cukup)
-      rethrow; 
+      rethrow;
     }
   }
 }

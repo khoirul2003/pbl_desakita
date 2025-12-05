@@ -9,10 +9,10 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/wallet/topup_screen.dart';
-import 'package:frontend/screens/home/iuran_payment_screen.dart';
+import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/screens/home/iuran_payment_screen.dart';
-import 'package:frontend/screens/home/token_listrik_screen.dart';
+import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
+import 'package:frontend/screens/wallet/token_listrik_screen.dart';
 // Definisi Model untuk Item PPOB (Pulsa, BPJS, dll.)
 class PPOBMenuItem {
   final String title;
