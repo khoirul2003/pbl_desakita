@@ -7,6 +7,8 @@ import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/wallet/topup_screen.dart';
 import 'package:frontend/screens/wallet/pembelian_pulsa_screen.dart'; 
+// *** BARU: Import Pembelian Paket Data Screen ***
+import 'package:frontend/screens/wallet/pembelian_paket_data_screen.dart'; 
 import 'package:frontend/state/auth_provider.dart';
 
 // --- DEFINISI WARNA PROSCAN ---
@@ -438,12 +440,15 @@ class _PPOBMenuGrid extends StatelessWidget {
         title: "Paket Data",
         icon: Icons.wifi,
         color: Colors.blue,
-        onTap: (ctx) => Navigator.of(ctx).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                const PlaceholderScreen(title: "Pembelian Paket Data"),
-          ),
-        ),
+        // *** PERBAIKAN DI SINI ***
+        onTap: (ctx) async {
+          final result = await Navigator.of(ctx).push(
+            MaterialPageRoute(builder: (_) => const PembelianPaketDataScreen()),
+          );
+          if (result == true) {
+            fetchWalletData();
+          }
+        },
       ),
       PPOBMenuItem(
         title: "Token Listrik",
