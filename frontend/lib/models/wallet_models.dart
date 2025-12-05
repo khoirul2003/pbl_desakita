@@ -17,8 +17,8 @@ class Wallet {
 
   factory Wallet.fromJson(Map<String, dynamic> json) {
     return Wallet(
-      id: json['id'],
-      wargaId: json['warga_id'],
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      wargaId: int.tryParse(json['warga_id'].toString()) ?? 0,
       desapayAccountNumber: json['desapay_account_number'],
       // Pastikan balance selalu double
       balance: double.tryParse(json['balance'].toString()) ?? 0.0,
