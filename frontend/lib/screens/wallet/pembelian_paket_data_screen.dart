@@ -4,35 +4,40 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/state/auth_provider.dart';
-import 'package:dio/dio.dart'; // Diperlukan untuk DioException
+import 'package:dio/dio.dart';
 
 // --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
-const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
-const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
-const Color _successColor = Color(0xFF28A745); // Hijau untuk Status Saldo
-const Color _dangerColor = Colors.red; // Merah untuk Debit/Pengeluaran
+const Color _primaryColor = Color(0xFF0E2F60);
+const Color _backgroundColor = Color(0xFFF5F5F5);
+const Color _accentColor = Color(0xFF3C486B);
+const Color _successColor = Color(0xFF28A745);
+const Color _dangerColor = Colors.red;
 
-class PulsaProduct {
+class PaketDataProduct {
   final int id;
+  final String providerName;
   final String label;
   final double harga;
-
-  PulsaProduct({required this.id, required this.label, required this.harga});
+  PaketDataProduct({
+    required this.id,
+    required this.providerName,
+    required this.label,
+    required this.harga,
+  });
 }
 
-class PembelianPulsaScreen extends StatefulWidget {
-  const PembelianPulsaScreen({super.key});
-
+class PembelianPaketDataScreen extends StatefulWidget {
+  const PembelianPaketDataScreen({super.key});
   @override
-  State<PembelianPulsaScreen> createState() => _PembelianPulsaScreenState();
+  State<PembelianPaketDataScreen> createState() =>
+      _PembelianPaketDataScreenState();
 }
 
-class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
+class _PembelianPaketDataScreenState extends State<PembelianPaketDataScreen> {
   final _formKey = GlobalKey<FormState>();
   final _numberController = TextEditingController();
-  PulsaProduct? _selectedProduct;
-  double _transactionFee = 500.0; // Simulasi biaya admin
+  PaketDataProduct? _selectedProduct;
+  final double _transactionFee = 1500.0;
   bool _isLoading = false;
 
   final NumberFormat _rupiahFormatter = NumberFormat.currency(
@@ -40,8 +45,6 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
     symbol: 'Rp',
     decimalDigits: 0,
   );
-
-  // Custom Input Decoration (Gaya ProScan)
   final InputDecoration _inputDecoration = InputDecoration(
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -57,24 +60,114 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
     ),
   );
 
-  // Data Pulsa Simulasi (Ganti dengan API Call jika ada)
-  final List<PulsaProduct> _pulsaOptions = [
-    PulsaProduct(id: 1, label: "Pulsa 10.000", harga: 10000),
-    PulsaProduct(id: 2, label: "Pulsa 25.000", harga: 25000),
-    PulsaProduct(id: 3, label: "Pulsa 50.000", harga: 50000),
-    PulsaProduct(id: 4, label: "Pulsa 100.000", harga: 100000),
+  final List<PaketDataProduct> _paketDataOptions = [
+    // Telkomsel
+    PaketDataProduct(
+      id: 1,
+      providerName: "Telkomsel",
+      label: "3 GB / 3 Hari",
+      harga: 20000,
+    ),
+    PaketDataProduct(
+      id: 2,
+      providerName: "Telkomsel",
+      label: "5 GB / 7 Hari",
+      harga: 30000,
+    ),
+    PaketDataProduct(
+      id: 3,
+      providerName: "Telkomsel",
+      label: "15 GB / 30 Hari",
+      harga: 65000,
+    ),
+    PaketDataProduct(
+      id: 4,
+      providerName: "Telkomsel",
+      label: "30 GB / 30 Hari",
+      harga: 99000,
+    ),
+    // Indosat
+    PaketDataProduct(
+      id: 5,
+      providerName: "Indosat",
+      label: "6 GB Freedom",
+      harga: 35000,
+    ),
+    PaketDataProduct(
+      id: 6,
+      providerName: "Indosat",
+      label: "20 GB Freedom",
+      harga: 75000,
+    ),
+    PaketDataProduct(
+      id: 7,
+      providerName: "Indosat",
+      label: "Unlimited Jumbo",
+      harga: 130000,
+    ),
+    // XL
+    PaketDataProduct(
+      id: 8,
+      providerName: "XL",
+      label: "1 GB Harian",
+      harga: 15000,
+    ),
+    PaketDataProduct(
+      id: 9,
+      providerName: "XL",
+      label: "10 GB Xtra Combo",
+      harga: 50000,
+    ),
+    PaketDataProduct(
+      id: 10,
+      providerName: "XL",
+      label: "30 GB Kuota Utama",
+      harga: 120000,
+    ),
+    // Tri (3)
+    PaketDataProduct(
+      id: 11,
+      providerName: "Tri",
+      label: "Always On 3 GB",
+      harga: 18000,
+    ),
+    PaketDataProduct(
+      id: 12,
+      providerName: "Tri",
+      label: "Kuota++ 10 GB",
+      harga: 35000,
+    ),
+    PaketDataProduct(
+      id: 13,
+      providerName: "Tri",
+      label: "Unlimited 30 Hari",
+      harga: 95000,
+    ),
+    // Smartfren
+    PaketDataProduct(
+      id: 14,
+      providerName: "Smartfren",
+      label: "5 GB Volume",
+      harga: 25000,
+    ),
+    PaketDataProduct(
+      id: 15,
+      providerName: "Smartfren",
+      label: "15 GB Nonstop",
+      harga: 70000,
+    ),
+    PaketDataProduct(
+      id: 16,
+      providerName: "Smartfren",
+      label: "Kuota Malam Unlimited",
+      harga: 50000,
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
-    _checkAndRefreshBalance();
-  }
-
-  // Memastikan Saldo Terload
-  Future<void> _checkAndRefreshBalance() async {
-    final authProvider = context.read<AuthProvider>();
-    await authProvider.tryAutoLogin();
+    context.read<AuthProvider>().tryAutoLogin();
   }
 
   @override
@@ -85,18 +178,15 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
 
   double get totalAmount => (_selectedProduct?.harga ?? 0.0) + _transactionFee;
 
-  void _selectQuickAmount(PulsaProduct product) {
-    setState(() {
-      _selectedProduct = product;
-    });
-  }
+  void _selectQuickAmount(PaketDataProduct product) => setState(() {
+    _selectedProduct = product;
+  });
 
-  // Fungsi Pembayaran
   Future<void> _submitPayment() async {
     if (!_formKey.currentState!.validate() || _selectedProduct == null) {
       if (_selectedProduct == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Harap pilih nominal pulsa.")),
+          const SnackBar(content: Text("Harap pilih paket data.")),
         );
       }
       return;
@@ -131,22 +221,20 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
       );
 
       if (success && mounted) {
-        // [1] Memaksa refresh data di provider
         authProvider.tryAutoLogin();
-
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Pembelian Pulsa Berhasil! Saldo Desapay dikurangi."),
+          SnackBar(
+            content: Text(
+              "Pembelian Paket Data (${_selectedProduct!.label}) Berhasil!",
+            ),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 4),
+            duration: const Duration(seconds: 4),
           ),
         );
-
-        // [2] PENTING: Pop dengan hasil 'true' agar Home Screen me-refresh tampilan
         Navigator.of(context).pop(true);
       } else {
         throw Exception(
-          "Gagal memproses pembayaran. Saldo tidak cukup atau NIK/Token salah.",
+          "Gagal memproses pembayaran. Saldo tidak cukup atau nomor salah.",
         );
       }
     } catch (e) {
@@ -154,7 +242,6 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
       if (e is DioException && e.response?.statusCode == 422) {
         errorMessage = e.response!.data['message'] ?? errorMessage;
       }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
@@ -169,7 +256,6 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
     }
   }
 
-  // --- WIDGET: CUSTOM HEADER PROSCAN ---
   Widget _buildCustomHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
@@ -197,7 +283,7 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
           ),
           const SizedBox(width: 8),
           const Text(
-            "Pembelian Pulsa",
+            "Pembelian Paket Data",
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -209,7 +295,6 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
     );
   }
 
-  // --- WIDGET: CARD RINCIAN PEMBAYARAN ---
   Widget _buildRincianCard(double walletBalance) {
     return Card(
       elevation: 4,
@@ -228,9 +313,7 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
               ),
             ),
             const SizedBox(height: 12),
-
-            // Isi Rincian
-            _buildRincianRow("Nominal Pulsa", _selectedProduct?.harga ?? 0.0),
+            _buildRincianRow("Nominal Paket", _selectedProduct?.harga ?? 0.0),
             _buildRincianRow(
               "Biaya Admin Desapay",
               _transactionFee,
@@ -238,10 +321,7 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
             ),
             const Divider(),
             _buildRincianRow("TOTAL DIBAYAR", totalAmount, isTotal: true),
-
             const SizedBox(height: 20),
-
-            // Saldo Saat Ini
             Text(
               "Saldo Anda: ${_rupiahFormatter.format(walletBalance)}",
               style: TextStyle(
@@ -282,6 +362,115 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
               color: isFee
                   ? Colors.grey
                   : (isTotal ? _primaryColor : Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaketDataListView() {
+    final Map<String, List<PaketDataProduct>> groupedProducts = {};
+    for (var product in _paketDataOptions) {
+      groupedProducts.putIfAbsent(product.providerName, () => []).add(product);
+    }
+    final List<String> providers = groupedProducts.keys.toList();
+
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: providers.length,
+        itemBuilder: (context, index) {
+          final products = groupedProducts[providers[index]]!;
+          return _buildProviderColumn(providers[index], products);
+        },
+      ),
+    );
+  }
+
+  Widget _buildProviderColumn(
+    String provider,
+    List<PaketDataProduct> products,
+  ) {
+    return Container(
+      width: 180,
+      margin: const EdgeInsets.only(right: 15),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryColor.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            provider,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: _primaryColor,
+            ),
+          ),
+          const Divider(height: 6), // DIRAPATKAN
+          Expanded(
+            child: ListView.builder(
+              itemCount: products.length,
+              physics: const ClampingScrollPhysics(),
+              itemBuilder: (context, index) {
+                final product = products[index];
+                final isSelected = product.id == _selectedProduct?.id;
+
+                return InkWell(
+                  onTap: _isLoading ? null : () => _selectQuickAmount(product),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 4,
+                      horizontal: 4,
+                    ), // DIRAPATKAN
+                    margin: const EdgeInsets.only(bottom: 2), // DIRAPATKAN
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? _primaryColor.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: isSelected
+                          ? Border.all(color: _primaryColor, width: 1.5)
+                          : null,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: _accentColor,
+                          ),
+                        ),
+                        Text(
+                          _rupiahFormatter.format(product.harga),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -337,9 +526,9 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
                     ),
                     const SizedBox(height: 30),
 
-                    // --- 2. Pilihan Nominal ---
+                    // --- 2. Pilihan Nominal (HORIZONTAL LISTVIEW) ---
                     Text(
-                      "Pilih Nominal Pulsa",
+                      "Pilih Paket Data",
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: _primaryColor,
@@ -347,48 +536,12 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10.0,
-                      runSpacing: 10.0,
-                      children: _pulsaOptions.map((product) {
-                        final isSelected = product.id == _selectedProduct?.id;
-                        final displayAmount = product.label;
 
-                        // *** PERBAIKAN: Mengganti ActionChip dengan ChoiceChip ***
-                        return ChoiceChip(
-                          label: Text(displayAmount),
-                          // Gunakan properti selected yang tersedia pada ChoiceChip
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (!_isLoading) {
-                              _selectQuickAmount(product);
-                            }
-                          },
-                          // Styling ChoiceChip agar sesuai ProScan
-                          selectedColor: _primaryColor,
-                          disabledColor: Colors.white,
-                          backgroundColor: Colors.white,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : _accentColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          side: BorderSide(
-                            color: isSelected
-                                ? _primaryColor
-                                : Colors.grey.shade300,
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 2,
-                        );
-                      }).toList(),
-                    ),
+                    _buildPaketDataListView(),
+
                     const SizedBox(height: 30),
 
                     // --- 3. Konfirmasi & Pembayaran ---
-                    // Menggunakan Card Rincian yang sudah disesuaikan
                     _buildRincianCard(walletBalance),
 
                     const SizedBox(height: 30),
@@ -416,7 +569,7 @@ class _PembelianPulsaScreenState extends State<PembelianPulsaScreen> {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      "Catatan: Ini adalah simulasi Top Up. Tidak ada integrasi Payment Gateway nyata.",
+                      "Catatan: Ini adalah simulasi PPOB. Tidak ada integrasi Payment Gateway nyata.",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
