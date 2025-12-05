@@ -6,6 +6,8 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/wallet/topup_screen.dart';
+import 'package:frontend/screens/wallet/pembelian_pulsa_screen.dart'; // Import Pembelian Pulsa
+import 'package:frontend/state/auth_provider.dart';
 
 // Definisi Model untuk Item PPOB (Pulsa, BPJS, dll.)
 class PPOBMenuItem {
@@ -31,7 +33,7 @@ class HomeTabWalletContent extends StatefulWidget {
 }
 
 class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
-  Wallet? _wallet;
+  // Hanya menyimpan transaksi di state lokal untuk riwayat
   List<Transaction> _transactions = [];
   bool _isLoading = true;
   String _errorMessage = '';
@@ -46,29 +48,33 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
   @override
   void initState() {
     super.initState();
-    _fetchWalletData();
+    _fetchWalletDataViaProvider();
   }
 
-  Future<void> _fetchWalletData() async {
+  Future<void> _fetchWalletDataViaProvider() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
 
+    final authProvider = context.read<AuthProvider>();
     final apiService = context.read<ApiService>();
 
     try {
       final data = await apiService.getWalletData();
       if (data != null && mounted) {
+        // PENTING: Panggil tryAutoLogin untuk memperbarui data user (termasuk wallet) di Provider
+        await authProvider.tryAutoLogin();
+
         setState(() {
-          _wallet = data['wallet'] as Wallet?;
+          // Hanya update transaksi di sini
           _transactions = data['transactions'] as List<Transaction>;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = "Gagal memuat Desapay. ${e.toString()}";
+          _errorMessage = "Gagal memuat Desapay: ${e.toString()}";
         });
       }
     } finally {
@@ -87,13 +93,18 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
     ).push(MaterialPageRoute(builder: (_) => const TopUpScreen()));
     // Jika TopUp berhasil, refresh data
     if (result == true) {
-      _fetchWalletData();
+      _fetchWalletDataViaProvider(); // Panggil fungsi refresh
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    // Kita watch AuthProvider untuk mendapatkan data saldo terbaru
+    final authProvider = context.watch<AuthProvider>();
+    final Wallet? currentWallet = authProvider.user?.warga?.wallet;
+    final List<Transaction> currentTransactions = _transactions;
+
+    if (_isLoading && currentWallet == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -106,8 +117,7 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
       );
     }
 
-    // Fallback jika tidak ada wallet (walaupun seeder seharusnya membuatnya)
-    if (_wallet == null) {
+    if (currentWallet == null) {
       return const Center(child: Text("Dompet Desapay belum terdaftar."));
     }
 
@@ -116,16 +126,20 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
       children: [
         // 1. Kartu Saldo (Wallet Info)
         _WalletInfoCard(
-          wallet: _wallet!,
+          wallet: currentWallet,
           rupiahFormatter: _rupiahFormatter,
           onTopUp: () => _onTopUp(context),
-          onRefresh: _fetchWalletData,
+          onRefresh: _fetchWalletDataViaProvider, // Panggil fungsi refresh
         ),
 
         const SizedBox(height: 24),
 
         // 2. Menu PPOB (Pulsa, Iuran, dll.)
-        _PPOBMenuGrid(user: widget.user),
+        _PPOBMenuGrid(
+          user: widget.user,
+          fetchWalletData:
+              _fetchWalletDataViaProvider, // Teruskan fungsi refresh
+        ),
 
         const SizedBox(height: 24),
 
@@ -135,10 +149,10 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        _transactions.isEmpty
+        currentTransactions.isEmpty
             ? const Text("Belum ada transaksi.")
             : Column(
-                children: _transactions
+                children: currentTransactions
                     .map((t) => _buildTransactionTile(t))
                     .toList(),
               ),
@@ -329,7 +343,7 @@ class _WalletActionButton extends StatelessWidget {
               color: Colors.white24,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: const Icon(Icons.menu, color: Colors.white, size: 24),
           ),
         ),
         const SizedBox(height: 4),
@@ -343,7 +357,9 @@ class _WalletActionButton extends StatelessWidget {
 
 class _PPOBMenuGrid extends StatelessWidget {
   final User user;
-  const _PPOBMenuGrid({required this.user});
+  final Future<void> Function() fetchWalletData; // <-- Terima refresh function
+
+  const _PPOBMenuGrid({required this.user, required this.fetchWalletData});
 
   @override
   Widget build(BuildContext context) {
@@ -352,11 +368,16 @@ class _PPOBMenuGrid extends StatelessWidget {
         title: "Pulsa",
         icon: Icons.phone_android,
         color: Colors.red,
-        onTap: (ctx) => Navigator.of(ctx).push(
-          MaterialPageRoute(
-            builder: (_) => const PlaceholderScreen(title: "Pembelian Pulsa"),
-          ),
-        ),
+        // NAVIGASI PULSA DENGAN RESULT
+        onTap: (ctx) async {
+          final result = await Navigator.of(ctx).push(
+            MaterialPageRoute(builder: (_) => const PembelianPulsaScreen()),
+          );
+          // PENTING: Jika ada perubahan (TopUp/Bayar) di layar pulsa, refresh data
+          if (result == true) {
+            fetchWalletData();
+          }
+        },
       ),
       PPOBMenuItem(
         title: "Paket Data",

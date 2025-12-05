@@ -75,13 +75,7 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    /**
-     * Dapatkan data warga yang terkait dengan user ini.
-     */
-    public function warga()
-    {
-        return $this->belongsTo(Warga::class, 'warga_id');
-    }
+    protected $with = ['warga'];
 
     // --- FUNGSI PENTING UNTUK ROLE ---
 
@@ -126,5 +120,14 @@ class User extends Authenticatable
     public function acaraDibuat()
     {
         return $this->hasMany(Acara::class, 'created_by_user_id');
+    }
+
+    /**
+     * Dapatkan data warga yang terkait dengan user ini.
+     */
+    public function warga()
+    {
+        // PENTING: Memuat relasi wallet saat memanggil warga
+        return $this->belongsTo(Warga::class, 'warga_id')->with('wallet');
     }
 }
