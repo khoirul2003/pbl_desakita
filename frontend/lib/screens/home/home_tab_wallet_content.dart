@@ -6,13 +6,10 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/wallet/topup_screen.dart';
-<<<<<<< HEAD
 import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
 import 'package:frontend/screens/wallet/token_listrik_screen.dart';
-// Definisi Model untuk Item PPOB (Pulsa, BPJS, dll.)
-=======
 import 'package:frontend/screens/wallet/pembelian_pulsa_screen.dart'; 
 import 'package:frontend/screens/wallet/pembelian_paket_data_screen.dart'; 
 import 'package:frontend/screens/wallet/transfer_screen.dart'; 
@@ -24,8 +21,7 @@ const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B); 
 const Color _successColor = Color(0xFF28A745); 
 const Color _dangerColor = Colors.red; 
-
->>>>>>> 5317e9cfce874bc0c341846d64d1ba9c81874078
+// Definisi Model untuk Item PPOB (Pulsa, BPJS, dll.)
 class PPOBMenuItem {
   final String title;
   final IconData icon;
