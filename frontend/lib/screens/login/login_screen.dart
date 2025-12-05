@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Rukun",
+                            "Desa",
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           Text(
-                            "App",
+                            "Kita",
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
