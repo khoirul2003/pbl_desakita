@@ -6,10 +6,15 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/wallet/topup_screen.dart';
-import 'package:frontend/screens/wallet/pembelian_pulsa_screen.dart'; // Import Pembelian Pulsa
+import 'package:frontend/screens/wallet/pembelian_pulsa_screen.dart'; 
 import 'package:frontend/state/auth_provider.dart';
 
-// Definisi Model untuk Item PPOB (Pulsa, BPJS, dll.)
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _successColor = Color(0xFF28A745); // Hijau untuk Kredit/Pemasukan
+const Color _dangerColor = Colors.red; // Merah untuk Debit/Pengeluaran
+
 class PPOBMenuItem {
   final String title;
   final IconData icon;
@@ -33,17 +38,36 @@ class HomeTabWalletContent extends StatefulWidget {
 }
 
 class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
-  // Hanya menyimpan transaksi di state lokal untuk riwayat
   List<Transaction> _transactions = [];
   bool _isLoading = true;
   String _errorMessage = '';
 
-  // Formatter untuk Rupiah
   final NumberFormat _rupiahFormatter = NumberFormat.currency(
     locale: 'id',
     symbol: 'Rp',
     decimalDigits: 0,
   );
+
+  // Helper function untuk Card Wrapper dengan Shadow ProScan
+  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16, // Shadow menonjol dan lembut
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: child,
+    );
+  }
+
 
   @override
   void initState() {
@@ -63,11 +87,9 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
     try {
       final data = await apiService.getWalletData();
       if (data != null && mounted) {
-        // PENTING: Panggil tryAutoLogin untuk memperbarui data user (termasuk wallet) di Provider
         await authProvider.tryAutoLogin();
 
         setState(() {
-          // Hanya update transaksi di sini
           _transactions = data['transactions'] as List<Transaction>;
         });
       }
@@ -87,25 +109,22 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
   }
 
   void _onTopUp(BuildContext context) async {
-    // Pindah ke layar TopUp
     final result = await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const TopUpScreen()));
-    // Jika TopUp berhasil, refresh data
     if (result == true) {
-      _fetchWalletDataViaProvider(); // Panggil fungsi refresh
+      _fetchWalletDataViaProvider();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Kita watch AuthProvider untuk mendapatkan data saldo terbaru
     final authProvider = context.watch<AuthProvider>();
     final Wallet? currentWallet = authProvider.user?.warga?.wallet;
     final List<Transaction> currentTransactions = _transactions;
 
     if (_isLoading && currentWallet == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: _primaryColor));
     }
 
     if (_errorMessage.isNotEmpty) {
@@ -129,24 +148,32 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
           wallet: currentWallet,
           rupiahFormatter: _rupiahFormatter,
           onTopUp: () => _onTopUp(context),
-          onRefresh: _fetchWalletDataViaProvider, // Panggil fungsi refresh
+          onRefresh: _fetchWalletDataViaProvider,
+          primaryColor: _primaryColor,
+          accentColor: _accentColor,
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 30),
 
         // 2. Menu PPOB (Pulsa, Iuran, dll.)
         _PPOBMenuGrid(
           user: widget.user,
           fetchWalletData:
-              _fetchWalletDataViaProvider, // Teruskan fungsi refresh
+              _fetchWalletDataViaProvider,
+          primaryColor: _primaryColor,
+          buildCardWrapper: _buildCardWrapper,
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 30),
 
         // 3. Riwayat Transaksi (Dibawah menu PPOB)
         Text(
           "Riwayat Transaksi Terakhir",
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: _primaryColor,
+            fontSize: 18,
+          ),
         ),
         const SizedBox(height: 8),
         currentTransactions.isEmpty
@@ -160,16 +187,15 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
     );
   }
 
-  // Widget untuk menampilkan 1 baris riwayat transaksi
+  // Widget untuk menampilkan 1 baris riwayat transaksi (Disesuaikan ProScan)
   Widget _buildTransactionTile(Transaction t) {
     final bool isDebit =
         t.type.contains('OUT') ||
         t.type == 'PAYMENT_IURAN' ||
         t.type == 'PAYMENT_PPOB';
-    final Color amountColor = isDebit ? Colors.red : Colors.green;
+    final Color amountColor = isDebit ? _dangerColor : _successColor;
     final String sign = isDebit ? '-' : '+';
 
-    // Tentukan deskripsi berdasarkan tipe
     String title;
     if (t.type == 'TOPUP') {
       title = "Isi Saldo (Demo)";
@@ -181,68 +207,89 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
       title = t.description ?? t.type;
     }
 
-    // Format tanggal
     final String formattedDate = DateFormat(
       'dd MMM, HH:mm',
     ).format(t.createdAt.toLocal());
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: amountColor.withOpacity(0.1),
-        child: Icon(
-          isDebit ? Icons.arrow_upward : Icons.arrow_downward,
-          color: amountColor,
-        ),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(formattedDate),
-      trailing: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "$sign ${_rupiahFormatter.format(t.amount)}",
-            style: TextStyle(color: amountColor, fontWeight: FontWeight.bold),
-          ),
-          if (t.fee > 0)
-            Text(
-              "Biaya: ${_rupiahFormatter.format(t.fee)}",
-              style: const TextStyle(color: Colors.grey, fontSize: 10),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: _buildCardWrapper( // Bungkus dalam card wrapper untuk efek shadow
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: amountColor.withOpacity(0.1),
+              child: Icon(
+                isDebit ? Icons.arrow_upward : Icons.arrow_downward,
+                color: amountColor,
+                size: 20,
+              ),
             ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  const SizedBox(height: 2),
+                  Text(formattedDate, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "$sign ${_rupiahFormatter.format(t.amount)}",
+                  style: TextStyle(color: amountColor, fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                if (t.fee > 0)
+                  Text(
+                    "Biaya: ${_rupiahFormatter.format(t.fee)}",
+                    style: const TextStyle(color: Colors.grey, fontSize: 10),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// --- WIDGET 1: Kartu Info Saldo ---
+// --- WIDGET 1: Kartu Info Saldo (Disesuaikan ProScan) ---
 
 class _WalletInfoCard extends StatelessWidget {
   final Wallet wallet;
   final NumberFormat rupiahFormatter;
   final VoidCallback onTopUp;
   final Future<void> Function() onRefresh;
+  final Color primaryColor;
+  final Color accentColor;
 
   const _WalletInfoCard({
     required this.wallet,
     required this.rupiahFormatter,
     required this.onTopUp,
     required this.onRefresh,
+    required this.primaryColor,
+    required this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      // Gunakan gradient agar terlihat mewah
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(16),
+          // Gradient Biru Tua ke Biru Aksen
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
+              primaryColor,
+              accentColor,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -262,21 +309,23 @@ class _WalletInfoCard extends StatelessWidget {
               children: [
                 Text(
                   rupiahFormatter.format(wallet.balance),
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 26,
+                      ),
                 ),
                 // Tombol Refresh Saldo
                 IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.white),
                   onPressed: onRefresh,
+                  tooltip: "Refresh Saldo",
                 ),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Tombol Cepat: Top Up, Transfer, Tarik Tunai
+            // Tombol Cepat: Isi Saldo, Transfer, Bayar QR
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -318,7 +367,7 @@ class _WalletInfoCard extends StatelessWidget {
   }
 }
 
-// Widget untuk tombol cepat di kartu saldo
+// Widget untuk tombol cepat di kartu saldo (Disesuaikan ProScan)
 class _WalletActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -336,18 +385,19 @@ class _WalletActionButton extends StatelessWidget {
       children: [
         InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.white24, // Background putih transparan
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.menu, color: Colors.white, size: 24),
+            // Menggunakan ikon yang sesuai dari properti
+            child: Icon(icon, color: Colors.white, size: 28), 
           ),
         ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        const SizedBox(height: 6),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -357,9 +407,16 @@ class _WalletActionButton extends StatelessWidget {
 
 class _PPOBMenuGrid extends StatelessWidget {
   final User user;
-  final Future<void> Function() fetchWalletData; // <-- Terima refresh function
+  final Future<void> Function() fetchWalletData; 
+  final Color primaryColor;
+  final Widget Function({required Widget child, EdgeInsets padding}) buildCardWrapper; // Menerima Card Wrapper
 
-  const _PPOBMenuGrid({required this.user, required this.fetchWalletData});
+  const _PPOBMenuGrid({
+    required this.user,
+    required this.fetchWalletData,
+    required this.primaryColor,
+    required this.buildCardWrapper,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -368,12 +425,10 @@ class _PPOBMenuGrid extends StatelessWidget {
         title: "Pulsa",
         icon: Icons.phone_android,
         color: Colors.red,
-        // NAVIGASI PULSA DENGAN RESULT
         onTap: (ctx) async {
           final result = await Navigator.of(ctx).push(
             MaterialPageRoute(builder: (_) => const PembelianPulsaScreen()),
           );
-          // PENTING: Jika ada perubahan (TopUp/Bayar) di layar pulsa, refresh data
           if (result == true) {
             fetchWalletData();
           }
@@ -414,7 +469,7 @@ class _PPOBMenuGrid extends StatelessWidget {
       PPOBMenuItem(
         title: "Bayar Iuran",
         icon: Icons.receipt_long,
-        color: Colors.green,
+        color: _successColor, // Hijau
         onTap: (ctx) => Navigator.of(ctx).push(
           MaterialPageRoute(
             builder: (_) =>
@@ -439,7 +494,11 @@ class _PPOBMenuGrid extends StatelessWidget {
       children: [
         Text(
           "Layanan Pembayaran",
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: primaryColor,
+            fontSize: 18,
+          ),
         ),
         const SizedBox(height: 12),
         GridView.builder(
@@ -448,20 +507,16 @@ class _PPOBMenuGrid extends StatelessWidget {
           itemCount: menuItems.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio:
-                1.0, // Perbandingan yang baik untuk 3 item per baris
+            childAspectRatio: 1.0, 
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),
           itemBuilder: (context, index) {
             final item = menuItems[index];
-            return InkWell(
-              onTap: () => item.onTap(context),
-              child: Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+            return buildCardWrapper( // Menggunakan Card Wrapper ProScan
+              padding: const EdgeInsets.all(8),
+              child: InkWell(
+                onTap: () => item.onTap(context),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -470,7 +525,8 @@ class _PPOBMenuGrid extends StatelessWidget {
                     Text(
                       item.title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      maxLines: 2,
                     ),
                   ],
                 ),
