@@ -31,7 +31,7 @@ class _PembelianPaketDataScreenState extends State<PembelianPaketDataScreen> {
   final _formKey = GlobalKey<FormState>();
   final _numberController = TextEditingController();
   PaketDataProduct? _selectedProduct;
-  final double _transactionFee = 1500.0;
+  final double _transactionFee = 150990.0;
   bool _isLoading = false;
 
   final NumberFormat _rupiahFormatter = NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0);
