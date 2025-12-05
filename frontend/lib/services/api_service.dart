@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io'; // Pastikan ini diimpor
 import 'package:dio/dio.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
@@ -534,8 +534,7 @@ class ApiService {
     }
   }
 
-  // *** FUNGSI BARU: TRANSFER SALDO DESAPAY ***
-  /// [WALLET] Transfer Saldo ke ID Akun Desapay Lain
+  // *** FUNGSI TRANSFER SALDO DESAPAY ***
   Future<bool> transferDesapay({
     required double amount,
     required double fee,
@@ -550,14 +549,31 @@ class ApiService {
           'receiver_desapay_id': receiverDesapayId,
         },
       );
-      // Asumsi server mengembalikan 200 OK jika transfer berhasil
       return response.statusCode == 200;
     } on DioException catch (e) {
       print("Error transferDesapay: ${e.message}");
-      // Re-throw exception agar TransferScreen dapat menangkap error spesifik (misal 422 Saldo tidak cukup)
       rethrow; 
     }
   }
 
-  Future<dynamic> payIuran({required double totalAmount, required List<String> tagihanIds}) async {}
+/// [WALLET] Pembayaran Iuran Desa (Asumsi endpoint)
+  Future<bool> payIuran({
+    required double totalAmount, 
+    required List<String> tagihanIds, 
+  }) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/wallet/pay-iuran', 
+        data: {
+          'total_amount': totalAmount,
+          'tagihan_ids': tagihanIds,
+        },
+      );
+      // Asumsi status 200 OK berarti sukses
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error payIuran: ${e.message}");
+      rethrow; 
+    }
+  }
 }

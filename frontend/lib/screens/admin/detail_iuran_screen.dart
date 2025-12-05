@@ -22,7 +22,6 @@ class DetailIuranScreen extends StatefulWidget {
 
 class _DetailIuranScreenState extends State<DetailIuranScreen> {
   late Iuran _iuran;
-  // Variabel _isGenerating dipertahankan, meskipun fungsinya dihapus dari UI
   bool _isGenerating = false; 
 
   final NumberFormat _rupiahFormatter = NumberFormat.currency(
@@ -265,6 +264,13 @@ class _DetailIuranScreenState extends State<DetailIuranScreen> {
     }
 
     final String tipeText = _iuran.tipe.replaceAll('_', ' ');
+    
+    // Asumsi: Iuran model memiliki field 'jatuhTempo' (misalnya, sebagai DateTime)
+    // Jika tidak ada di model Anda, Anda harus menambahkan field ini.
+    final String jatuhTempoText = _iuran.jatuhTempo != null
+        ? DateFormat('dd MMMM yyyy').format(_iuran.jatuhTempo!)
+        : "Tidak ditentukan";
+
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -285,11 +291,25 @@ class _DetailIuranScreenState extends State<DetailIuranScreen> {
                     children: [
                       _buildDetailRow("Tipe Penagihan", tipeText),
                       _buildDetailRow("Lingkup Area", scope),
+                      // *** BARU: Menambahkan Tanggal Jatuh Tempo ***
+                      _buildDetailRow("Jadwal/Jatuh Tempo", jatuhTempoText),
+                      // ********************************************
+                      _buildDetailRow("Terakhir Dibuat", DateFormat('dd MMMM yyyy').format(DateTime.now()),), // Simulasi tanggal dibuat
+                      
+                      // Tombol Lihat Tagihan
+                      const Divider(height: 20),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Daftar Tagihan Belum Lunas")),
+                          );
+                        },
+                        icon: const Icon(Icons.list_alt, color: _primaryColor),
+                        label: const Text("Lihat Tagihan Belum Lunas"),
+                      ),
                     ],
                   ),
                 ),
-
-                // --- BAGIAN 'AKSI CEPAT' TELAH DIHAPUS DARI SINI ---
                 
                 const SizedBox(height: 40),
               ],

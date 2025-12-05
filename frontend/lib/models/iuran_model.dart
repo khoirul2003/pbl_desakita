@@ -31,6 +31,8 @@ class Iuran {
     );
   }
 
+  get jatuhTempo => null;
+
   Map<String, dynamic> toJsonMap() => {
     'id': id,
     'nama_iuran': namaIuran,

@@ -97,14 +97,12 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
 
   // --- LOGIKA PERHITUNGAN SALDO (SIMULASI UNTUK USER WALLET) ---
   Map<String, double> _calculateBalances(BuildContext context) {
-    // Logika Simulasi: 
     double totalIn = _allTransactions.where((t) => t.type.contains('IN') || t.type == 'TOPUP').fold(0.0, (sum, t) => sum + t.amount);
     double totalOut = _allTransactions.where((t) => t.type.contains('OUT') || t.type == 'PAYMENT_PPOB' || t.type == 'PAYMENT_IURAN').fold(0.0, (sum, t) => sum + t.amount);
     
     // Mengambil saldo saat ini dari AuthProvider
     double currentBalance = context.read<AuthProvider>().user?.warga?.wallet?.balance ?? 0.0;
     
-    // Mengembalikan data mentah untuk digunakan di _buildBalanceView
     return {
       'currentBalance': currentBalance,
       'totalIn': totalIn,
