@@ -10,21 +10,15 @@ import 'package:frontend/models/keuangan_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
-// Mengurus Auth, Warga CRUD, CV/ML, Iuran, Kegiatan, Acara, dan Wallet.
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
-  // GANTI URL INI DENGAN ALAMAT NGROK/VPS BARU ANDA
-  // URL ini diambil dari Canvas Anda: 3006b3bc1d45.ngrok-free.app/api dan 1f18cc5d2b9a.ngrok-free.app
-  final String _baseUrlLaravel = "https://3006b3bc1d45.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://1f18cc5d2b9a.ngrok-free.app";
+  final String _baseUrlLaravel = "https://697adcd5cd47.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://07ee0188de7c.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 
-  // Dio untuk request publik (login, register)
   final Dio _dioPublic = Dio();
-
-  // Dio untuk request terproteksi (yang butuh token)
   late Dio _dioProtected;
 
   // --- KONSTRUKTOR ---
@@ -537,6 +531,31 @@ class ApiService {
     } on DioException catch (e) {
       print("Error payPPOB: ${e.response?.data}");
       return false;
+    }
+  }
+
+  // *** FUNGSI BARU: TRANSFER SALDO DESAPAY ***
+  /// [WALLET] Transfer Saldo ke ID Akun Desapay Lain
+  Future<bool> transferDesapay({
+    required double amount,
+    required double fee,
+    required String receiverDesapayId,
+  }) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/wallet/transfer', // Asumsi endpoint transfer
+        data: {
+          'amount': amount,
+          'fee': fee,
+          'receiver_desapay_id': receiverDesapayId,
+        },
+      );
+      // Asumsi server mengembalikan 200 OK jika transfer berhasil
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error transferDesapay: ${e.message}");
+      // Re-throw exception agar TransferScreen dapat menangkap error spesifik (misal 422 Saldo tidak cukup)
+      rethrow; 
     }
   }
 }

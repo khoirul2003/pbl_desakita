@@ -17,7 +17,6 @@ class Wallet {
 
   factory Wallet.fromJson(Map<String, dynamic> json) {
     return Wallet(
-      // PENTING: Menggunakan tryParse agar aman dari String ID dari DB
       id: int.tryParse(json['id'].toString()) ?? 0,
       wargaId: int.tryParse(json['warga_id'].toString()) ?? 0,
       desapayAccountNumber: json['desapay_account_number'],
