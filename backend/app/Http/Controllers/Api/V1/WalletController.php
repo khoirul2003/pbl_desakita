@@ -171,4 +171,54 @@ class WalletController extends Controller
             ], 500);
         }
     }
+
+    public function payPPOB(Request $request)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:10000',
+            'product_name' => 'required|string|max:255',
+            'target_number' => 'required|string|max:20',
+            'fee' => 'required|numeric|min:0',
+        ]);
+
+        $user = Auth::user();
+        $warga = $user->warga;
+        $senderWallet = $warga->wallet;
+
+        $totalCharge = $validated['amount'] + $validated['fee'];
+
+        // 1. Cek Saldo
+        if ($senderWallet->balance < $totalCharge) {
+            return response()->json(['message' => 'Saldo Desapay tidak mencukupi untuk transaksi ini.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 2. DEBIT Saldo Pengirim
+            $senderWallet->balance -= $totalCharge;
+            $senderWallet->save();
+
+            // 3. Catat Transaksi
+            Transaction::create([
+                'sender_warga_id' => $warga->id,
+                'type' => 'PAYMENT_PPOB',
+                'amount' => $validated['amount'],
+                'fee' => $validated['fee'],
+                'description' => "Pembelian {$validated['product_name']} ke {$validated['target_number']}",
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => "Pembelian {$validated['product_name']} berhasil diproses.",
+                'new_balance' => $senderWallet->balance,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Pembayaran Gagal. Terjadi kesalahan sistem.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

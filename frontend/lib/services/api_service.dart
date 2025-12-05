@@ -6,36 +6,30 @@ import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/models/kegiatan_model.dart';
 import 'package:frontend/models/acara_model.dart';
-import 'package:frontend/models/keuangan_model.dart'; // Import Keuangan Model
+import 'package:frontend/models/keuangan_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
-// Mengurus Auth, Warga CRUD, CV/ML, Iuran, Kegiatan, Acara, dan Wallet.
 
 class ApiService {
-
+  // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
   final String _baseUrlLaravel = "https://3006b3bc1d45.ngrok-free.app/api";
-
   final String _baseUrlFastApi = "https://1f18cc5d2b9a.ngrok-free.app";
-
-
 
   final _storage = const FlutterSecureStorage();
 
-  // Dio untuk request publik (login, register)
   final Dio _dioPublic = Dio();
-
-  // Dio untuk request terproteksi (yang butuh token)
   late Dio _dioProtected;
 
   // --- KONSTRUKTOR ---
   ApiService() {
     _dioProtected = Dio();
 
-    // Interceptor untuk PROTECTED API (Menambahkan Token & Bypass Loca.lt)
+    // Interceptor untuk PROTECTED API (Menambahkan Token & Bypass)
     _dioProtected.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          // Ngrok/Loca.lt Bypass
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
@@ -50,7 +44,7 @@ class ApiService {
       ),
     );
 
-    // Interceptor untuk PUBLIC API (Hanya Bypass Loca.lt)
+    // Interceptor untuk PUBLIC API (Hanya Bypass)
     _dioPublic.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -513,6 +507,55 @@ class ApiService {
     } on DioException catch (e) {
       print("Error topUpWallet: ${e.response?.data}");
       return null;
+    }
+  }
+
+  /// [WALLET] Pembayaran Pulsa/PPOB
+  Future<bool> payPPOB({
+    required double amount,
+    required double fee,
+    required String productName,
+    required String targetNumber,
+  }) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/wallet/pay-ppob',
+        data: {
+          'amount': amount,
+          'fee': fee,
+          'product_name': productName,
+          'target_number': targetNumber,
+        },
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error payPPOB: ${e.response?.data}");
+      return false;
+    }
+  }
+
+  // *** FUNGSI BARU: TRANSFER SALDO DESAPAY ***
+  /// [WALLET] Transfer Saldo ke ID Akun Desapay Lain
+  Future<bool> transferDesapay({
+    required double amount,
+    required double fee,
+    required String receiverDesapayId,
+  }) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/wallet/transfer', // Asumsi endpoint transfer
+        data: {
+          'amount': amount,
+          'fee': fee,
+          'receiver_desapay_id': receiverDesapayId,
+        },
+      );
+      // Asumsi server mengembalikan 200 OK jika transfer berhasil
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error transferDesapay: ${e.message}");
+      // Re-throw exception agar TransferScreen dapat menangkap error spesifik (misal 422 Saldo tidak cukup)
+      rethrow; 
     }
   }
 }
