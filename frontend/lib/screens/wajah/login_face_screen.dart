@@ -16,16 +16,35 @@ class LoginFaceScreen extends StatefulWidget {
   State<LoginFaceScreen> createState() => _LoginFaceScreenState();
 }
 
-class _LoginFaceScreenState extends State<LoginFaceScreen> {
+class _LoginFaceScreenState extends State<LoginFaceScreen>
+    with SingleTickerProviderStateMixin {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   bool _isCameraReady = false;
   String _feedbackMessage = "Meminta izin kamera...";
 
+  // Animation untuk efek scanning
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
   @override
   void initState() {
     super.initState();
     _initCamera();
+
+    _pulseController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _controller?.dispose();
+    super.dispose();
   }
 
   Future<void> _initCamera() async {
@@ -92,12 +111,6 @@ class _LoginFaceScreenState extends State<LoginFaceScreen> {
             });
           }
         });
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
   }
 
   Future<void> _attemptLogin() async {
@@ -168,9 +181,7 @@ class _LoginFaceScreenState extends State<LoginFaceScreen> {
       for (var file in frames) {
         try {
           file.delete();
-        } catch (e) {
-          print("Gagal hapus file frame: $e");
-        }
+        } catch (_) {}
       }
     }
   }
@@ -180,57 +191,118 @@ class _LoginFaceScreenState extends State<LoginFaceScreen> {
     final isLoading = context.watch<AuthProvider>().isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Login dengan Wajah")),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 4,
-            child: Container(
-              color: Colors.black,
-              child: FutureBuilder<void>(
-                future: _initializeControllerFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done &&
-                      _isCameraReady) {
-                    return Center(
-                      child: AspectRatio(
-                        aspectRatio: 1 / _controller!.value.aspectRatio,
-                        child: CameraPreview(_controller!),
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text("Face Login"),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1F1C2C),
+              Color(0xFF928DAB),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+
+        child: Column(
+          children: [
+            Expanded(
+              flex: 4,
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _pulseAnimation.value,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.4),
+                            width: 2,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: FutureBuilder<void>(
+                            future: _initializeControllerFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                      ConnectionState.done &&
+                                  _isCameraReady) {
+                                return AspectRatio(
+                                  aspectRatio:
+                                      1 / _controller!.value.aspectRatio,
+                                  child: CameraPreview(_controller!),
+                                );
+                              } else {
+                                return const SizedBox(
+                                  width: 120,
+                                  height: 120,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
                       ),
                     );
-                  } else {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                },
+                  },
+                ),
               ),
             ),
-          ),
 
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (isLoading)
-                    const Center(child: CircularProgressIndicator())
-                  else
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isLoading)
+                      const CircularProgressIndicator(color: Colors.white),
+
                     const SizedBox(height: 24),
 
-                  const SizedBox(height: 24),
+                    Text(
+                      isLoading ? "MEMPROSES..." : _feedbackMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
 
-                  Text(
-                    isLoading ? "MEMPROSES..." : _feedbackMessage,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
+                    const SizedBox(height: 12),
+
+                    Text(
+                      "Pastikan wajah terlihat jelas & pencahayaan cukup.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

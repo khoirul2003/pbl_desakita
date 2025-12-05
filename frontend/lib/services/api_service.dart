@@ -16,7 +16,7 @@ class ApiService {
 
   final String _baseUrlLaravel = "https://3006b3bc1d45.ngrok-free.app/api";
 
-  final String _baseUrlFastApi = " https://1f18cc5d2b9a.ngrok-free.app";
+  final String _baseUrlFastApi = "https://1f18cc5d2b9a.ngrok-free.app";
 
 
 
