@@ -13,12 +13,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
-<<<<<<< HEAD
-  final String _baseUrlLaravel = " https://697adcd5cd47.ngrok-free.app/api";
-=======
-  final String _baseUrlLaravel = "https://697adcd5cd47.ngrok-free.app/api";
->>>>>>> 5317e9cfce874bc0c341846d64d1ba9c81874078
-  final String _baseUrlFastApi = "https://07ee0188de7c.ngrok-free.app";
+  final String _baseUrlLaravel = "https://2dd9b5758e82.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://4ed23276db90.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 

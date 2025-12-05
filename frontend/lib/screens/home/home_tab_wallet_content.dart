@@ -7,7 +7,6 @@ import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/wallet/topup_screen.dart';
 import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
-import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
 import 'package:frontend/screens/wallet/token_listrik_screen.dart';
 import 'package:frontend/screens/wallet/pembelian_pulsa_screen.dart'; 
 import 'package:frontend/screens/wallet/pembelian_paket_data_screen.dart'; 
@@ -311,9 +310,12 @@ class _PPOBMenuGrid extends StatelessWidget {
         await Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PembelianPaketDataScreen()));
         fetchWalletData();
       }),
-      PPOBMenuItem(title: "Token Listrik", icon: Icons.flash_on, color: Colors.orange, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Pembelian Token Listrik")))),
-      PPOBMenuItem(title: "Bayar BPJS", icon: Icons.health_and_safety, color: Colors.indigo, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Pembayaran BPJS")))),
-      PPOBMenuItem(title: "Bayar Iuran", icon: Icons.receipt_long, color: _successColor, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Pembayaran Iuran Desa")))),
+      PPOBMenuItem(title: "Token Listrik", icon: Icons.flash_on, color: Colors.orange, onTap: (ctx) async {
+  await Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const TokenListrikScreen()));
+  fetchWalletData();
+}),
+     PPOBMenuItem(title: "Bayar Iuran", icon: Icons.receipt_long, color: _successColor, onTap: (ctx) async {
+  await Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const IuranPaymentScreen())); fetchWalletData(); }),
       PPOBMenuItem(title: "Lainnya", icon: Icons.apps, color: Colors.grey, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Menu PPOB Lainnya")))),
     ];
 
