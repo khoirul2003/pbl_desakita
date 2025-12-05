@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/state/auth_provider.dart';
 import 'package:dio/dio.dart'; 
-import 'package:frontend/screens/placeholder_screen.dart'; 
+import 'package:frontend/screens/placeholder_screen.dart'; // Untuk navigasi sementara
 
 // --- DEFINISI WARNA PROSCAN ---
 const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
@@ -105,7 +105,11 @@ class _TransferScreenState extends State<TransferScreen> {
 
     final authProvider = context.read<AuthProvider>();
     final apiService = context.read<ApiService>();
+    
+    // *** FIX AKSES SALDO DENGAN NULL CHECK YANG AMAN ***
     final walletBalance = authProvider.user?.warga?.wallet?.balance ?? 0.0; 
+    // ****************************************************
+    
     final totalDibayar = amount + _transactionFee;
     final receiverId = _targetIdController.text;
 

@@ -45,6 +45,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('/transfer', [WalletController::class, 'transfer']);
         Route::post('/pay-ppob', [WalletController::class, 'payPPOB']);
     });
+    
 
     Route::prefix('fitur')->group(function () {
         Route::get('/tagihan', [WargaFiturController::class, 'getTagihan']);

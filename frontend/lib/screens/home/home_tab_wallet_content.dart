@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/wallet/riwayat_transaksi_screen.dart';
-import 'package:frontend/screens/wallet/transfer_screen.dart';
-import 'package:frontend/state/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/services/api_service.dart';
@@ -9,11 +6,26 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/wallet/topup_screen.dart';
+<<<<<<< HEAD
 import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/screens/wallet/iuran_payment_screen.dart';
 import 'package:frontend/screens/wallet/token_listrik_screen.dart';
 // Definisi Model untuk Item PPOB (Pulsa, BPJS, dll.)
+=======
+import 'package:frontend/screens/wallet/pembelian_pulsa_screen.dart'; 
+import 'package:frontend/screens/wallet/pembelian_paket_data_screen.dart'; 
+import 'package:frontend/screens/wallet/transfer_screen.dart'; 
+import 'package:frontend/screens/wallet/riwayat_transaksi_screen.dart' hide PembelianPaketDataScreen; 
+import 'package:frontend/state/auth_provider.dart';
+
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); 
+const Color _accentColor = Color(0xFF3C486B); 
+const Color _successColor = Color(0xFF28A745); 
+const Color _dangerColor = Colors.red; 
+
+>>>>>>> 5317e9cfce874bc0c341846d64d1ba9c81874078
 class PPOBMenuItem {
   final String title;
   final IconData icon;
@@ -37,14 +49,6 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
   String _errorMessage = '';
 
   final NumberFormat _rupiahFormatter = NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0);
-  
-  get _dangerColor => null;
-  
-  get _successColor => null;
-  
-  Color? get _primaryColor => null;
-  
-  Color get _accentColor => null;
 
   // Helper: Card Wrapper
   Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
@@ -167,7 +171,7 @@ class _HomeTabWalletContentState extends State<HomeTabWalletContent> {
     final currentWallet = context.watch<AuthProvider>().user?.warga?.wallet;
 
     if (_isLoading && currentWallet == null) {
-      return Center(child: CircularProgressIndicator(color: _primaryColor));
+      return const Center(child: CircularProgressIndicator(color: _primaryColor));
     }
     if (_errorMessage.isNotEmpty) {
       return Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text("Error Desapay: $_errorMessage")));
@@ -304,57 +308,18 @@ class _PPOBMenuGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<PPOBMenuItem> menuItems = [
-      PPOBMenuItem(
-        title: "Pulsa",
-        icon: Icons.phone_android,
-        color: Colors.red,
-        onTap: (ctx) => Navigator.of(ctx).push(
-          MaterialPageRoute(
-            builder: (_) => const PlaceholderScreen(title: "Pembelian Pulsa"),
-          ),
-        ),
-      ),
-      PPOBMenuItem(
-        title: "Paket Data",
-        icon: Icons.wifi,
-        color: Colors.blue,
-        onTap: (ctx) => Navigator.of(ctx).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                const PlaceholderScreen(title: "Pembelian Paket Data"),
-          ),
-        ),
-      ),
-      PPOBMenuItem(
-        title: "Token Listrik",
-        icon: Icons.flash_on,
-        color: Colors.orange,
-        onTap: (ctx) => Navigator.of(ctx).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                const TokenListrikScreen(),
-          ),
-        ),
-      ),
-
-      PPOBMenuItem(
-        title: "Bayar Iuran",
-        icon: Icons.receipt_long,
-        color: Colors.green,
-        onTap: (ctx) => Navigator.of(
-          ctx,
-        ).push(MaterialPageRoute(builder: (_) => const IuranPaymentScreen())),
-      ),
-      PPOBMenuItem(
-        title: "Lainnya",
-        icon: Icons.apps,
-        color: Colors.grey,
-        onTap: (ctx) => Navigator.of(ctx).push(
-          MaterialPageRoute(
-            builder: (_) => const PlaceholderScreen(title: "Menu PPOB Lainnya"),
-          ),
-        ),
-      ),
+      PPOBMenuItem(title: "Pulsa", icon: Icons.phone_android, color: Colors.red, onTap: (ctx) async {
+        await Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PembelianPulsaScreen()));
+        fetchWalletData();
+      }),
+      PPOBMenuItem(title: "Paket Data", icon: Icons.wifi, color: Colors.blue, onTap: (ctx) async {
+        await Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PembelianPaketDataScreen()));
+        fetchWalletData();
+      }),
+      PPOBMenuItem(title: "Token Listrik", icon: Icons.flash_on, color: Colors.orange, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Pembelian Token Listrik")))),
+      PPOBMenuItem(title: "Bayar BPJS", icon: Icons.health_and_safety, color: Colors.indigo, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Pembayaran BPJS")))),
+      PPOBMenuItem(title: "Bayar Iuran", icon: Icons.receipt_long, color: _successColor, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Pembayaran Iuran Desa")))),
+      PPOBMenuItem(title: "Lainnya", icon: Icons.apps, color: Colors.grey, onTap: (ctx) => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const PlaceholderScreen(title: "Menu PPOB Lainnya")))),
     ];
 
     return Column(
