@@ -1,362 +1,284 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+// Asumsi model Kegiatan ada di sini (sesuaikan path ini jika perlu)
+import 'package:frontend/models/kegiatan_model.dart'; 
+// Asumsi service dan provider tidak digunakan di StatelessWidget, tapi dipertahankan untuk referensi
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/models/kegiatan_model.dart';
-import 'package:flutter/services.dart'; // Untuk FilteringTextInputFormatter
+import 'package:frontend/screens/admin/edit_kegiatan_screen.dart';
+import 'package:frontend/screens/placeholder_screen.dart';
 
-class EditKegiatanScreen extends StatefulWidget {
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
+const Color _kegiatanColor = Color(0xFF6C4BA3); // Warna khas Kegiatan (Ungu)
+const Color _upcomingColor = Color(0xFF28A745); // Hijau untuk Status Akan Datang
+
+// DIUBAH MENJADI STATEFULWIDGET
+class DetailKegiatanScreen extends StatefulWidget {
   final Kegiatan kegiatan;
-  const EditKegiatanScreen({super.key, required this.kegiatan});
+  const DetailKegiatanScreen({super.key, required this.kegiatan});
 
   @override
-  State<EditKegiatanScreen> createState() => _EditKegiatanScreenState();
+  State<DetailKegiatanScreen> createState() => _DetailKegiatanScreenState();
 }
 
-class _EditKegiatanScreenState extends State<EditKegiatanScreen> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _namaController;
-  late TextEditingController _deskripsiController;
-  late TextEditingController _lokasiController;
-  late TextEditingController _rtController;
-  late TextEditingController _rwController;
-  late TextEditingController _biayaController; // <-- BARU: Controller Biaya
-
-  DateTime? _tanggalMulai;
-  TimeOfDay? _waktuMulai;
-  DateTime? _tanggalSelesai;
-  TimeOfDay? _waktuSelesai;
-
-  bool _isLoading = false;
-  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
+  // Kita akan menggunakan _kegiatanDetail untuk potensi refresh data, 
+  // meskipun dalam contoh ini kita hanya menggunakan widget.kegiatan
+  late Kegiatan _kegiatanDetail;
 
   @override
   void initState() {
     super.initState();
-    final kegiatan = widget.kegiatan;
-    _namaController = TextEditingController(text: kegiatan.namaKegiatan);
-    _deskripsiController = TextEditingController(text: kegiatan.deskripsi);
-    _lokasiController = TextEditingController(text: kegiatan.lokasi);
-    _rtController = TextEditingController(text: kegiatan.rt);
-    _rwController = TextEditingController(text: kegiatan.rw);
-    // Inisialisasi Biaya
-    _biayaController = TextEditingController(
-      text: kegiatan.totalBiaya.toStringAsFixed(0),
+    _kegiatanDetail = widget.kegiatan;
+    // Tambahkan fetch detail jika perlu update real-time: _fetchKegiatanDetail();
+  }
+
+  // --- FUNGSI NAVIGASI KE EDIT ---
+  void _goToEditKegiatan() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EditKegiatanScreen(kegiatan: _kegiatanDetail),
+        fullscreenDialog: true,
+      ),
     );
-
-    // Inisialisasi Tanggal dan Waktu
-    _tanggalMulai = kegiatan.tanggalMulai;
-    _waktuMulai = TimeOfDay.fromDateTime(kegiatan.tanggalMulai);
-    _tanggalSelesai = kegiatan.tanggalSelesai;
-    _waktuSelesai = TimeOfDay.fromDateTime(kegiatan.tanggalSelesai);
+    
+    // Logika refresh data setelah kembali dari edit (jika diperlukan)
+    if (result == true) {
+      // Di sini seharusnya ada logika untuk mengambil data terbaru
+      // Contoh: _fetchKegiatanDetail();
+    }
   }
 
-  @override
-  void dispose() {
-    _namaController.dispose();
-    _deskripsiController.dispose();
-    _lokasiController.dispose();
-    _rtController.dispose();
-    _rwController.dispose();
-    _biayaController.dispose(); // Dispose Biaya
-    super.dispose();
-  }
-
-  // Helper untuk menggabungkan DateTime dan TimeOfDay
-  DateTime _combineDateTime(DateTime date, TimeOfDay time) {
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
-  }
-
-  // Helper untuk memilih tanggal dan waktu
-  Future<void> _selectDateTime(BuildContext context, bool isMulai) async {
-    DateTime initialDate = isMulai ? _tanggalMulai! : _tanggalSelesai!;
-    TimeOfDay initialTime = isMulai ? _waktuMulai! : _waktuSelesai!;
-
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+  // --- WIDGET BANTUAN: CARD WRAPPER DENGAN SHADOW PROSCAN ---
+  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16, // Shadow menonjol dan lembut
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: child,
     );
-
-    if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: initialTime,
-      );
-
-      if (pickedTime != null) {
-        setState(() {
-          if (isMulai) {
-            _tanggalMulai = pickedDate;
-            _waktuMulai = pickedTime;
-          } else {
-            _tanggalSelesai = pickedDate;
-            _waktuSelesai = pickedTime;
-          }
-        });
-      }
-    }
   }
 
-  Future<void> _submitUpdateKegiatan() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_tanggalMulai == null ||
-        _waktuMulai == null ||
-        _tanggalSelesai == null ||
-        _waktuSelesai == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tanggal dan waktu wajib diisi.")),
-      );
-      return;
-    }
-
-    final tglMulai = _combineDateTime(_tanggalMulai!, _waktuMulai!);
-    final tglSelesai = _combineDateTime(_tanggalSelesai!, _waktuSelesai!);
-
-    if (tglSelesai.isBefore(tglMulai)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Tanggal Selesai tidak boleh mendahului Tanggal Mulai.",
+  // Helper widget untuk membuat baris detail
+  Widget _buildDetailRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper widget untuk judul
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      // Padding atas disesuaikan untuk konsistensi
+      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0, left: 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: _primaryColor,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
         ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Ambil Biaya
-    final double? totalBiaya = double.tryParse(_biayaController.text);
-    if (totalBiaya == null || totalBiaya < 0) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Total Biaya harus berupa angka positif."),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-
-    final apiService = context.read<ApiService>();
-    final Map<String, dynamic> data = {
-      'nama_kegiatan': _namaController.text,
-      'deskripsi': _deskripsiController.text,
-      'tanggal_mulai': tglMulai.toIso8601String(),
-      'tanggal_selesai': tglSelesai.toIso8601String(),
-      'lokasi': _lokasiController.text,
-      'rt': _rtController.text.isNotEmpty ? _rtController.text : null,
-      'rw': _rwController.text.isNotEmpty ? _rwController.text : null,
-      'total_biaya': totalBiaya, // <-- KIRIM Biaya
-    };
-
-    try {
-      final success = await apiService.updateKegiatan(widget.kegiatan.id, data);
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Kegiatan berhasil diperbarui!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pop(true); // Pop dengan hasil true untuk refresh
-      } else {
-        throw Exception("Gagal menyimpan data ke server.");
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+      ),
+    );
   }
+
+  // --- WIDGET: CUSTOM HEADER PROSCAN (DENGAN TOMBOL EDIT) ---
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Text(
+            "Detail Kegiatan",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          // TOMBOL EDIT BARU
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            onPressed: _goToEditKegiatan,
+          ), 
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Edit Kegiatan: ${widget.kegiatan.namaKegiatan}"),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                "Detail Kegiatan",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _namaController,
-                decoration: const InputDecoration(labelText: "Nama Kegiatan"),
-                validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _deskripsiController,
-                decoration: const InputDecoration(
-                  labelText: "Deskripsi Lengkap",
-                ),
-                maxLines: 4,
-                validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _lokasiController,
-                decoration: const InputDecoration(labelText: "Lokasi"),
-                validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-              ),
-              const SizedBox(height: 24),
-
-              Text(
-                "Pendanaan dan Jadwal",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-
-              // Field Biaya
-              TextFormField(
-                controller: _biayaController,
-                decoration: const InputDecoration(
-                  labelText: "Total Biaya (Rp)",
-                  prefixText: 'Rp ',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) {
-                  final amount = double.tryParse(v ?? '0');
-                  if (amount == null || amount < 0) {
-                    return "Biaya harus angka positif.";
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Tanggal & Waktu Mulai
-              _buildDateTimeRow(
-                context,
-                "Mulai:",
-                _tanggalMulai,
-                _waktuMulai,
-                () => _selectDateTime(context, true),
-              ),
-              const SizedBox(height: 16),
-
-              // Tanggal & Waktu Selesai
-              _buildDateTimeRow(
-                context,
-                "Selesai:",
-                _tanggalSelesai,
-                _waktuSelesai,
-                () => _selectDateTime(context, false),
-              ),
-
-              const SizedBox(height: 24),
-
-              Text(
-                "Lingkup Kegiatan",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _rtController,
-                      decoration: const InputDecoration(
-                        labelText: "RT (Opsional)",
-                      ),
-                      keyboardType: TextInputType.number,
-                      maxLength: 3,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _rwController,
-                      decoration: const InputDecoration(
-                        labelText: "RW (Opsional)",
-                      ),
-                      keyboardType: TextInputType.number,
-                      maxLength: 3,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitUpdateKegiatan,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text("SIMPAN PERUBAHAN"),
-              ),
-            ],
-          ),
-        ),
-      ),
+    final Kegiatan kegiatan = _kegiatanDetail; // Menggunakan stateful detail
+    
+    final NumberFormat rupiahFormatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp',
+      decimalDigits: 0,
     );
-  }
+    
+    // Logika Status
+    final bool isFinished = kegiatan.tanggalSelesai.isBefore(DateTime.now());
+    final String statusText = isFinished ? 'SELESAI' : 'AKAN DATANG';
+    final Color statusColor = isFinished ? Colors.grey : _upcomingColor;
+    
+    // Format Lingkup RT/RW
+    final String rt = kegiatan.rt ?? '';
+    final String rw = kegiatan.rw ?? '';
+    final String scope = (rt.isNotEmpty && rw.isNotEmpty) 
+        ? "RT $rt / RW $rw" 
+        : (rw.isNotEmpty ? "RW $rw" : "Desa (Umum)");
 
-  // Widget Helper untuk menampilkan tanggal dan waktu
-  Widget _buildDateTimeRow(
-    BuildContext context,
-    String label,
-    DateTime? date,
-    TimeOfDay? time,
-    VoidCallback onTap,
-  ) {
-    final String dateText = date == null
-        ? 'Pilih Tanggal'
-        : _dateFormat.format(date);
-    final String timeText = time == null ? 'Pilih Waktu' : time.format(context);
+    // Format Biaya
+    final formattedBiaya = rupiahFormatter.format(kegiatan.totalBiaya);
 
-    return InkWell(
-      onTap: _isLoading ? null : onTap,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
+
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      body: Column(
+        children: [
+          _buildCustomHeader(context), // Mengganti AppBar
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              children: [
+                // --- KARTU RINGKASAN KEGIATAN ---
+                _buildCardWrapper(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            statusText,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleSmall?.copyWith(color: statusColor, fontWeight: FontWeight.bold),
+                          ),
+                          Icon(Icons.event_note, color: statusColor, size: 24),
+                        ],
+                      ),
+                      const Divider(height: 20, thickness: 1),
+                      
+                      Text(
+                        kegiatan.namaKegiatan,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: _primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // Display Lokasi
+                      Text(
+                        "Lokasi: ${kegiatan.lokasi}",
+                        style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      Text(
+                        "Biaya Total: ${formattedBiaya}",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: _kegiatanColor, // Warna khas Kegiatan
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // --- RINCIAN JADWAL & LINGKUP ---
+                _buildSectionTitle(context, "Jadwal dan Lingkup"),
+                _buildCardWrapper(
+                  child: Column(
+                    children: [
+                      _buildDetailRow(
+                        "Mulai",
+                        DateFormat('dd MMMM yyyy, HH:mm').format(kegiatan.tanggalMulai),
+                      ),
+                      _buildDetailRow(
+                        "Selesai",
+                        DateFormat('dd MMMM yyyy, HH:mm').format(kegiatan.tanggalSelesai),
+                      ),
+                      const Divider(height: 1, thickness: 1, color: Colors.grey),
+                      _buildDetailRow("Lingkup Area", scope),
+                    ],
+                  ),
+                ),
+
+                // --- KETERANGAN ---
+                _buildSectionTitle(context, "Deskripsi Kegiatan"),
+                _buildCardWrapper(
+                  child: Text(
+                    kegiatan.deskripsi, 
+                    style: const TextStyle(fontSize: 16, height: 1.5),
+                  ),
+                ),
+                
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(dateText, style: const TextStyle(fontSize: 16)),
-            Text(timeText, style: const TextStyle(fontSize: 16)),
-            const Icon(Icons.calendar_today, size: 20),
-          ],
-        ),
+        ],
       ),
     );
   }

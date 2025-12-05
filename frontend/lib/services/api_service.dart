@@ -13,8 +13,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // Mengurus Auth, Warga CRUD, CV/ML, Iuran, Kegiatan, Acara, dan Wallet.
 
 class ApiService {
+  // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
+  // GANTI URL INI DENGAN ALAMAT NGROK/VPS BARU ANDA
+  // URL ini diambil dari Canvas Anda: 3006b3bc1d45.ngrok-free.app/api dan 1f18cc5d2b9a.ngrok-free.app
   final String _baseUrlLaravel = "https://3006b3bc1d45.ngrok-free.app/api";
-
   final String _baseUrlFastApi = "https://1f18cc5d2b9a.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();

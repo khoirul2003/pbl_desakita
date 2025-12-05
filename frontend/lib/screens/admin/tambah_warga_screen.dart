@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart'; // <-- Diperlukan untuk Input Formatters
-import 'package:intl/intl.dart';
+
+
+
+
+
 
 class TambahWargaScreen extends StatefulWidget {
   const TambahWargaScreen({super.key});
@@ -27,45 +30,42 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
   final _alamatKtpController = TextEditingController();
-  final _keluargaIdController = TextEditingController();
-  final _noHpController = TextEditingController(); // <-- CONTROLLER BARU: No HP
+  final _keluargaIdController =
+      TextEditingController(); 
 
-  // State untuk Dropdown
+  
   String? _jenisKelaminValue;
   String? _statusDalamKeluargaValue;
   DateTime? _selectedDate;
   bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _namaController.dispose();
-    _nikController.dispose();
-    _tempatLahirController.dispose();
-    _tanggalLahirController.dispose();
-    _agamaController.dispose();
-    _statusPerkawinanController.dispose();
-    _pekerjaanController.dispose();
-    _rtController.dispose();
-    _rwController.dispose();
-    _alamatKtpController.dispose();
-    _keluargaIdController.dispose();
-    _noHpController.dispose(); // <-- DISPOSE: No HP
-    super.dispose();
-  }
-
-  // Fungsi untuk menampilkan Date Picker
+  
   Future<void> _selectDate(BuildContext context) async {
+    // Menggunakan tema kustom untuk Date Picker
+    final ThemeData datePickerTheme = ThemeData.light().copyWith(
+      colorScheme: const ColorScheme.light(
+        primary: _primaryColor, 
+        onPrimary: Colors.white,
+        onSurface: Colors.black,
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: _primaryColor),
+      ),
+    );
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
+      builder: (context, child) => Theme(data: datePickerTheme, child: child!),
     );
+    
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        // Format tanggal YYYY-MM-DD
-        _tanggalLahirController.text = DateFormat('yyyy-MM-dd').format(picked);
+        _tanggalLahirController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -81,7 +81,7 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
 
     final apiService = context.read<ApiService>();
 
-    // Kumpulkan data ke dalam Map
+    
     final Map<String, dynamic> data = {
       "nama_lengkap": _namaController.text,
       "nik": _nikController.text,
@@ -97,10 +97,7 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
       // Konversi ke int
       "keluarga_id": int.tryParse(_keluargaIdController.text),
       "status_dalam_keluarga": _statusDalamKeluargaValue,
-      "no_hp": _noHpController.text.isNotEmpty
-          ? _noHpController.text
-          : null, // <-- KIRIM NO HP
-      "kewarganegaraan": "WNI", // Default
+      "kewarganegaraan": "WNI", 
     };
 
     try {
@@ -115,34 +112,20 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
         );
         Navigator.of(context).pop(true);
       } else {
-        // Logika untuk menangkap 422 error dan menampilkan pesan yang lebih baik
-        throw Exception("Gagal menambah warga. Periksa data NIK/ID Keluarga.");
-      }
-    } catch (e) {
-      // Menangkap DioException dan menampilkan pesan yang lebih detail
-      String errorMessage = "Terjadi kesalahan";
-      if (e is DioException && e.response != null) {
-        if (e.response!.statusCode == 422) {
-          // Gagal validasi Laravel: Ambil pesan error pertama
-          final errors = e.response!.data['errors'] as Map<String, dynamic>;
-          // Coba ambil pesan error yang paling relevan (misal: NIK sudah ada)
-          errorMessage = "Validasi Gagal: ${errors.values.first.first}";
-        } else {
-          errorMessage =
-              "Error Server ${e.response!.statusCode}: Cek koneksi atau token.";
-        }
-      } else {
-        errorMessage = e.toString();
-      }
-
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Gagal: $errorMessage"),
+          const SnackBar(
+            content: Text("Gagal menambah warga. Periksa kembali data."),
             backgroundColor: Colors.red,
           ),
         );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Terjadi kesalahan: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -151,6 +134,66 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
       }
     }
   }
+
+  // --- WIDGET: CUSTOM HEADER PROSCAN ---
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            "Tambah Warga Baru",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // --- WIDGET: SECTION TITLE (Padding disesuaikan) ---
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), 
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: _primaryColor, 
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -179,11 +222,6 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                 decoration: const InputDecoration(labelText: "NIK (16 Digit)"),
                 keyboardType: TextInputType.number,
                 validator: (v) => v!.length != 16 ? "NIK harus 16 digit" : null,
-                // --- FORMATTER NIK ---
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(16),
-                ],
               ),
               const SizedBox(height: 16),
               Row(
@@ -248,15 +286,6 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                 validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
               ),
               const SizedBox(height: 16),
-              // --- FIELD BARU: NO HP ---
-              TextFormField(
-                controller: _noHpController,
-                decoration: const InputDecoration(
-                  labelText: "No. HP (Opsional)",
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
               TextFormField(
                 controller: _alamatKtpController,
                 decoration: const InputDecoration(labelText: "Alamat KTP"),
@@ -279,11 +308,6 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                       keyboardType: TextInputType.number,
                       validator: (v) =>
                           v!.length != 3 ? "Format 3 digit (001)" : null,
-                      // --- FORMATTER RT ---
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(3),
-                      ],
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -296,17 +320,13 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                       keyboardType: TextInputType.number,
                       validator: (v) =>
                           v!.length != 3 ? "Format 3 digit (001)" : null,
-                      // --- FORMATTER RW ---
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(3),
-                      ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-
+              
+              
               TextFormField(
                 controller: _keluargaIdController,
                 decoration: const InputDecoration(
@@ -314,8 +334,6 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                // --- FORMATTER KK ID ---
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -323,6 +341,8 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                 decoration: const InputDecoration(
                   labelText: "Status Dalam Keluarga",
                 ),
+                
+                
                 items: const [
                   DropdownMenuItem(value: "ISTRI", child: Text("Istri")),
                   DropdownMenuItem(value: "ANAK", child: Text("Anak")),
