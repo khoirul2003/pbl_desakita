@@ -111,7 +111,6 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
       'totalOut': totalOut,
     };
   }
-  // -----------------------------------------------------------------------------
   
   // Widget untuk menampilkan 1 baris riwayat transaksi
   Widget _buildTransactionTile(Transaction t) {
@@ -283,11 +282,8 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
   // --- WIDGET: Tampilan Saldo Ringkasan ---
   Widget _buildBalanceView(Map<String, double> balances) {
     final dataView = [
-      // Menampilkan Total Saldo Desapay user saat ini
       {'label': 'Saldo Desapay Anda', 'amount': balances['currentBalance']!, 'isTotal': true, 'color': _primaryColor},
-      // Menampilkan total Pemasukan 
       {'label': 'Total Pemasukan (Riwayat)', 'amount': balances['totalIn']!, 'isTotal': false, 'color': _successColor},
-      // Menampilkan total Pengeluaran
       {'label': 'Total Pengeluaran (Riwayat)', 'amount': balances['totalOut']!, 'isTotal': false, 'color': _dangerColor},
     ];
 
@@ -307,9 +303,10 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
             final bool isTotal = item['isTotal'] as bool;
             Color color = item['color'] as Color;
             
-            // Khusus Pengeluaran, warnanya _dangerColor
             if (item['label'] == 'Total Pengeluaran (Riwayat)') {
                color = _dangerColor;
+            } else if (item['label'] == 'Total Pemasukan (Riwayat)') {
+               color = _successColor;
             }
 
             return Padding(
@@ -381,7 +378,7 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
                       : ListView( 
                           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
                           children: [
-                            // 🗹 Kartu Ringkasan Saldo (Baru Ditambahkan)
+                            // Kartu Ringkasan Saldo
                             _buildBalanceView(_calculateBalances(context)), 
                             
                             const SizedBox(height: 12),

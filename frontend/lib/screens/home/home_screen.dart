@@ -355,8 +355,8 @@ class _HomeTabContent extends StatelessWidget {
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
           // RASIO DIPERBAIKI: Nilai yang lebih kecil membuat kartu lebih tinggi
           childAspectRatio: 0.9, 
           // -----------------------------------------------------------------------

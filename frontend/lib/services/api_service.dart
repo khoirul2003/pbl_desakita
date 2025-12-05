@@ -558,4 +558,10 @@ class ApiService {
       rethrow;
     }
   }
+<<<<<<< HEAD
 }
+=======
+
+  Future<dynamic> payIuran({required double totalAmount, required List<String> tagihanIds}) async {}
+}
+>>>>>>> de98e585bbef38db3fac422e796976c278b943a3

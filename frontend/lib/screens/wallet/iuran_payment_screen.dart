@@ -2,33 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:math'; 
+// Import Dio untuk menggunakan DioException
+import 'package:dio/dio.dart'; 
 
 // Import services and models yang diperlukan (asumsi path ini benar)
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/models/wallet_models.dart'; 
 import 'package:frontend/models/iuran_model.dart'; // Menggunakan model Iuran Anda
+import 'package:frontend/state/auth_provider.dart';
 
-// --- DEFINISI WARNA ---
+// --- DEFINISI WARNA PROSCAN ---
 const Color _primaryColor = Color(0xFF0E2F60); 
+const Color _backgroundColor = Color(0xFFF5F5F5); 
+const Color _accentColor = Color(0xFF3C486B); 
 const Color _successColor = Color(0xFF28A745); 
 const Color _dangerColor = Color(0xFFDC3545); 
 
 // =========================================================================
-// MODEL TAGIHAN PERORANGAN (DIBUAT DI FRONTEND UNTUK MENAMPUNG DATA API)
+// MODEL TAGIHAN PERORANGAN
 // =========================================================================
 class UserTagihan {
-  final String id; // ID tagihan unik
-  final Iuran iuran; // Jenis iuran yang diambil dari API
+  final String id; 
+  final Iuran iuran; 
   final double jumlah;
   final DateTime jatuhTempo;
-  final String status; // 'Belum Lunas'
+  final String status; 
 
   UserTagihan({
-    required this.id,
-    required this.iuran,
-    required this.jumlah,
-    required this.jatuhTempo,
-    required this.status,
+    required this.id, required this.iuran, required this.jumlah, 
+    required this.jatuhTempo, required this.status,
   });
 }
 typedef TagihanIuran = UserTagihan;
@@ -42,14 +44,11 @@ class IuranPaymentScreen extends StatefulWidget {
 }
 
 class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
-  // 1. DAFTAR TAGIHAN DIINISIALISASI SEBAGAI DAFTAR KOSONG
   List<TagihanIuran> _tagihanList = []; 
-
   bool _isLoading = true;
   String _errorMessage = '';
   Wallet? _userWallet;
 
-  // Tagihan yang dipilih untuk dibayar
   Set<String> _selectedTagihanIds = {}; 
 
   final NumberFormat _rupiahFormatter = NumberFormat.currency(
@@ -57,6 +56,9 @@ class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
     symbol: 'Rp',
     decimalDigits: 0,
   );
+  
+  Color get _successColorShade => Color.lerp(_successColor, Colors.black, 0.2) ?? _successColor;
+
 
   @override
   void initState() {
@@ -66,45 +68,34 @@ class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
 
   // Menghitung total jumlah tagihan yang dipilih
   double get _totalPembayaran {
-    // Menggunakan tagihan.id, bukan tagihan['id']
     return _tagihanList
         .where((tagihan) => _selectedTagihanIds.contains(tagihan.id))
         .fold(0.0, (sum, tagihan) => sum + tagihan.jumlah);
   }
 
-  // --- LOGIKA PENGAMBILAN DATA (Menggunakan getManajemenIuran yang ada di ApiService) ---
+  // --- LOGIKA PENGAMBILAN DATA ---
   Future<void> _fetchTagihanAndWallet() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+    setState(() { _isLoading = true; _errorMessage = ''; });
 
     try {
       final apiService = context.read<ApiService>();
       
-      // 1. Ambil data dompet dari API (Ini yang real dari API)
       final walletData = await apiService.getWalletData(); 
       _userWallet = walletData?['wallet'] as Wallet?;
 
-      // 2. AMBIL JENIS IURAN DARI API (Menggunakan fungsi yang sudah ada di api_service.dart)
-      // Asumsi: getManajemenIuran() mengembalikan semua jenis Iuran yang tersedia.
       final List<Iuran> jenisIuran = await apiService.getManajemenIuran(); 
       
-      // 3. SIMULASI PEMBUATAN TAGIHAN BELUM LUNAS DARI JENIS IURAN
       final List<UserTagihan> pendingTagihan = [];
       final random = Random();
 
       for (var iuran in jenisIuran) {
-        // Asumsi: Kita hanya buat tagihan belum lunas dari jenis iuran yang ada, 
-        // meniru perilaku API getPendingIuran() yang seharusnya.
-        // Simulasi bahwa tagihan Kas Warga, Kebersihan, dan Keamanan belum lunas.
-        if (iuran.namaIuran != 'Sosial') { 
+        if (iuran.namaIuran != 'Sosial' && iuran.namaIuran != 'Sampah') { 
             pendingTagihan.add(
                 UserTagihan(
-                    id: 'TGH-${iuran.id}-${random.nextInt(1000)}', // ID Tagihan unik
+                    id: 'TGH-${iuran.id}-${random.nextInt(1000)}',
                     iuran: iuran,
-                    jumlah: iuran.jumlah, // Mengambil jumlah dari model Iuran
-                    jatuhTempo: DateTime.now().add(const Duration(days: 5)),
+                    jumlah: iuran.jumlah,
+                    jatuhTempo: DateTime.now().subtract(const Duration(days: 10)),
                     status: 'Belum Lunas',
                 ),
             );
@@ -113,27 +104,22 @@ class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
 
       if (mounted) {
         setState(() {
-          // Hanya ambil yang statusnya 'Belum Lunas' (dalam simulasi ini, semua pendingTagihan)
           _tagihanList = pendingTagihan.where((t) => t.status == 'Belum Lunas').toList();
         });
       }
 
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errorMessage = "Gagal memuat saldo atau jenis iuran: ${e.toString()}";
-        });
+        setState(() { _errorMessage = "Gagal memuat saldo atau jenis iuran: ${e.toString()}"; });
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() { _isLoading = false; });
       }
     }
   }
 
-  // --- LOGIKA PEMBAYARAN (SIMULASI FRONTEND & REFRESH HOME) ---
+  // --- LOGIKA PEMBAYARAN ---
   Future<void> _processPayment() async {
     if (_selectedTagihanIds.isEmpty) {
       _showSnackBar("Pilih minimal satu tagihan untuk dibayar.");
@@ -145,7 +131,6 @@ class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
       return;
     }
 
-    // Konfirmasi sebelum pembayaran
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => _buildConfirmationDialog(ctx),
@@ -153,92 +138,350 @@ class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
 
     if (confirmed != true) return;
 
-    // Lanjutkan proses pembayaran
-    _showSnackBar("Memproses Pembayaran ${_rupiahFormatter.format(_totalPembayaran)}...", duration: const Duration(seconds: 2));
+    setState(() { _isLoading = true; });
+    final authProvider = context.read<AuthProvider>();
+    final apiService = context.read<ApiService>();
+
 
     try {
-      // 1. SIMULASI API DELAY
-      await Future.delayed(const Duration(seconds: 1)); 
+      // 1. PANGGIL API PEMBAYARAN IURAN SEBENARNYA (Asumsi ada endpoint di ApiService)
+      // Kita asumsikan ini akan memotong saldo dan mencatat transaksi di server
+      // final success = await apiService.payIuran(
+      //   totalAmount: _totalPembayaran,
+      //   tagihanIds: _selectedTagihanIds.toList(),
+      // );
       
-      if (mounted) {
-        setState(() {
-          // 2. SIMULASI PENGURANGAN SALDO LOKAL
-          if (_userWallet != null) {
-            final double newBalance = _userWallet!.balance - _totalPembayaran;
-            _userWallet = Wallet(
-              id: _userWallet!.id,
-              wargaId: _userWallet!.wargaId, 
-              desapayAccountNumber: _userWallet!.desapayAccountNumber, 
-              balance: newBalance, // Saldo berkurang!
-            );
-          }
-
-          // 3. SIMULASI PENGHAPUSAN TAGIHAN LOKAL
-          _tagihanList.removeWhere((tagihan) => _selectedTagihanIds.contains(tagihan.id));
-
-          // 4. CLEAR SELECTION
-          _selectedTagihanIds.clear(); 
-        });
+      // --- SIMULASI SUKSES KARENA LACK OF ENDPOINT ---
+      await Future.delayed(const Duration(milliseconds: 500)); 
+      final success = true; 
+      // ---------------------------------------------
+      
+      if (success && mounted) {
+        
+        // 2. Refresh SALDO dan Riwayat Transaksi (WAJIB)
+        await authProvider.tryAutoLogin(); 
+        
+        // 3. Update UI Lokal (Hapus Tagihan)
+        if (mounted) {
+          setState(() {
+            // Logika untuk simulasi update saldo lokal:
+             if (_userWallet != null) {
+              final double newBalance = _userWallet!.balance - _totalPembayaran;
+              _userWallet = Wallet(
+                id: _userWallet!.id,
+                wargaId: _userWallet!.wargaId, 
+                desapayAccountNumber: _userWallet!.desapayAccountNumber, 
+                balance: newBalance,
+              );
+            }
+            _tagihanList.removeWhere((tagihan) => _selectedTagihanIds.contains(tagihan.id));
+            _selectedTagihanIds.clear(); 
+          });
+        }
+        
+        _showSnackBar("Pembayaran Berhasil! Tagihan telah dilunasi.", isSuccess: true);
+        
+        // 4. Sinyal ke HomeTabWalletContent agar me-refresh riwayat transaksi
+        Navigator.pop(context, true); 
+        
+      } else {
+        throw Exception("Pembayaran gagal, silakan coba lagi.");
       }
       
-      _showSnackBar("Pembayaran Berhasil! Tagihan telah dilunasi.", isSuccess: true);
-      
-      // 5. Refresh data saldo (local state) dari API
-      await _fetchTagihanAndWallet(); 
-      
-      // 6. Sinyal ke HomeTabWalletContent agar me-refresh riwayat transaksi (WAJIB)
-      Navigator.pop(context, true); 
-      
+    } on DioException catch (e) { // FIX: DioException sekarang dikenali
+        String errorMessage = "Pembayaran Gagal. Cek Saldo dan Koneksi.";
+        if (e.response?.data != null && e.response!.data.containsKey('message')) {
+             errorMessage = e.response!.data['message'];
+        }
+       _showSnackBar(errorMessage);
+       
     } catch (e) {
       _showSnackBar("Pembayaran Gagal: ${e.toString()}");
+    } finally {
+      if (mounted) {
+        setState(() { _isLoading = false; });
+      }
     }
   }
 
   // --- WIDGET HELPER ---
   void _showSnackBar(String message, {Duration duration = const Duration(seconds: 3), bool isSuccess = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isSuccess ? _successColor : _dangerColor,
-        duration: duration,
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isSuccess ? _successColor : _dangerColor,
+          duration: duration,
+        ),
+      );
+    }
+  }
+  
+  // Custom Header ProScan
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8, left: 16, right: 16, bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white), 
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          const Text("Pembayaran Iuran", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  // Kartu Saldo Desapay
+  Widget _buildWalletBalanceCard() {
+    final saldo = _userWallet?.balance ?? 0.0;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: _primaryColor.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text("Saldo Desapay:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _primaryColor)),
+          Text(
+            _rupiahFormatter.format(saldo),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _successColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Tile Tagihan Iuran
+  Widget _buildTagihanTile(UserTagihan tagihan) {
+    final bool isSelected = _selectedTagihanIds.contains(tagihan.id);
+    final bool isOverdue = tagihan.jatuhTempo.isBefore(DateTime.now());
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          setState(() {
+            if (isSelected) {
+              _selectedTagihanIds.remove(tagihan.id);
+            } else {
+              _selectedTagihanIds.add(tagihan.id);
+            }
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Checkbox / Status Icon
+              Checkbox(
+                value: isSelected,
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      if (val) {
+                        _selectedTagihanIds.add(tagihan.id);
+                      } else {
+                        _selectedTagihanIds.remove(tagihan.id);
+                      }
+                    });
+                  }
+                },
+                activeColor: _successColor,
+              ),
+              const SizedBox(width: 8),
+              
+              // Detail Tagihan
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tagihan.iuran.namaIuran, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: _accentColor)),
+                    const SizedBox(height: 4),
+                    Text(
+                      tagihan.iuran.deskripsi ?? "Tagihan Iuran",
+                      style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Jatuh Tempo: ${DateFormat('dd MMM yyyy').format(tagihan.jatuhTempo)}",
+                      style: TextStyle(
+                        color: isOverdue ? _dangerColor : _successColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Jumlah
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(
+                  _rupiahFormatter.format(tagihan.jumlah),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: isSelected ? _successColor : Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Tombol Pembayaran (Bottom Bar)
+  Widget _buildPaymentButton() {
+    final bool isSufficient = (_userWallet?.balance ?? 0.0) >= _totalPembayaran;
+    final bool canPay = isSufficient && _selectedTagihanIds.isNotEmpty && !_isLoading;
+    
+    final String buttonText = _selectedTagihanIds.isEmpty
+        ? "Pilih Tagihan"
+        : isSufficient
+            ? "BAYAR ${_rupiahFormatter.format(_totalPembayaran)}"
+            : "SALDO KURANG (${_rupiahFormatter.format(_totalPembayaran)})";
+            
+    final Color buttonColor = canPay ? _successColor : Colors.grey;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5))],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: canPay ? _processPayment : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: buttonColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text(
+              buttonText,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildConfirmationDialog(BuildContext context) {
     return AlertDialog(
-      title: const Text("Konfirmasi Pembayaran"),
-      content: Text(
-        "Anda akan membayar ${_selectedTagihanIds.length} tagihan dengan total ${_rupiahFormatter.format(_totalPembayaran)} menggunakan Desapay. Lanjutkan?",
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), // Sudut membulat
+      title: Text(
+        "Konfirmasi Pembayaran",
+        style: TextStyle(color: _primaryColor, fontWeight: FontWeight.bold),
       ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Anda akan melunasi tagihan berikut:", style: TextStyle(fontSize: 16)),
+          const SizedBox(height: 10),
+          
+          // Ringkasan Tagihan yang dipilih
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: _primaryColor.withOpacity(0.1)),
+            ),
+            child: Text(
+              "${_selectedTagihanIds.length} Tagihan Iuran",
+              style: const TextStyle(fontWeight: FontWeight.bold, color: _primaryColor),
+            ),
+          ),
+          
+          const SizedBox(height: 15),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: const Text("Total Pembayaran:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500))),
+              Expanded(
+                child: Text(
+                  _rupiahFormatter.format(_totalPembayaran),
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: _successColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text("Batal"),
+          child: Text("Batal", style: TextStyle(color: _accentColor)),
         ),
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(true),
-          style: ElevatedButton.styleFrom(backgroundColor: _successColor, foregroundColor: Colors.white),
-          child: const Text("Bayar Sekarang"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _successColor, 
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          child: const Text("Bayar Sekarang", style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );
   }
 
+
   // --- UI UTAMA ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Pembayaran Iuran Desa"),
-        backgroundColor: _primaryColor,
-        foregroundColor: Colors.white,
+      backgroundColor: _backgroundColor,
+      // AppBar sudah diganti dengan Custom Header
+      body: Column(
+        children: [
+          _buildCustomHeader(context),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: _primaryColor))
+                : _errorMessage.isNotEmpty
+                      ? Center(child: Text("Error: $_errorMessage"))
+                      : _buildContent(),
+          ),
+        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
-              ? Center(child: Text("Error: $_errorMessage"))
-              : _buildContent(),
       
       // Tombol Bayar di bagian bawah
       bottomNavigationBar: _tagihanList.isNotEmpty ? _buildPaymentButton() : null,
@@ -261,6 +504,7 @@ class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
                   ),
                 )
               : ListView.builder(
+                  // Padding horizontal sudah diatur di _buildTagihanTile margin
                   padding: const EdgeInsets.only(top: 8, bottom: 80),
                   itemCount: _tagihanList.length,
                   itemBuilder: (context, index) {
@@ -270,142 +514,6 @@ class _IuranPaymentScreenState extends State<IuranPaymentScreen> {
                 ),
         ),
       ],
-    );
-  }
-
-  Widget _buildWalletBalanceCard() {
-    final saldo = _userWallet?.balance ?? 0.0;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _primaryColor.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text("Saldo Desapay:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(
-            _rupiahFormatter.format(saldo),
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _primaryColor),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTagihanTile(UserTagihan tagihan) {
-    final bool isSelected = _selectedTagihanIds.contains(tagihan.id);
-    final bool isOverdue = tagihan.jatuhTempo.isBefore(DateTime.now());
-    
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      elevation: 2,
-      child: ListTile(
-        onTap: () {
-          setState(() {
-            if (isSelected) {
-              _selectedTagihanIds.remove(tagihan.id);
-            } else {
-              _selectedTagihanIds.add(tagihan.id);
-            }
-          });
-        },
-        leading: Icon(
-          Icons.receipt_long,
-          color: isSelected ? _successColor : _primaryColor,
-        ),
-        title: Text(tagihan.iuran.namaIuran, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(tagihan.iuran.deskripsi ?? "Tagihan Iuran"),
-            const SizedBox(height: 4),
-            Text(
-              "Jatuh Tempo: ${DateFormat('dd MMM yyyy').format(tagihan.jatuhTempo)}",
-              style: TextStyle(
-                color: isOverdue ? _dangerColor : Colors.grey[600],
-                fontSize: 12,
-                fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _rupiahFormatter.format(tagihan.jumlah),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? _successColor : Colors.black,
-              ),
-            ),
-            Checkbox(
-              value: isSelected,
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() {
-                    if (val) {
-                      _selectedTagihanIds.add(tagihan.id);
-                    } else {
-                      _selectedTagihanIds.remove(tagihan.id);
-                    }
-                  });
-                }
-              },
-              activeColor: _successColor,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentButton() {
-    final bool isSufficient = (_userWallet?.balance ?? 0.0) >= _totalPembayaran;
-    final String buttonText = _selectedTagihanIds.isEmpty
-        ? "Pilih Tagihan"
-        : isSufficient
-            ? "BAYAR ${_rupiahFormatter.format(_totalPembayaran)}"
-            : "SALDO KURANG (${_rupiahFormatter.format(_totalPembayaran)})";
-            
-    final Color buttonColor = isSufficient && _selectedTagihanIds.isNotEmpty
-        ? _successColor
-        : Colors.grey;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: isSufficient && _selectedTagihanIds.isNotEmpty
-              ? _processPayment
-              : null, // Disable jika saldo kurang atau belum ada tagihan dipilih
-          style: ElevatedButton.styleFrom(
-            backgroundColor: buttonColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          child: Text(
-            buttonText,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
     );
   }
 }
