@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TagihanIuran> $tagihanIuran
  * @property-read int|null $tagihan_iuran_count
  * @property-read \App\Models\User|null $user
+ * @property-read \App\Models\Wallet|null $wallet  <-- Tambahkan property ini untuk Eloquent
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Warga newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Warga newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Warga query()
@@ -21,6 +22,8 @@ class Warga extends Model
     use HasFactory;
 
     protected $table = 'warga';
+    // Matikan timestamps jika tidak diperlukan, tapi biarkan aktif jika ada created_at/updated_at
+    // public $timestamps = false; 
 
     protected $fillable = [
         'nik',
@@ -73,8 +76,12 @@ class Warga extends Model
         return $this->hasMany(TagihanIuran::class, 'warga_id');
     }
 
-    public function wallet() // <--- PASTIKAN FUNGSI INI ADA
+    /**
+     * Dapatkan dompet (wallet) Desapay milik warga ini.
+     */
+    public function wallet()
     {
+        // Wallet adalah relasi one-to-one (hasOne)
         return $this->hasOne(Wallet::class, 'warga_id');
     }
 }
