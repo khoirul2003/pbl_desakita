@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io'; // Pastikan ini diimpor
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/wallet_models.dart';
@@ -10,15 +10,21 @@ import 'package:frontend/models/keuangan_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
+// Mengurus Auth, Warga CRUD, CV/ML, Iuran, Kegiatan, Acara, dan Wallet.
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
-  final String _baseUrlLaravel = "https://2dd9b5758e82.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://4ed23276db90.ngrok-free.app";
+  // GANTI URL INI DENGAN ALAMAT NGROK/VPS BARU ANDA
+  // URL ini diambil dari Canvas Anda: 7c8845616f6a.ngrok-free.app/api dan 6afe861c4d4f.ngrok-free.app
+  final String _baseUrlLaravel = "https://7c8845616f6a.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://6afe861c4d4f.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 
+  // Dio untuk request publik (login, register)
   final Dio _dioPublic = Dio();
+
+  // Dio untuk request terproteksi (yang butuh token)
   late Dio _dioProtected;
 
   // --- KONSTRUKTOR ---
@@ -506,12 +512,13 @@ class ApiService {
       return null;
     } on DioException catch (e) {
       print("Error topUpWallet: ${e.response?.data}");
-      return null;
+      rethrow;
     }
   }
 
   /// [WALLET] Pembayaran Pulsa/PPOB
-  Future<bool> payPPOB({
+  Future<double?> payPPOB({
+    // Return type UBAH dari bool ke double?
     required double amount,
     required double fee,
     required String productName,
@@ -527,14 +534,19 @@ class ApiService {
           'target_number': targetNumber,
         },
       );
-      return response.statusCode == 200;
+
+      // KOREKSI: Ambil saldo baru dari respons server
+      if (response.statusCode == 200 && response.data['new_balance'] != null) {
+        return double.tryParse(response.data['new_balance'].toString());
+      }
+      return null;
     } on DioException catch (e) {
       print("Error payPPOB: ${e.response?.data}");
-      return false;
+      rethrow; // Re-throw agar PembelianPulsaScreen menangkapnya
     }
   }
 
-  // *** FUNGSI TRANSFER SALDO DESAPAY ***
+  /// [WALLET] Transfer Saldo ke ID Akun Desapay Lain
   Future<bool> transferDesapay({
     required double amount,
     required double fee,
@@ -549,31 +561,29 @@ class ApiService {
           'receiver_desapay_id': receiverDesapayId,
         },
       );
+      // Asumsi server mengembalikan 200 OK jika transfer berhasil
       return response.statusCode == 200;
     } on DioException catch (e) {
       print("Error transferDesapay: ${e.message}");
-      rethrow; 
+      rethrow;
     }
   }
 
-/// [WALLET] Pembayaran Iuran Desa (Asumsi endpoint)
+  /// [WALLET] Pembayaran Iuran Desa (Asumsi endpoint)
   Future<bool> payIuran({
-    required double totalAmount, 
-    required List<String> tagihanIds, 
+    required double totalAmount,
+    required List<String> tagihanIds,
   }) async {
     try {
       final response = await _dioProtected.post(
-        '$_baseUrlLaravel/v1/wallet/pay-iuran', 
-        data: {
-          'total_amount': totalAmount,
-          'tagihan_ids': tagihanIds,
-        },
+        '$_baseUrlLaravel/v1/wallet/pay-iuran',
+        data: {'total_amount': totalAmount, 'tagihan_ids': tagihanIds},
       );
       // Asumsi status 200 OK berarti sukses
       return response.statusCode == 200;
     } on DioException catch (e) {
       print("Error payIuran: ${e.message}");
-      rethrow; 
+      rethrow;
     }
   }
 }
