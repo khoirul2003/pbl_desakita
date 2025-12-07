@@ -134,4 +134,5 @@ class AuthProvider with ChangeNotifier {
     _setLoading(false);
     return error; 
   }
+  
 }
