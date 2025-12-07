@@ -3,24 +3,19 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
-// Import Screens & Models
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/state/auth_provider.dart';
-import 'package:frontend/screens/login/login_screen.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/admin/manajemen_warga_screen.dart';
 import 'package:frontend/screens/admin/manajemen_iuran_screen.dart';
 import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart';
-import 'package:frontend/screens/admin/manajemen_acara_screen.dart';
-import 'package:frontend/screens/admin/manajemen_keuangan_screen.dart';
 import 'package:frontend/screens/profile/profile_main_screen.dart';
-import 'package:frontend/screens/home/home_tab_wallet_content.dart';
+import 'package:frontend/screens/wallet/desapay_wallet_section.dart';
 
-// --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
-const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
-const Color _backgroundColor = Color(0xFFF5F5F5); // Latar Belakang Scaffold
-const Color _successColor = Color(0xFF28A745); // Hijau untuk Status Sukses
+const Color _primaryColor = Color(0xFF0E2F60);
+const Color _accentColor = Color(0xFF3C486B);
+const Color _backgroundColor = Color(0xFFF5F5F5);
+const Color _successColor = Color(0xFF28A745);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,31 +44,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
     List<Widget> pages = [_HomeTabContent(user: user)];
     List<BottomNavigationBarItem> navItems = [
-      // PERBAIKAN: IconData dibungkus dengan Icon()
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
     ];
 
-    // Menentukan Navigation Stack berdasarkan Role
     if (user.role == 'admin' || user.role == 'rt' || user.role == 'rw') {
-      // ADMIN/RT/RW: 5 Item Navigation (Home + Warga + Iuran + Kegiatan + Profil)
       pages.addAll([
-        // Tab 1: Warga (Manajemen/Data Warga)
         user.role == 'admin'
             ? const ManajemenWargaScreen()
             : const PlaceholderScreen(title: "Data Warga & Keluarga"),
 
-        // Tab 2: Iuran (Manajemen/Tagihan Iuran)
-        const ManajemenIuranScreen(), // Sudah terimplementasi penuh
-        // Tab 3: Kegiatan (Manajemen Kegiatan/Acara)
-        // Kita gunakan ManajemenKegiatanScreen sebagai wakil tab ini
+        const ManajemenIuranScreen(),
+
         const ManajemenKegiatanScreen(),
 
-        // Tab 4: Profile (Pusat Menu Manajemen)
         const ProfileMainScreen(),
       ]);
 
       navItems.addAll([
-        // PERBAIKAN: IconData dibungkus dengan Icon()
         const BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Warga'),
         const BottomNavigationBarItem(icon: Icon(Icons.paid), label: 'Iuran'),
         const BottomNavigationBarItem(
@@ -86,20 +73,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ]);
     } else {
-      // WARGA BIASA: 4 Item Navigation
       pages.addAll([
-        // Tab 1: Keluarga (List data keluarga)
         const PlaceholderScreen(title: "Data Keluarga Saya"),
 
-        // Tab 2: Tagihan Iuran
         const PlaceholderScreen(title: "Tagihan Iuran"),
 
-        // Tab 3: Profile (Pusat Menu Warga)
         const ProfileMainScreen(),
       ]);
 
       navItems.addAll([
-        // PERBAIKAN: IconData dibungkus dengan Icon()
         const BottomNavigationBarItem(
           icon: Icon(Icons.family_restroom),
           label: 'Keluarga',
@@ -138,18 +120,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: _backgroundColor, // Latar belakang abu-abu muda
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
         title: const Text("DesaKita"),
-        // centerTitle: true DIHAPUS agar judul berada di samping kiri
-        backgroundColor: _primaryColor, 
+        backgroundColor: _primaryColor,
         foregroundColor: Colors.white,
-        elevation: 0, // Menghilangkan shadow karena kita ingin tampilan yang bersih
+        elevation: 0,
       ),
-      // Body tanpa SafeArea karena AppBar sudah menangani padding atas
       body: IndexedStack(index: _selectedIndex, children: _pages),
-      
-      // Mengubah BottomNavigationBar agar lebih elegan
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -166,9 +144,9 @@ class _HomeScreenState extends State<HomeScreen> {
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: _primaryColor, // Warna primer saat terpilih
+          selectedItemColor: _primaryColor,
           unselectedItemColor: Colors.grey[500],
-          backgroundColor: Colors.transparent, // Transparan agar Container yang menentukan warna/shadow
+          backgroundColor: Colors.transparent,
           elevation: 0,
         ),
       ),
@@ -176,14 +154,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// --- WIDGET UNTUK KONTEN TAB HOME ---
-
 class _HomeTabContent extends StatelessWidget {
   final User user;
   const _HomeTabContent({required this.user});
 
-  // Helper function untuk Card Wrapper dengan Shadow ProScan
-  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
+  Widget _buildCardWrapper({
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.all(16),
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -192,9 +170,9 @@ class _HomeTabContent extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
-            blurRadius: 16, // Shadow menonjol dan lembut
+            blurRadius: 16,
             offset: const Offset(0, 6),
-          )
+          ),
         ],
       ),
       padding: padding,
@@ -206,47 +184,50 @@ class _HomeTabContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final warga = user.warga;
     final String greeting = _getGreeting();
-    
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
       children: [
-        // --- SALAM PEMBUKA (Gaya ProScan) ---
         Text(
           greeting,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.grey[600],
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
         ),
         const SizedBox(height: 4),
         Text(
           user.warga?.namaLengkap ?? user.email,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800, 
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w800,
             color: _primaryColor,
           ),
         ),
         if (warga != null)
           Text(
             "Warga RT ${warga.rt} / RW ${warga.rw}",
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.grey[500],
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: Colors.grey[500]),
           ),
         const SizedBox(height: 20),
-        
-        // --- Wallet Card (dianggap sudah didesain di HomeTabWalletContent) ---
-        HomeTabWalletContent(user: user),
 
-        const SizedBox(height: 30),
+        // === Card saldo Desapay + menu layanan lain ===
+        _buildCardWrapper(
+          child: const DesaPayWalletSection(
+            primaryColor: _primaryColor,
+            accentColor: _accentColor,
+            successColor: _successColor,
+          ),
+        ),
+        const SizedBox(height: 20),
 
+        // =================================================
         _buildDashboardByRole(context, user),
         const SizedBox(height: 40),
       ],
     );
   }
-  
+
   String _getGreeting() {
     final now = DateTime.now().hour;
     if (now >= 5 && now < 11) {
@@ -260,7 +241,6 @@ class _HomeTabContent extends StatelessWidget {
     }
   }
 
-
   Widget _buildDashboardByRole(BuildContext context, User user) {
     if (user.role == 'admin') {
       return _buildAdminDashboard(context);
@@ -273,8 +253,6 @@ class _HomeTabContent extends StatelessWidget {
     }
     return const SizedBox.shrink();
   }
-
-  // --- Widget Dashboard Statistik & Chart (Menggunakan Kartu ProScan) ---
 
   Widget _buildRtRwDashboard(BuildContext context, User user) {
     final String totalWarga = "45";
@@ -298,9 +276,7 @@ class _HomeTabContent extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          // RASIO DIPERBAIKI: Nilai yang lebih kecil (misal 0.9) membuat kartu lebih tinggi
-          childAspectRatio: 0.9, 
-          // -----------------------------------------------------------------------
+          childAspectRatio: 0.9,
           children: [
             _StatCard(
               icon: Icons.people_alt_rounded,
@@ -357,9 +333,7 @@ class _HomeTabContent extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          // RASIO DIPERBAIKI: Nilai yang lebih kecil membuat kartu lebih tinggi
-          childAspectRatio: 0.9, 
-          // -----------------------------------------------------------------------
+          childAspectRatio: 0.9,
           children: [
             _StatCard(
               icon: Icons.receipt_long,
@@ -407,17 +381,19 @@ class _HomeTabContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Chart Keuangan (menggunakan Card Wrapper)
         _buildCardWrapper(
           padding: const EdgeInsets.all(16.0),
           child: SizedBox(
             height: 200,
-            child: _FinancialBarChart(data: dummyFinancialData, primaryColor: _primaryColor, successColor: _successColor),
+            child: _FinancialBarChart(
+              data: dummyFinancialData,
+              primaryColor: _primaryColor,
+              successColor: _successColor,
+            ),
           ),
         ),
         const SizedBox(height: 16),
 
-        // Chart Populasi (menggunakan Card Wrapper)
         _buildCardWrapper(
           padding: const EdgeInsets.all(16.0),
           child: SizedBox(
@@ -436,7 +412,8 @@ class _StatCard extends StatelessWidget {
   final String title;
   final String value;
   final Color color;
-  final Widget Function({required Widget child, EdgeInsets padding}) cardWrapper;
+  final Widget Function({required Widget child, EdgeInsets padding})
+  cardWrapper;
 
   const _StatCard({
     required this.icon,
@@ -448,29 +425,27 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mengganti Card standar dengan Card Wrapper ProScan
     return cardWrapper(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 32, color: color), // Ikon sedikit dikecilkan
-          // PERBAIKAN: Ganti Spacer dengan SizedBox
-          const SizedBox(height: 16), // Memberikan ruang vertikal tetap
+          Icon(icon, size: 32, color: color),
+          const SizedBox(height: 16),
           Text(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w800,
-              color: color, // Menggunakan warna card untuk nilai
+              color: color,
             ),
           ),
-          // PERBAIKAN: Memberikan ruang vertikal tetap
-          const SizedBox(height: 4), 
-          Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
-          )),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          ),
         ],
       ),
     );
@@ -481,7 +456,12 @@ class _FinancialBarChart extends StatelessWidget {
   final List<Map<String, dynamic>> data;
   final Color primaryColor;
   final Color successColor;
-  const _FinancialBarChart({required this.data, required this.primaryColor, required this.successColor});
+
+  const _FinancialBarChart({
+    required this.data,
+    required this.primaryColor,
+    required this.successColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -494,14 +474,12 @@ class _FinancialBarChart extends StatelessWidget {
           return BarChartGroupData(
             x: index,
             barRods: [
-              // Pemasukan (Hijau/Success Color)
               BarChartRodData(
                 toY: item['pemasukan'],
                 color: successColor,
-                width: 12, // Lebar diatur
+                width: 12,
                 borderRadius: BorderRadius.circular(4),
               ),
-              // Pengeluaran (Merah/Primary Color)
               BarChartRodData(
                 toY: item['pengeluaran'],
                 color: primaryColor,
@@ -519,7 +497,10 @@ class _FinancialBarChart extends StatelessWidget {
             sideTitles: SideTitles(showTitles: false),
           ),
           bottomTitles: AxisTitles(
-            axisNameWidget: const Text("Pemasukan & Pengeluaran Bulanan", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            axisNameWidget: const Text(
+              "Pemasukan & Pengeluaran Bulanan",
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+            ),
             axisNameSize: 20,
             sideTitles: SideTitles(
               showTitles: true,
@@ -553,7 +534,11 @@ class _FinancialBarChart extends StatelessWidget {
           ),
         ),
         borderData: FlBorderData(show: false),
-        gridData: const FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 500000),
+        gridData: const FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 500000,
+        ),
       ),
     );
   }
@@ -579,7 +564,7 @@ class _ResidentPieChart extends StatelessWidget {
                   color: item['color'],
                   value: percentage,
                   title: '${percentage.toStringAsFixed(0)}%',
-                  radius: 60, // Radius sedikit diperbesar
+                  radius: 60,
                   titleStyle: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -598,7 +583,14 @@ class _ResidentPieChart extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Distribusi Pengguna:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _primaryColor)),
+              const Text(
+                "Distribusi Pengguna:",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: _primaryColor,
+                ),
+              ),
               const SizedBox(height: 8),
               ...data.map((item) {
                 return Padding(
@@ -614,7 +606,10 @@ class _ResidentPieChart extends StatelessWidget {
                         ),
                         margin: const EdgeInsets.only(right: 8),
                       ),
-                      Text("${item['role']} (${item['count']})", style: const TextStyle(fontSize: 12)),
+                      Text(
+                        "${item['role']} (${item['count']})",
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ],
                   ),
                 );
