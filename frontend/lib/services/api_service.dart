@@ -8,6 +8,8 @@ import 'package:frontend/models/acara_model.dart';
 import 'package:frontend/models/keuangan_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/models/wallet_models.dart';
+import 'package:frontend/models/tagihan_iuran_model.dart';
+
 
 
 class ApiService {
@@ -540,5 +542,52 @@ class ApiService {
       rethrow;
     }
   }
+
+    // ============= TAGIHAN IURAN (FITUR WARGA) =============
+
+  Future<List<TagihanIuran>> getTagihanIuranWarga() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/fitur/tagihan',
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+
+        List<dynamic> listJson;
+        if (data is Map && data['data'] != null) {
+          listJson = data['data'] as List<dynamic>;
+        } else if (data is List) {
+          listJson = data;
+        } else {
+          return [];
+        }
+
+        return listJson
+            .map((e) => TagihanIuran.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print("Error getTagihanIuranWarga: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  /// Tandai tagihan sebagai dibayar di backend.
+  /// Catatan: untuk integrasi yang robust, idealnya proses bayar saldo dan update tagihan
+  /// digabung di backend (1 endpoint). Sekarang ini dua langkah: payPPOB + bayarTagihan.
+  Future<bool> bayarTagihanIuran(int tagihanId) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/fitur/tagihan/$tagihanId/bayar',
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print("Error bayarTagihanIuran: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
 
 }
