@@ -5,15 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property-read \App\Models\Iuran|null $iuran
- * @property-read \App\Models\Keluarga|null $keluarga
- * @property-read \App\Models\Warga|null $warga
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TagihanIuran newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TagihanIuran newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TagihanIuran query()
- * @mixin \Eloquent
- */
 class TagihanIuran extends Model
 {
     use HasFactory;

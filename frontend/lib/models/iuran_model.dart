@@ -1,13 +1,11 @@
-import 'dart:convert';
-
 class Iuran {
   final int id;
   final String namaIuran;
   final String? deskripsi;
   final double jumlah;
-  final String tipe; // 'PER_WARGA' atau 'PER_KELUARGA'
-  final String? rt; // null jika level RW/Desa
-  final String? rw; // null jika level Desa
+  final String tipe; 
+  final String? rt; 
+  final String? rw; 
 
   Iuran({
     required this.id,
