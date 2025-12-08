@@ -1,7 +1,5 @@
-import 'package:frontend/models/user_model.dart'; // Diperlukan untuk Warga Model
-import 'dart:convert';
+import 'package:frontend/models/user_model.dart';
 
-// --- Wallet Model (Saldo Desapay) ---
 class Wallet {
   final int id;
   final int wargaId;
@@ -20,12 +18,10 @@ class Wallet {
       id: int.tryParse(json['id'].toString()) ?? 0,
       wargaId: int.tryParse(json['warga_id'].toString()) ?? 0,
       desapayAccountNumber: json['desapay_account_number'],
-      // Parsing balance
       balance: double.tryParse(json['balance'].toString()) ?? 0.0,
     );
   }
 
-  // Method untuk serialisasi (Dipanggil dari Warga Model)
   Map<String, dynamic> toJsonMap() => {
     'id': id,
     'warga_id': wargaId,
@@ -34,7 +30,6 @@ class Wallet {
   };
 }
 
-// --- Transaction Model (Riwayat) ---
 class Transaction {
   final int id;
   final String type;
@@ -43,7 +38,6 @@ class Transaction {
   final String? description;
   final DateTime createdAt;
 
-  // Relasi ke Warga (Sender/Receiver)
   final Warga? sender;
   final Warga? receiver;
 
@@ -59,7 +53,6 @@ class Transaction {
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
-    // Parsing sender dan receiver dari relasi
     Warga? senderData = json['sender'] != null
         ? Warga.fromJson(json['sender'])
         : null;
@@ -68,20 +61,17 @@ class Transaction {
         : null;
 
     return Transaction(
-      // PENTING: Menggunakan tryParse untuk ID
       id: int.tryParse(json['id'].toString()) ?? 0,
-      type: json['type'],
+      type: json['type'] ?? '',
       amount: double.tryParse(json['amount'].toString()) ?? 0.0,
       fee: double.tryParse(json['fee'].toString()) ?? 0.0,
       description: json['description'],
-      // Parsing dari string ISO ke DateTime
       createdAt: DateTime.parse(json['created_at']),
       sender: senderData,
       receiver: receiverData,
     );
   }
 
-  // Method untuk serialisasi
   Map<String, dynamic> toJsonMap() => {
     'id': id,
     'type': type,
@@ -89,8 +79,25 @@ class Transaction {
     'fee': fee,
     'description': description,
     'created_at': createdAt.toIso8601String(),
-    // Memanggil method publik dari Warga Model (toJsonMap)
     'sender': sender?.toJsonMap(),
     'receiver': receiver?.toJsonMap(),
   };
+}
+
+class WalletSummary {
+  final Wallet wallet;
+  final List<Transaction> transactions;
+
+  WalletSummary({required this.wallet, required this.transactions});
+
+  factory WalletSummary.fromJson(Map<String, dynamic> json) {
+    final walletJson = json['wallet'] as Map<String, dynamic>;
+    final txListJson = (json['transactions'] as List<dynamic>? ?? []);
+    final txList = txListJson.map((e) => Transaction.fromJson(e)).toList();
+
+    return WalletSummary(
+      wallet: Wallet.fromJson(walletJson),
+      transactions: txList,
+    );
+  }
 }

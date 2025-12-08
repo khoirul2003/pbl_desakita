@@ -13,10 +13,7 @@ use Illuminate\Validation\Rule;
 
 class WalletController extends Controller
 {
-    /**
-     * Dapatkan saldo dan riwayat transaksi Desapay
-     * Endpoint: GET /api/v1/wallet/balance
-     */
+
     public function getBalanceAndTransactions(Request $request)
     {
         $warga = Auth::user()->warga()->with('wallet')->first();
@@ -27,13 +24,12 @@ class WalletController extends Controller
 
         $wallet = $warga->wallet;
 
-        // Riwayat transaksi (sebagai pengirim atau penerima)
         $transactions = Transaction::where(function ($query) use ($warga) {
             $query->where('sender_warga_id', $warga->id)
                 ->orWhere('receiver_warga_id', $warga->id);
         })
             ->orderBy('created_at', 'desc')
-            ->with('sender', 'receiver') // Load relasi untuk nama
+            ->with('sender', 'receiver')
             ->limit(10)
             ->get();
 
@@ -44,32 +40,25 @@ class WalletController extends Controller
         ]);
     }
 
-    /**
-     * Isi Saldo (TOPUP Demo/Simulasi)
-     * Endpoint: POST /api/v1/wallet/topup
-     */
     public function topUp(Request $request)
     {
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:1000|max:1000000', // Batasan 1 Juta
+            'amount' => 'required|numeric|min:1000|max:1000000',
         ]);
 
         $warga = Auth::user()->warga;
 
-        // Ambil Wallet (diasumsikan sudah ada dari Seeder/Register)
         $wallet = Wallet::where('warga_id', $warga->id)->firstOrFail();
 
-        // Gunakan Transaction untuk memastikan konsistensi saldo
         DB::beginTransaction();
 
         try {
-            // 1. Tambah saldo
+
             $wallet->balance += $validated['amount'];
             $wallet->save();
 
-            // 2. Catat transaksi
             Transaction::create([
-                'sender_warga_id' => $warga->id, // Topup dianggap pengirim ke dirinya sendiri (opsional)
+                'sender_warga_id' => $warga->id,
                 'receiver_warga_id' => $warga->id,
                 'type' => 'TOPUP',
                 'amount' => $validated['amount'],
@@ -91,10 +80,6 @@ class WalletController extends Controller
         }
     }
 
-    /**
-     * Transfer Saldo Antar Desapay
-     * Endpoint: POST /api/v1/wallet/transfer
-     */
     public function transfer(Request $request)
     {
         $warga = Auth::user()->warga;
@@ -107,19 +92,17 @@ class WalletController extends Controller
 
         $senderWallet = $warga->wallet;
 
-        // 1. Cek saldo pengirim
         if ($senderWallet->balance < $validated['amount']) {
             return response()->json(['message' => 'Saldo Desapay tidak mencukupi.'], 422);
         }
 
-        // 2. Cari penerima berdasarkan nomor akun
         $receiverWallet = Wallet::where('desapay_account_number', $validated['account_number_receiver'])->first();
 
         if (!$receiverWallet) {
             return response()->json(['message' => 'Nomor akun Desapay tujuan tidak ditemukan.'], 404);
         }
 
-        $fee = $validated['amount'] * 0.005; // Contoh biaya 0.5%
+        $fee = $validated['amount'] * 0.005;
         $totalAmount = $validated['amount'] + $fee;
 
         if ($senderWallet->balance < $totalAmount) {
@@ -128,15 +111,13 @@ class WalletController extends Controller
 
         DB::beginTransaction();
         try {
-            // DEBIT Pengirim
+
             $senderWallet->balance -= $totalAmount;
             $senderWallet->save();
 
-            // KREDIT Penerima
             $receiverWallet->balance += $validated['amount'];
             $receiverWallet->save();
 
-            // Catat Transaksi Pengirim (TRANSFER_OUT)
             Transaction::create([
                 'sender_warga_id' => $warga->id,
                 'receiver_warga_id' => $receiverWallet->warga_id,
@@ -146,7 +127,6 @@ class WalletController extends Controller
                 'description' => $validated['notes'] ?? 'Transfer Desapay',
             ]);
 
-            // Catat Transaksi Penerima (TRANSFER_IN)
             Transaction::create([
                 'sender_warga_id' => $warga->id,
                 'receiver_warga_id' => $receiverWallet->warga_id,
@@ -187,18 +167,18 @@ class WalletController extends Controller
 
         $totalCharge = $validated['amount'] + $validated['fee'];
 
-        // 1. Cek Saldo
+
         if ($senderWallet->balance < $totalCharge) {
             return response()->json(['message' => 'Saldo Desapay tidak mencukupi untuk transaksi ini.'], 422);
         }
 
         DB::beginTransaction();
         try {
-            // 2. DEBIT Saldo Pengirim
+
             $senderWallet->balance -= $totalCharge;
             $senderWallet->save();
 
-            // 3. Catat Transaksi
+
             Transaction::create([
                 'sender_warga_id' => $warga->id,
                 'type' => 'PAYMENT_PPOB',
