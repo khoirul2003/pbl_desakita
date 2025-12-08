@@ -263,13 +263,6 @@ class _DesaPayIuranScreenState extends State<DesaPayIuranScreen> {
                 if (index == 0) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Text(
-                      "Daftar tagihan iuran yang terhubung dengan akun warga ini.\n"
-                      "Data diambil dari tabel tagihan_iuran via endpoint /v1/fitur/tagihan.",
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
-                    ),
                   );
                 }
 
