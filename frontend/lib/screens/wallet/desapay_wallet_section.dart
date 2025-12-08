@@ -380,12 +380,12 @@ class _DesaPayActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: primaryColor),
-            const SizedBox(width: 6),
+            Icon(icon, size: 15, color: primaryColor),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: primaryColor,
               ),
