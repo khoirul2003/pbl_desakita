@@ -14,8 +14,8 @@ import 'package:frontend/models/tagihan_iuran_model.dart';
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
-  final String _baseUrlLaravel = "https://7c8845616f6a.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://6afe861c4d4f.ngrok-free.app";
+  final String _baseUrlLaravel = "https://684357abb645.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://f000756e972a.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 
