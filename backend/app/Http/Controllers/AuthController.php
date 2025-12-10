@@ -168,10 +168,7 @@ class AuthController extends Controller
             'status_perkawinan' => 'sometimes|string',
             'pekerjaan' => 'sometimes|string',
 
-
-
             'current_password' => 'sometimes|required_with:new_password',
-
 
             'new_password' => ['sometimes', 'required_with:current_password', \Illuminate\Validation\Rules\Password::min(8), 'confirmed'],
         ]);
@@ -182,14 +179,12 @@ class AuthController extends Controller
 
         $data = $validator->validated();
 
-
         $passwordData = [];
         if (isset($data['new_password'])) {
             if (!Hash::check($data['current_password'], $user->password)) {
                 return response()->json(['errors' => ['current_password' => ['Password saat ini salah.']]], 422);
             }
             $passwordData['password'] = Hash::make($data['new_password']);
-
 
             unset($data['current_password'], $data['new_password'], $data['new_password_confirmation']);
         }
@@ -199,11 +194,9 @@ class AuthController extends Controller
             $warga->update($data);
         }
 
-
         if (!empty($passwordData)) {
             $user->update($passwordData);
         }
-
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
             'user' => $user->fresh()->load('warga')
@@ -213,12 +206,11 @@ class AuthController extends Controller
     public function registerFace(Request $request)
     {
         $validatedData = $request->validate([
-            'face_features' => 'required|json', // Menerima JSON string dari Flutter
+            'face_features' => 'required|json',
         ]);
 
         $user = Auth::user();
 
-        // Simpan vektor fitur ke profil user
         $user->update([
             'face_features' => $validatedData['face_features']
         ]);
@@ -228,6 +220,35 @@ class AuthController extends Controller
         ]);
     }
 
+    public function uploadPhoto(Request $request)
+    {
+        $request->validate([
+            'foto' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $user = Auth::user();
+        $warga = $user->warga;
+
+        if (!$warga) {
+            return response()->json(['message' => 'Data warga tidak ditemukan'], 404);
+        }
+
+        $file = $request->file('foto');
+        $filename = 'foto_profil_' . $warga->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+
+        $path = $file->storeAs('foto_profil', $filename, 'public');
+
+        // update ke database (tetap pakai field foto_ktp)
+        $warga->foto_ktp = 'https://3dd183e6e125.ngrok-free.app/storage/'.$path;
+        $warga->save();
+
+        return response()->json([
+            'message' => 'Foto profil berhasil diupload',
+            'foto_url' => asset('storage/' . $path),
+        ]);
+    }
+
+
     /**
      * Mencoba login menggunakan fitur wajah.
      * (Skenario 2 - Login Wajah)
@@ -235,27 +256,25 @@ class AuthController extends Controller
     public function loginFace(Request $request)
     {
         $validatedData = $request->validate([
-            'face_features' => 'required|json', // Vektor fitur "login" dari Flutter
+            'face_features' => 'required|json',
         ]);
 
-        // Ini adalah vektor (array 128 angka) dari percobaan login
+
         $loginVector = json_decode($validatedData['face_features']);
 
-        // Ambil semua user yang SUDAH mendaftarkan wajah
+
         $usersWithFaces = User::whereNotNull('face_features')->get();
 
         $matchedUser = null;
-        $lowestDistance = 1.0; // Jarak terjauh adalah 1.0
+        $lowestDistance = 1.0;
 
-        // Threshold (ambang batas) kemiripan.
-        // 0.6 adalah standar dlib. Di bawah 0.6 = mirip, di atas 0.6 = beda orang.
         $distanceThreshold = 0.6;
 
         foreach ($usersWithFaces as $user) {
-            // Ambil vektor yang tersimpan di DB
+
             $storedVector = json_decode($user->face_features);
 
-            // Hitung jarak antara vektor login dan vektor DB
+
             $distance = $this->_calculateEuclideanDistance($loginVector, $storedVector);
 
             if ($distance < $lowestDistance) {
@@ -264,12 +283,12 @@ class AuthController extends Controller
             }
         }
 
-        // Cek apakah user yang cocok lolos threshold
+
         if ($matchedUser && $lowestDistance < $distanceThreshold) {
-            // --- LOGIN BERHASIL ---
-            // Hapus token lama
+
+
             $matchedUser->tokens()->delete();
-            // Buat token baru
+
             $token = $matchedUser->createToken('auth_token')->plainTextToken;
 
             Log::info("Login Wajah Berhasil: User {$matchedUser->email} (Jarak: {$lowestDistance})");
@@ -282,7 +301,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // --- LOGIN GAGAL ---
+
         Log::warning("Login Wajah Gagal: Wajah tidak dikenali. (Jarak terdekat: {$lowestDistance})");
         return response()->json([
             'message' => 'Wajah tidak dikenali.'
@@ -296,8 +315,8 @@ class AuthController extends Controller
     private function _calculateEuclideanDistance(array $vec1, array $vec2): float
     {
         if (count($vec1) != count($vec2)) {
-            // Seharusnya tidak pernah terjadi jika datanya dari face_recognition
-            return 2.0; // Angka error
+
+            return 2.0;
         }
 
         $sum = 0.0;
@@ -307,4 +326,6 @@ class AuthController extends Controller
 
         return (float) sqrt($sum);
     }
+
+
 }

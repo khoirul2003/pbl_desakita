@@ -83,7 +83,6 @@ class MyApp extends StatelessWidget {
             ),
           ),
           
-          
           appBarTheme: const AppBarTheme(
             backgroundColor: _primaryColor,
             foregroundColor: Colors.white,

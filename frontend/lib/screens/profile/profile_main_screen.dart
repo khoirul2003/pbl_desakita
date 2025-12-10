@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/profile/profile_edit_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/state/auth_provider.dart';
 import 'package:frontend/models/user_model.dart';
@@ -13,11 +14,10 @@ import 'package:frontend/screens/profile/detail_profile_screen.dart';
 import 'package:frontend/screens/profile/change_password_screen.dart'; 
 // (Asumsi: File manajemen lain tetap diimport di proyek utama, tapi dihilangkan di sini karena sudah dihapus dari menu)
 
-// --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
-const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
-const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
-const Color _successColor = Color(0xFF28A745); // Hijau
+const Color _primaryColor = Color(0xFF0E2F60);
+const Color _accentColor = Color(0xFF3C486B);
+const Color _backgroundColor = Color(0xFFF5F5F5);
+const Color _successColor = Color(0xFF28A745);
 
 class ProfileMainScreen extends StatefulWidget { 
   const ProfileMainScreen({super.key});
@@ -212,15 +212,12 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
     }
 
     final List<Map<String, dynamic>> menuItems = _buildMenuItems(user, authProvider);
-
-    return Scaffold(
-      backgroundColor: _backgroundColor,
-      body: Column(
-        children: [
-          _buildCustomHeader(context),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 20.0,
+              ),
               children: [
                 _buildProfileCard(context, user), 
                 const SizedBox(height: 30),
@@ -238,13 +235,14 @@ class _ProfileMainScreenState extends State<ProfileMainScreen> {
                         children: [
                           _buildMenuItem(context, item),
                           if (index < menuItems.length - 1)
-                            const Divider(height: 1, thickness: 1, indent: 20, endIndent: 20),
+                            const Divider(
+                              height: 1,
+                              thickness: 1,
+                              indent: 20,
+                              endIndent: 20,
+                            ),
                         ],
                       );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 40),
               ],
             ),
           ),
