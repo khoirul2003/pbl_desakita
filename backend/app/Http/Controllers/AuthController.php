@@ -220,6 +220,35 @@ class AuthController extends Controller
         ]);
     }
 
+    public function uploadPhoto(Request $request)
+    {
+        $request->validate([
+            'foto' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $user = Auth::user();
+        $warga = $user->warga;
+
+        if (!$warga) {
+            return response()->json(['message' => 'Data warga tidak ditemukan'], 404);
+        }
+
+        $file = $request->file('foto');
+        $filename = 'foto_profil_' . $warga->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+
+        $path = $file->storeAs('foto_profil', $filename, 'public');
+
+        // update ke database (tetap pakai field foto_ktp)
+        $warga->foto_ktp = 'https://3dd183e6e125.ngrok-free.app/storage/'.$path;
+        $warga->save();
+
+        return response()->json([
+            'message' => 'Foto profil berhasil diupload',
+            'foto_url' => asset('storage/' . $path),
+        ]);
+    }
+
+
     /**
      * Mencoba login menggunakan fitur wajah.
      * (Skenario 2 - Login Wajah)
@@ -298,30 +327,5 @@ class AuthController extends Controller
         return (float) sqrt($sum);
     }
 
-    public function uploadPhoto(Request $request)
-    {
-        $request->validate([
-            'foto' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
 
-        $user = Auth::user();
-        $warga = $user->warga;
-
-        if (!$warga) {
-            return response()->json(['message' => 'Data warga tidak ditemukan'], 404);
-        }
-
-        $file = $request->file('foto');
-        $filename = 'foto_profil_' . $warga->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-
-        $path = $file->storeAs('foto_profil', $filename, 'public');
-
-        $warga->foto_ktp = $path;
-        $warga->save();
-
-        return response()->json([
-            'message' => 'Foto profil berhasil diupload',
-            'foto_url' => asset('storage/' . $path),
-        ]);
-    }
 }

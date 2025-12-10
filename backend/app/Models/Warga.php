@@ -1,5 +1,6 @@
 <?php
 
+// Warga.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,8 +28,19 @@ class Warga extends Model
         'keluarga_id',
         'status_dalam_keluarga',
         'no_hp',
-        'foto_ktp',
+        'foto_ktp', // tetap gunakan foto_ktp untuk menyimpan foto profil
     ];
+
+    protected $appends = ['foto_url'];
+
+    public function getFotoUrlAttribute()
+    {
+        if (!$this->foto_ktp) {
+            return null;
+        }
+
+        return asset('storage/' . $this->foto_ktp);
+    }
 
     public function user()
     {
@@ -52,7 +64,6 @@ class Warga extends Model
 
     public function wallet()
     {
-
         return $this->hasOne(Wallet::class, 'warga_id');
     }
 }
