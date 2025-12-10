@@ -165,7 +165,7 @@ class _ManajemenKegiatanScreenState extends State<ManajemenKegiatanScreen> {
 
     final bool isFinished = kegiatan.tanggalSelesai.isBefore(DateTime.now());
     final Color primaryColor = isFinished ? Colors.grey : _accentColor;
-    final Color indicatorColor = isFinished ? Colors.grey : _cardIndicator;
+    final Color indicatorColor = isFinished ? Colors.grey : const Color(0xFF0E2F60);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

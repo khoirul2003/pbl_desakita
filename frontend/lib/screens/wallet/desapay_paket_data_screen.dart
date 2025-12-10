@@ -4,9 +4,13 @@ import 'package:dio/dio.dart';
 
 import 'package:frontend/services/api_service.dart';
 
+// Konstanta untuk Gaya ProScan
+const double _kBorderRadius = 12.0;
+const double _kCardRadius = 16.0;
+
 class DesaPayPaketDataScreen extends StatefulWidget {
-  final Color primaryColor;
-  final Color accentColor;
+  final Color primaryColor; // Navy Blue
+  final Color accentColor; // Warna Aksen
 
   const DesaPayPaketDataScreen({
     super.key,
@@ -53,7 +57,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
     {
       'name': 'Paket Sosmed Unlimited',
       'detail': 'Masa aktif 30 hari, FUP 5GB',
-      'quota': 'Unlimited Sosmed',
+      'quota': 'Sosmed UNL', // Diperpendek agar pas di ikon
       'price': 60000,
     },
   ];
@@ -65,6 +69,35 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
   void dispose() {
     _phoneController.dispose();
     super.dispose();
+  }
+
+  // Fungsi untuk mendapatkan InputDecoration bergaya ProScan
+  InputDecoration _proscanInputDecoration({
+    required String labelText,
+    String? hintText,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      suffixIcon: suffixIcon,
+      labelStyle: TextStyle(color: Colors.grey.shade600),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      // Aksen Warna saat fokus
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: widget.accentColor, width: 2),
+      ),
+    );
   }
 
   Future<void> _buyPackage(Map<String, dynamic> pkg) async {
@@ -99,10 +132,18 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
         fee: fee,
       );
 
+      // --- ALERT DIALOG (Gaya ProScan) ---
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Pembelian Paket Data Berhasil"),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            "Pembelian Berhasil",
+            style: TextStyle(
+                color: widget.primaryColor, fontWeight: FontWeight.bold),
+          ),
           content: Text(
             "Paket: ${pkg['name']} (${pkg['quota']})\n"
             "Nomor: $phone (${_selectedOperator!})\n"
@@ -116,7 +157,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                 Navigator.of(context).pop(); // dialog
                 Navigator.of(context).pop(true); // kembali, trigger refresh
               },
-              child: const Text("Tutup"),
+              child: Text("Tutup", style: TextStyle(color: widget.primaryColor)),
             ),
           ],
         ),
@@ -150,47 +191,58 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
     );
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text("Paket Data"),
         backgroundColor: widget.primaryColor,
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: Column(
         children: [
-          Padding(
+          // --- FORM INPUT AREA ---
+          Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 12.0,
+              horizontal: 20.0,
+              vertical: 20.0,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              // Tambahkan shadow atau border bawah opsional
+              border: Border(bottom: BorderSide(color: Colors.grey, width: 0.1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Pilih paket data untuk nomor Anda.",
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: widget.primaryColor,
+                      ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                
+                // INPUT NOMOR HP
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: "Nomor HP",
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  decoration: _proscanInputDecoration(
+                    labelText: "Nomor HP Tujuan",
                     hintText: "08xxxxxxxxxx",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    suffixIcon: Icon(Icons.contact_phone, color: widget.accentColor),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
+                
+                // DROP DOWN OPERATOR
                 DropdownButtonFormField<String>(
                   value: _selectedOperator,
-                  decoration: InputDecoration(
-                    labelText: "Operator",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  style: const TextStyle(color: Colors.black, fontSize: 16),
+                  decoration: _proscanInputDecoration(
+                    labelText: "Pilih Operator",
                   ),
                   items: _operators
                       .map(
@@ -211,44 +263,52 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
               ],
             ),
           ),
-          const Divider(height: 0),
-
+          
+          // --- DAFTAR PAKET DATA (Gaya ProScan) ---
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               itemCount: _dummyPackages.length,
               itemBuilder: (context, index) {
                 final pkg = _dummyPackages[index];
                 final double price = (pkg['price'] as num).toDouble();
 
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: Colors.white,
+                  elevation: 2, // Tambahkan sedikit elevasi
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(_kCardRadius),
+                    side: BorderSide(
+                        color: Colors.grey.shade200), // Border lembut
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.all(16.0), // Padding lebih besar
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        // Kotak Quota (Icon-like)
                         Container(
-                          width: 50,
-                          height: 50,
+                          width: 60, // Ukuran lebih besar
+                          height: 60,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: widget.primaryColor.withOpacity(0.07),
-                            borderRadius: BorderRadius.circular(12),
+                            color: widget.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             pkg['quota'],
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
+                              fontWeight: FontWeight.w800, // Sangat tebal
+                              fontSize: 12,
                               color: widget.primaryColor,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
+                        
+                        // Detail Paket
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,31 +316,33 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                               Text(
                                 pkg['name'],
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700, // Tebal
+                                  fontSize: 15,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 pkg['detail'],
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 8),
                               Text(
                                 formatter.format(price),
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                  color: widget.accentColor,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  color: widget.accentColor, // Harga menonjol
                                 ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
+                        
+                        // Tombol Beli
                         ElevatedButton(
                           onPressed: _submitting
                               ? null
@@ -289,8 +351,8 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                             backgroundColor: widget.primaryColor,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+                              horizontal: 16,
+                              vertical: 10,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -298,15 +360,18 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                           ),
                           child: _submitting
                               ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
+                                  height: 18,
+                                  width: 18,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: 2.5,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(Colors.white),
                                   ),
                                 )
                               : const Text(
                                   "Beli",
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                      fontSize: 14, fontWeight: FontWeight.w600),
                                 ),
                         ),
                       ],

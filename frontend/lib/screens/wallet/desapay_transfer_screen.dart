@@ -4,6 +4,9 @@ import 'package:dio/dio.dart';
 
 import 'package:frontend/services/api_service.dart';
 
+// Konstanta untuk Gaya ProScan
+const double _kBorderRadius = 12.0;
+
 class DesaPayTransferScreen extends StatefulWidget {
   final Color primaryColor;
   final Color accentColor;
@@ -73,10 +76,19 @@ class _DesaPayTransferScreenState extends State<DesaPayTransferScreen> {
         notes: note,
       );
 
+      // --- DIALOG SUKSES (Gaya ProScan) ---
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Transfer Berhasil"),
+          // Sudut membulat pada dialog
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            "Transfer Berhasil",
+            style: TextStyle(
+                color: widget.primaryColor, fontWeight: FontWeight.bold),
+          ),
           content: Text(
             "Transfer ke akun $target sebesar ${formatter.format(amount)} berhasil.\n"
             "Saldo baru: ${newBalance != null ? formatter.format(newBalance) : '-'}",
@@ -87,7 +99,8 @@ class _DesaPayTransferScreenState extends State<DesaPayTransferScreen> {
                 Navigator.of(context).pop(); // dialog
                 Navigator.of(context).pop(true); // screen, trigger refresh
               },
-              child: const Text("Tutup"),
+              // Warna TextButton menggunakan Primary Color
+              child: Text("Tutup", style: TextStyle(color: widget.primaryColor)), 
             ),
           ],
         ),
@@ -112,66 +125,102 @@ class _DesaPayTransferScreenState extends State<DesaPayTransferScreen> {
     }
   }
 
+  // --- START WIDGET BUILD ---
   @override
   Widget build(BuildContext context) {
+    // Fungsi untuk mendapatkan InputDecoration bergaya ProScan
+    InputDecoration _proscanInputDecoration(
+        {required String labelText, String? hintText, String? prefixText}) {
+      return InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        prefixText: prefixText,
+        labelStyle: TextStyle(color: Colors.grey.shade600),
+        
+        // KUNCI: Sudut membulat (12dp) pada border
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(_kBorderRadius),
+          borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(_kBorderRadius),
+          borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+        ),
+        // Aksen Warna saat fokus
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(_kBorderRadius),
+          borderSide: BorderSide(color: widget.accentColor, width: 2),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      );
+    }
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Transfer Antar Desapay"),
         backgroundColor: widget.primaryColor,
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0), // Padding lebih besar
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- HEADER (Gaya ProScan) ---
             Text(
               "Transfer saldo antar akun Desapay.",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: widget.accentColor,
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800, // Lebih tebal
+                    color: widget.primaryColor, // Warna Primary
+                  ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               "Masukkan nomor akun tujuan dan nominal transfer.",
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 30),
+            
+            // --- INPUT NO. AKUN TUJUAN ---
             TextField(
               controller: _targetAccountController,
-              decoration: InputDecoration(
+              keyboardType: TextInputType.text,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+              decoration: _proscanInputDecoration(
                 labelText: "No. Akun Tujuan",
                 hintText: "Mis. DSP-001-00012346",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
+
+            // --- INPUT NOMINAL TRANSFER ---
             TextField(
               controller: _amountController,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(
+              style: const TextStyle(fontWeight: FontWeight.w600),
+              decoration: _proscanInputDecoration(
                 labelText: "Nominal Transfer",
                 prefixText: "Rp ",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
+
+            // --- INPUT CATATAN (OPSIONAL) ---
             TextField(
               controller: _noteController,
-              maxLines: 2,
-              decoration: InputDecoration(
+              maxLines: 3, // Perbesar field catatan
+              style: const TextStyle(fontWeight: FontWeight.w500),
+              decoration: _proscanInputDecoration(
                 labelText: "Catatan (opsional)",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
+
+            // --- TOMBOL SUBMIT (Gaya ProScan) ---
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -179,20 +228,29 @@ class _DesaPayTransferScreenState extends State<DesaPayTransferScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: widget.primaryColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 18), // Padding lebih besar
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(_kBorderRadius),
                   ),
+                  elevation: 5,
+                  shadowColor: widget.primaryColor.withOpacity(0.4),
                 ),
                 child: _submitting
                     ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
                       )
                     : const Text(
                         "Kirim",
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
                       ),
               ),
             ),

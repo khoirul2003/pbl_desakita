@@ -3,9 +3,12 @@ import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:frontend/services/api_service.dart';
 
+// Konstanta untuk Gaya ProScan
+const double _kBorderRadius = 12.0;
+
 class DesaPayPulsaScreen extends StatefulWidget {
-  final Color primaryColor;
-  final Color accentColor;
+  final Color primaryColor; // Navy Blue
+  final Color accentColor; // Warna Aksen (mis. Biru Cerah)
 
   const DesaPayPulsaScreen({
     super.key,
@@ -72,10 +75,18 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
         fee: fee,
       );
 
+      // --- ALERT DIALOG (Gaya ProScan) ---
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Pembelian Pulsa Berhasil"),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            "Pembelian Pulsa Berhasil",
+            style: TextStyle(
+                color: widget.primaryColor, fontWeight: FontWeight.bold),
+          ),
           content: Text(
             "Pulsa ${formatter.format(_selectedDenom)} untuk nomor $phone "
             "(${_selectedOperator!}) berhasil.\n"
@@ -88,7 +99,7 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
                 Navigator.of(context).pop(); // dialog
                 Navigator.of(context).pop(true); // kembali, refresh wallet
               },
-              child: const Text("Tutup"),
+              child: Text("Tutup", style: TextStyle(color: widget.primaryColor)),
             ),
           ],
         ),
@@ -113,6 +124,36 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
     }
   }
 
+  // Fungsi untuk mendapatkan InputDecoration bergaya ProScan
+  InputDecoration _proscanInputDecoration({
+    required String labelText,
+    String? hintText,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      suffixIcon: suffixIcon,
+      labelStyle: TextStyle(color: Colors.grey.shade600),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      
+      // KUNCI: Sudut membulat (12dp) pada border
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      // Aksen Warna saat fokus
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: widget.accentColor, width: 2),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -123,44 +164,55 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
     );
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Pembelian Pulsa"),
         backgroundColor: widget.primaryColor,
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0), // Padding lebih besar
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- HEADER DESKRIPSI (Gaya ProScan) ---
+            Text(
+              "Beli Pulsa & Paket Data.",
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800, // Sangat tebal
+                    color: widget.primaryColor,
+                  ),
+            ),
+            const SizedBox(height: 8),
             Text(
               "Isi pulsa menggunakan saldo Desapay (demo).",
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 30),
 
+            // --- INPUT NOMOR HP ---
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: "Nomor HP",
+              style: const TextStyle(fontWeight: FontWeight.w600),
+              decoration: _proscanInputDecoration(
+                labelText: "Nomor HP Tujuan",
                 hintText: "08xxxxxxxxxx",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                // Tambahkan ikon opsional untuk kontak
+                suffixIcon: Icon(Icons.contact_phone, color: widget.accentColor),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
+            // --- DROP DOWN OPERATOR ---
             DropdownButtonFormField<String>(
               value: _selectedOperator,
-              decoration: InputDecoration(
-                labelText: "Operator",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              style: const TextStyle(
+                  color: Colors.black, fontSize: 16), // Penting agar teks tidak hilang
+              decoration: _proscanInputDecoration(
+                labelText: "Pilih Operator",
               ),
               items: _operators
                   .map(
@@ -174,20 +226,21 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
                 });
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 30),
 
+            // --- PILIH NOMINAL / DENOMINASI ---
             Text(
-              "Pilih nominal",
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: widget.accentColor,
-              ),
+              "Pilih Nominal Pulsa",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: widget.primaryColor,
+                  ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 10, // Jarak antar chip
+              runSpacing: 10,
               children: _denomList.map((amount) {
                 final selected = _selectedDenom == amount;
                 return ChoiceChip(
@@ -198,40 +251,69 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
                       _selectedDenom = amount;
                     });
                   },
-                  selectedColor: widget.primaryColor.withOpacity(0.15),
-                  labelStyle: TextStyle(
-                    color: selected ? widget.primaryColor : Colors.black87,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                    fontSize: 12,
+                  // KUNCI: Styling ChoiceChip ProScan
+                  selectedColor: widget.primaryColor, // Warna primary saat terpilih
+                  backgroundColor: Colors.grey.shade100,
+                  side: BorderSide(
+                    color: selected ? widget.primaryColor : Colors.grey.shade300,
+                    width: selected ? 1.5 : 1,
                   ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10), // Sudut membulat
+                  ),
+                  labelStyle: TextStyle(
+                    color: selected ? Colors.white : Colors.black87, // Teks putih saat terpilih
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
 
+            // --- TOMBOL SUBMIT (Gaya ProScan) ---
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _submitPurchase,
+                onPressed: _submitting ? null : _submitPurchase,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: widget.primaryColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 18), // Padding besar
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(_kBorderRadius),
                   ),
+                  elevation: 5,
+                  shadowColor: widget.primaryColor.withOpacity(0.4),
                 ),
-                child: const Text(
-                  "Bayar Sekarang (Demo)",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+                child: _submitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        "Bayar Sekarang (Demo)",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
+                      ),
               ),
             ),
 
             const SizedBox(height: 12),
-            const Text(
-              "Catatan: hanya simulasi. Integrasikan dengan API operator / payment gateway untuk transaksi nyata.",
-              style: TextStyle(fontSize: 11, color: Colors.grey),
+            const Center(
+              child: Text(
+                "Catatan: hanya simulasi. Integrasikan dengan API operator / payment gateway untuk transaksi nyata.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
             ),
           ],
         ),
