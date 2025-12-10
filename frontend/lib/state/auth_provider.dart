@@ -113,7 +113,36 @@ class AuthProvider with ChangeNotifier {
     }
 
     _setLoading(false);
-    return error; 
+    return error;
   }
-  
+
+  void updateUser(User user) {
+    _user = user;
+    notifyListeners();
+  }
+
+  Future<void> refreshUserProfile() async {
+    _setLoading(true);
+    try {
+      final user = await _apiService.fetchProfile();
+      if (user != null) {
+        _user = user;
+      }
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateProfilePhoto(File file) async {
+    final url = await _apiService.uploadProfilePhoto(file);
+
+    if (url != null) {
+      await refreshUserProfile(); // refresh data user termasuk foto
+      return true;
+    }
+
+    return false;
+  }
+
+
 }
