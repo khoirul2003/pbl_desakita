@@ -1,29 +1,16 @@
 <?php
 
+// Warga.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property-read \App\Models\Keluarga|null $keluarga
- * @property-read \App\Models\Keluarga|null $kepalaDariKeluarga
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TagihanIuran> $tagihanIuran
- * @property-read int|null $tagihan_iuran_count
- * @property-read \App\Models\User|null $user
- * @property-read \App\Models\Wallet|null $wallet  <-- Tambahkan property ini untuk Eloquent
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Warga newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Warga newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Warga query()
- * @mixin \Eloquent
- */
 class Warga extends Model
 {
     use HasFactory;
 
     protected $table = 'warga';
-    // Matikan timestamps jika tidak diperlukan, tapi biarkan aktif jika ada created_at/updated_at
-    // public $timestamps = false; 
 
     protected $fillable = [
         'nik',
@@ -41,47 +28,42 @@ class Warga extends Model
         'keluarga_id',
         'status_dalam_keluarga',
         'no_hp',
-        'foto_ktp',
+        'foto_ktp', // tetap gunakan foto_ktp untuk menyimpan foto profil
     ];
 
-    /**
-     * Dapatkan akun user yang terkait dengan data warga ini.
-     */
+    protected $appends = ['foto_url'];
+
+    public function getFotoUrlAttribute()
+    {
+        if (!$this->foto_ktp) {
+            return null;
+        }
+
+        return asset('storage/' . $this->foto_ktp);
+    }
+
     public function user()
     {
         return $this->hasOne(User::class, 'warga_id');
     }
 
-    /**
-     * Dapatkan keluarga tempat warga ini terdaftar.
-     */
     public function keluarga()
     {
         return $this->belongsTo(Keluarga::class, 'keluarga_id');
     }
 
-    /**
-     * Dapatkan keluarga jika warga ini adalah kepala keluarganya.
-     */
     public function kepalaDariKeluarga()
     {
         return $this->hasOne(Keluarga::class, 'kepala_keluarga_id');
     }
 
-    /**
-     * Dapatkan semua tagihan iuran untuk warga ini.
-     */
     public function tagihanIuran()
     {
         return $this->hasMany(TagihanIuran::class, 'warga_id');
     }
 
-    /**
-     * Dapatkan dompet (wallet) Desapay milik warga ini.
-     */
     public function wallet()
     {
-        // Wallet adalah relasi one-to-one (hasOne)
         return $this->hasOne(Wallet::class, 'warga_id');
     }
 }

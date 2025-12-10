@@ -14,7 +14,6 @@ class User {
       id: json['id'],
       email: json['email'],
       role: json['role'],
-
       warga: json['warga'] != null ? Warga.fromJson(json['warga']) : null,
     );
   }
@@ -47,7 +46,12 @@ class Warga {
   final int? keluargaId;
   final String? statusDalamKeluarga;
   final String? noHp;
+
+  // Foto path dari database
   final String? fotoKtp;
+
+  // URL hasil accessor Laravel: foto_url
+  final String? fotoUrl;
 
   final Keluarga? keluarga;
   final User? user;
@@ -71,6 +75,7 @@ class Warga {
     this.statusDalamKeluarga,
     this.noHp,
     this.fotoKtp,
+    this.fotoUrl,
     this.keluarga,
     this.user,
     this.wallet,
@@ -96,13 +101,14 @@ class Warga {
           : null,
       statusDalamKeluarga: json['status_dalam_keluarga'],
       noHp: json['no_hp'],
+
       fotoKtp: json['foto_ktp'],
+      fotoUrl: json['foto_url'],
 
       keluarga: json['keluarga'] != null
           ? Keluarga.fromJson(json['keluarga'])
           : null,
       user: json['user'] != null ? User.fromJson(json['user']) : null,
-
       wallet: json['wallet'] != null ? Wallet.fromJson(json['wallet']) : null,
     );
   }
@@ -124,7 +130,9 @@ class Warga {
     'keluarga_id': keluargaId,
     'status_dalam_keluarga': statusDalamKeluarga,
     'no_hp': noHp,
+
     'foto_ktp': fotoKtp,
+    
     'keluarga': keluarga?.toJsonMap(),
     'user': user?.toJsonMap(),
     'wallet': wallet?.toJsonMap(),

@@ -10,16 +10,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/models/tagihan_iuran_model.dart';
 
-
-
 class ApiService {
-  final String _baseUrlLaravel = "https://7c8845616f6a.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://6afe861c4d4f.ngrok-free.app";
-
+  final String _baseUrlLaravel = "https://3dd183e6e125.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://fe1abcc6d2fd.ngrok-free.app";
+ 
   final _storage = const FlutterSecureStorage();
-
   final Dio _dioPublic = Dio();
-
   late Dio _dioProtected;
 
   ApiService() {
@@ -42,7 +38,7 @@ class ApiService {
       ),
     );
 
-    _dioPublic.interceptors.add(
+     _dioPublic.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
@@ -51,6 +47,9 @@ class ApiService {
       ),
     );
   }
+
+  Dio get dioProtected => _dioProtected;
+  String get baseUrlLaravel => _baseUrlLaravel;
 
   Future<User?> getUserDataFromStorage() async {
     final userString = await _storage.read(key: 'user_data');
@@ -447,7 +446,6 @@ class ApiService {
     }
   }
 
-    // ================= WALLET & DESAPAY =================
 
   Future<WalletSummary?> getWalletSummary() async {
     try {
@@ -467,7 +465,6 @@ class ApiService {
     }
   }
 
-  /// Top up saldo Desapay, return saldo baru kalau sukses
   Future<double?> topUpWallet(double amount) async {
     try {
       final response = await _dioProtected.post(
@@ -486,7 +483,6 @@ class ApiService {
     }
   }
 
-  /// Transfer antar Desapay, return saldo baru pengirim kalau sukses
   Future<double?> transferWallet({
     required String accountNumberReceiver,
     required double amount,
@@ -513,8 +509,6 @@ class ApiService {
     }
   }
 
-  /// Pembayaran PPOB generic (pulsa, paket data, token, iuran, dll)
-  /// amount = nilai produk, fee = biaya admin
   Future<double?> payPPOB({
     required double amount,
     required String productName,
@@ -542,8 +536,6 @@ class ApiService {
       rethrow;
     }
   }
-
-    // ============= TAGIHAN IURAN (FITUR WARGA) =============
 
   Future<List<TagihanIuran>> getTagihanIuranWarga() async {
     try {
@@ -574,9 +566,6 @@ class ApiService {
     }
   }
 
-  /// Tandai tagihan sebagai dibayar di backend.
-  /// Catatan: untuk integrasi yang robust, idealnya proses bayar saldo dan update tagihan
-  /// digabung di backend (1 endpoint). Sekarang ini dua langkah: payPPOB + bayarTagihan.
   Future<bool> bayarTagihanIuran(int tagihanId) async {
     try {
       final response = await _dioProtected.post(
@@ -586,6 +575,83 @@ class ApiService {
     } on DioException catch (e) {
       print("Error bayarTagihanIuran: ${e.response?.data}");
       rethrow;
+    }
+  }
+
+  Future<Response> getBalanceAndTransactions() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/wallet/balance',
+      );
+      return response;
+    } on DioException catch (e) {
+      print("Error getBalanceAndTransactions: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+    Future<User?> fetchProfile() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/profile');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final user = User.fromJson(response.data);
+
+        await _storage.write(key: 'user_data', value: user.toJsonString());
+
+        return user;
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error fetchProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<User?> updateProfile(Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.put(
+        '$_baseUrlLaravel/v1/profile',
+        data: data,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final userJson =
+            response.data['user'] ?? response.data;
+        final user = User.fromJson(userJson);
+
+        await _storage.write(key: 'user_data', value: user.toJsonString());
+
+        return user;
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error updateProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<String?> uploadProfilePhoto(File file) async {
+    try {
+      final fileName = file.path.split('/').last;
+
+      final formData = FormData.fromMap({
+        'foto': await MultipartFile.fromFile(file.path, filename: fileName),
+      });
+
+      final res = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/profile/upload-photo',
+        data: formData,
+      );
+
+      if (res.statusCode == 200) {
+        return res.data['foto_url'];
+      }
+
+      return null;
+    } on DioException catch (e) {
+      print("Upload Foto Error: ${e.response?.data}");
+      return null;
     }
   }
 
