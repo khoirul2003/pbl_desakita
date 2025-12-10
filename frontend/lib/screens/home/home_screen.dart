@@ -11,6 +11,8 @@ import 'package:frontend/screens/admin/manajemen_iuran_screen.dart';
 import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart';
 import 'package:frontend/screens/profile/profile_main_screen.dart';
 import 'package:frontend/screens/wallet/desapay_wallet_section.dart';
+import 'package:frontend/screens/rt_rw/manajemen_warga_rt_rw_screen.dart'; 
+import 'package:frontend/screens/rt_rw/manajemen_iuran_rt_rw_screen.dart'; 
 
 const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B);
@@ -48,15 +50,30 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     if (user.role == 'admin' || user.role == 'rt' || user.role == 'rw') {
+
+      // 1. Tentukan halaman Manajemen Warga
+      Widget manajemenWargaPage;
+      if (user.role == 'admin') {
+        manajemenWargaPage = const ManajemenWargaScreen(); // Admin melihat SEMUA Warga
+      } else { 
+        // Role 'rt' dan 'rw' akan diarahkan ke screen yang sudah difilter
+        manajemenWargaPage = const ManajemenWargaRtRwScreen();
+      }
+
+      // 2. Tentukan halaman Manajemen Iuran
+      Widget manajemenIuranPage;
+      if (user.role == 'admin') {
+        manajemenIuranPage = const ManajemenIuranScreen(); // Admin melihat SEMUA Iuran
+      } else {
+        // Role 'rt' dan 'rw' akan diarahkan ke screen Iuran yang difilter
+        manajemenIuranPage = const ManajemenIuranRtRwScreen(); 
+      }
+
+      // 3. Tambahkan semua halaman ke list pages
       pages.addAll([
-        user.role == 'admin'
-            ? const ManajemenWargaScreen()
-            : const PlaceholderScreen(title: "Data Warga & Keluarga"),
-
-        const ManajemenIuranScreen(),
-
-        const ManajemenKegiatanScreen(),
-
+        manajemenWargaPage,
+        manajemenIuranPage,
+        const ManajemenKegiatanScreen(), // Kegiatan bisa dilihat semua
         const ProfileMainScreen(),
       ]);
 
@@ -73,11 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ]);
     } else {
+      // Logika untuk Warga Biasa
       pages.addAll([
         const PlaceholderScreen(title: "Data Keluarga Saya"),
-
         const PlaceholderScreen(title: "Tagihan Iuran"),
-
         const ProfileMainScreen(),
       ]);
 
