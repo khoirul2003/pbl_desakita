@@ -23,25 +23,16 @@ class TagihanIuran extends Model
         'payment_gateway_order_id',
     ];
 
-    /**
-     * Dapatkan jenis iurannya.
-     */
     public function iuran()
     {
         return $this->belongsTo(Iuran::class, 'iuran_id');
     }
 
-    /**
-     * Dapatkan data warga yang ditagih (jika iuran perorangan).
-     */
     public function warga()
     {
         return $this->belongsTo(Warga::class, 'warga_id');
     }
 
-    /**
-     * Dapatkan data keluarga yang ditagih (jika iuran per KK).
-     */
     public function keluarga()
     {
         return $this->belongsTo(Keluarga::class, 'keluarga_id');

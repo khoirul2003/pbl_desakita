@@ -42,9 +42,6 @@ class IuranController extends Controller
         return $query->paginate(10);
     }
 
-    /**
-     * Buat Iuran baru. (Admin, RW, RT)
-     */
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -74,11 +71,9 @@ class IuranController extends Controller
             $data['rw'] = $user->warga->rw;
         }
 
-
         $iuran = Iuran::create($data);
 
-
-
+        $this->generateTagihan($iuran);
 
         return response()->json($iuran, 201);
     }
@@ -87,7 +82,6 @@ class IuranController extends Controller
 
     public function show(Iuran $iuran)
     {
-
         return $iuran;
     }
 
@@ -130,5 +124,23 @@ class IuranController extends Controller
             }
         }
 
+        if ($iuran->tipe == 'PER_WARGA') {
+            $query = Warga::query();
+            if ($iuran->rt) $query->where('rt', $iuran->rt);
+            if ($iuran->rw) $query->where('rw', $iuran->rw);
+
+            $wargas = $query->get();
+            foreach ($wargas as $warga) {
+                TagihanIuran::firstOrCreate(
+                    [
+                        'iuran_id' => $iuran->id,
+                        'warga_id' => $warga->id,
+                        'periode_bulan' => $bulanIni,
+                        'periode_tahun' => $tahunIni,
+                    ],
+                    ['jumlah_bayar' => $iuran->jumlah]
+                );
+            }
+        }
     }
 }
