@@ -40,10 +40,11 @@ class WalletController extends Controller
         ]);
     }
 
+
     public function topUp(Request $request)
     {
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:1000|max:1000000',
+            'amount' => 'required|numeric|min:1000|max:100000000',
         ]);
 
         $warga = Auth::user()->warga;
@@ -86,7 +87,7 @@ class WalletController extends Controller
 
         $validated = $request->validate([
             'account_number_receiver' => ['required', 'string', 'max:20', Rule::notIn([$warga->wallet->desapay_account_number])],
-            'amount' => 'required|numeric|min:1000|max:5000000',
+            'amount' => 'required|numeric|min:1000|max:50000000',
             'notes' => 'nullable|string|max:255',
         ]);
 
