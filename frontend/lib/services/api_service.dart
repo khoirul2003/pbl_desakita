@@ -26,11 +26,32 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
+
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+
+          // 🔍 DEBUG REQUEST
+          print("➡️➡️➡️ REQUEST");
+          print("URL     : ${options.uri}");
+          print("METHOD  : ${options.method}");
+          print("HEADERS : ${options.headers}");
+          print("DATA    : ${options.data}");
+          print("QUERY   : ${options.queryParameters}");
+          print("➡️➡️➡️ END REQUEST");
+
           return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          // ✅ DEBUG RESPONSE
+          print("✅✅✅ RESPONSE");
+          print("URL     : ${response.requestOptions.uri}");
+          print("STATUS  : ${response.statusCode}");
+          print("DATA    : ${response.data}");
+          print("✅✅✅ END RESPONSE");
+
+          return handler.next(response);
         },
         onError: (DioException e, handler) {
           // ❌ DEBUG ERROR
@@ -202,11 +223,7 @@ class ApiService {
     }
   }
 
-  Future<List<Warga>> getManajemenWarga({
-    String? search,
-    String? rt,
-    String? rw,
-  }) async {
+  Future<List<Warga>> getManajemenWarga({String? search, String? rt, String? rw}) async {
     try {
       final Map<String, dynamic> params = {};
 
@@ -298,11 +315,6 @@ class ApiService {
     }
   }
 
-  Future<List<Iuran>> getManajemenIuran({
-    String? search,
-    String? rt,
-    String? rw,
-  }) async {
   Future<List<Iuran>> getManajemenIuran({String? search, String? rt, String? rw}) async {
   Future<List<String>> getRwList() async {
     try {
@@ -359,9 +371,9 @@ class ApiService {
 
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/iuran',
-        queryParameters: params,
+        queryParameters: params, 
       );
-
+      
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Iuran.fromJson(json)).toList();
@@ -714,6 +726,45 @@ class ApiService {
       return null;
     } on DioException catch (e) {
       print("Error updateProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<String>> getRwList() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/master/rw');
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRwList: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<Keluarga>> getAllKeluarga() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/keluarga',
+      );
+
+      return (response.data as List).map((e) => Keluarga.fromJson(e)).toList();
+    } on DioException catch (e) {
+      print("Error getAllKeluarga: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+
+  Future<List<String>> getRtList(String rw) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/rt',
+        queryParameters: {'rw': rw},
+      );
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRtList: ${e.response?.data}");
       rethrow;
     }
   }
