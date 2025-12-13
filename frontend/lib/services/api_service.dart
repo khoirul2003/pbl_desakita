@@ -607,92 +607,9 @@ class ApiService {
       );
       return response.statusCode == 200;
     } on DioException catch (e) {
-<<<<<<< HEAD
       print("Error transferDesapay: ${e.message}");
       // Re-throw exception agar TransferScreen dapat menangkap error spesifik (misal 422 Saldo tidak cukup)
       rethrow;
     }
   }
-=======
-      print("Error bayarTagihanIuran: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-  Future<Response> getBalanceAndTransactions() async {
-    try {
-      final response = await _dioProtected.get(
-        '$_baseUrlLaravel/v1/wallet/balance',
-      );
-      return response;
-    } on DioException catch (e) {
-      print("Error getBalanceAndTransactions: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-  Future<User?> fetchProfile() async {
-    try {
-      final response = await _dioProtected.get('$_baseUrlLaravel/v1/profile');
-
-      if (response.statusCode == 200 && response.data != null) {
-        final user = User.fromJson(response.data);
-
-        await _storage.write(key: 'user_data', value: user.toJsonString());
-
-        return user;
-      }
-      return null;
-    } on DioException catch (e) {
-      print("Error fetchProfile: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-  Future<User?> updateProfile(Map<String, dynamic> data) async {
-    try {
-      final response = await _dioProtected.put(
-        '$_baseUrlLaravel/v1/profile',
-        data: data,
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        final userJson = response.data['user'] ?? response.data;
-        final user = User.fromJson(userJson);
-
-        await _storage.write(key: 'user_data', value: user.toJsonString());
-
-        return user;
-      }
-      return null;
-    } on DioException catch (e) {
-      print("Error updateProfile: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-  Future<String?> uploadProfilePhoto(File file) async {
-    try {
-      final fileName = file.path.split('/').last;
-
-      final formData = FormData.fromMap({
-        'foto': await MultipartFile.fromFile(file.path, filename: fileName),
-      });
-
-      final res = await _dioProtected.post(
-        '$_baseUrlLaravel/v1/profile/upload-photo',
-        data: formData,
-      );
-
-      if (res.statusCode == 200) {
-        return res.data['foto_url'];
-      }
-
-      return null;
-    } on DioException catch (e) {
-      print("Upload Foto Error: ${e.response?.data}");
-      return null;
-    }
-  }
->>>>>>> 6b47a25c040bf8bcb348cb2d034694f4993ba8cc
 }
