@@ -12,8 +12,8 @@ import 'package:frontend/models/tagihan_iuran_model.dart';
 
 class ApiService {
 
-  final String _baseUrlLaravel = "https://64df3290146c.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://b6d8ff767f85.ngrok-free.app";
+  final String _baseUrlLaravel = "https://intelligential-argentina-goutily.ngrok-free.dev/api";
+  final String _baseUrlFastApi = "https://intelligential-argentina-goutily.ngrok-free.dev";
 
   final _storage = const FlutterSecureStorage();
   final Dio _dioPublic = Dio();
@@ -26,24 +26,44 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
+
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+
+          // 🔍 DEBUG REQUEST
+          print("➡️➡️➡️ REQUEST");
+          print("URL     : ${options.uri}");
+          print("METHOD  : ${options.method}");
+          print("HEADERS : ${options.headers}");
+          print("DATA    : ${options.data}");
+          print("QUERY   : ${options.queryParameters}");
+          print("➡️➡️➡️ END REQUEST");
+
           return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          // ✅ DEBUG RESPONSE
+          print("✅✅✅ RESPONSE");
+          print("URL     : ${response.requestOptions.uri}");
+          print("STATUS  : ${response.statusCode}");
+          print("DATA    : ${response.data}");
+          print("✅✅✅ END RESPONSE");
+
+          return handler.next(response);
         },
         onError: (DioException e, handler) {
-          print("Dio Interceptor Protected Error: ${e.message}");
-          return handler.next(e);
-        },
-      ),
-    );
+          // ❌ DEBUG ERROR
+          print("❌❌❌ ERROR RESPONSE");
+          print("URL     : ${e.requestOptions.uri}");
+          print("METHOD  : ${e.requestOptions.method}");
+          print("STATUS  : ${e.response?.statusCode}");
+          print("DATA    : ${e.response?.data}");
+          print("MESSAGE : ${e.message}");
+          print("❌❌❌ END ERROR");
 
-     _dioPublic.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          options.headers['Bypass-Tunnel-Reminder'] = 'true';
-          return handler.next(options);
+          return handler.next(e);
         },
       ),
     );
@@ -654,6 +674,45 @@ class ApiService {
       return null;
     } on DioException catch (e) {
       print("Error updateProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<String>> getRwList() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/master/rw');
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRwList: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<Keluarga>> getAllKeluarga() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/keluarga',
+      );
+
+      return (response.data as List).map((e) => Keluarga.fromJson(e)).toList();
+    } on DioException catch (e) {
+      print("Error getAllKeluarga: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+
+  Future<List<String>> getRtList(String rw) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/rt',
+        queryParameters: {'rw': rw},
+      );
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRtList: ${e.response?.data}");
       rethrow;
     }
   }
