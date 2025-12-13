@@ -1,106 +1,307 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:frontend/models/user_model.dart';
-import 'package:frontend/services/api_service.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-// 1. Impor EditWargaScreen
-import 'package:frontend/screens/admin/edit_warga_screen.dart'; // <--- PASTIKAN PATH INI BENAR
+// Import model dan service yang diperlukan (sesuaikan path Anda)
+import 'package:frontend/models/user_model.dart';
+import 'package:frontend/state/auth_provider.dart';
+import 'package:frontend/services/api_service.dart';
 
-// --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
-const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
-const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
+// --- KONSTANTA GAYA (Diambil dari kode yang Anda kirimkan) ---
+const Color _primaryColor = Color(0xFF0E2F60); // Navy Blue
+const Color _backgroundColor = Color(0xFFF5F5F5); 
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu-abu gelap
+const Color _successColor = Color(0xFF28A745); 
 
-class DetailWargaScreen extends StatefulWidget {
-  final Warga wargaAwal;
+// Custom Input Decoration (Gaya ProScan dari kode Anda)
+final InputDecoration _inputDecoration = InputDecoration(
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12),
+    borderSide: BorderSide.none,
+  ),
+  filled: true,
+  fillColor: Colors.white,
+  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+  labelStyle: const TextStyle(color: _accentColor),
+  // Tambahkan floatingLabelBehavior agar label selalu berada di atas, 
+  // mencegah tumpang tindih dengan teks field yang terisi.
+  floatingLabelBehavior: FloatingLabelBehavior.auto,
+);
 
-  const DetailWargaScreen({super.key, required this.wargaAwal});
+// --- CLASS UTAMA ---
+class ProfileEditScreen extends StatefulWidget {
+  const ProfileEditScreen({super.key});
 
   @override
-  State<DetailWargaScreen> createState() => _DetailWargaScreenState();
+  State<ProfileEditScreen> createState() => _ProfileEditScreenState();
 }
 
-class _DetailWargaScreenState extends State<DetailWargaScreen> {
-  Warga? _wargaDetail;
-  bool _isLoading = true;
+class _ProfileEditScreenState extends State<ProfileEditScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  // State untuk Foto
+  File? newProfilePhoto;
+  String? currentPhotoUrl;
+  bool _isUploadingPhoto = false;
+
+  // State untuk Input Data Diri
+  late TextEditingController namaController;
+  late TextEditingController noHpController;
+  late TextEditingController alamatKtpController;
+  late TextEditingController tempatLahirController;
+  late TextEditingController tanggalLahirController;
+  late TextEditingController agamaController;
+  late TextEditingController statusPerkawinanController;
+  late TextEditingController pekerjaanController;
+
+  // State untuk Ganti Password
+  late TextEditingController currentPasswordController;
+  late TextEditingController newPasswordController;
+  late TextEditingController confirmPasswordController;
+  bool _isPasswordVisible = false;
+  bool _isCurrentPasswordVisible = false;
+  bool _isSavingProfile = false;
+  
+  // State untuk Expansion Tile
+  bool _isExpanded1 = true;
+  bool _isExpanded2 = false;
 
   @override
   void initState() {
     super.initState();
-    _wargaDetail = widget.wargaAwal;
-    _fetchDetailWarga();
+    _initializeControllers();
   }
 
-  Future<void> _fetchDetailWarga() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-    });
+  void _initializeControllers() {
+    final user = context.read<AuthProvider>().user!;
+    final warga = user.warga!;
 
-    final apiService = context.read<ApiService>();
+    currentPhotoUrl = warga.fotoKtp; 
+
+    namaController = TextEditingController(text: warga.namaLengkap);
+    noHpController = TextEditingController(text: warga.noHp ?? "");
+    alamatKtpController = TextEditingController(text: warga.alamatKtp ?? "");
+    tempatLahirController = TextEditingController(text: warga.tempatLahir ?? "");
+    tanggalLahirController = TextEditingController(text: warga.tanggalLahir ?? "");
+    agamaController = TextEditingController(text: warga.agama ?? "");
+    statusPerkawinanController = TextEditingController(text: warga.statusPerkawinan ?? "");
+    pekerjaanController = TextEditingController(text: warga.pekerjaan ?? "");
+
+    currentPasswordController = TextEditingController();
+    newPasswordController = TextEditingController();
+    confirmPasswordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    namaController.dispose();
+    noHpController.dispose();
+    alamatKtpController.dispose();
+    tempatLahirController.dispose();
+    tanggalLahirController.dispose();
+    agamaController.dispose();
+    statusPerkawinanController.dispose();
+    pekerjaanController.dispose();
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+  
+  // --- LOGIKA DATE PICKER ---
+  Future<void> _selectDate(BuildContext context) async {
+    final initialDate = tanggalLahirController.text.isNotEmpty 
+      ? DateTime.tryParse(tanggalLahirController.text) ?? DateTime.now().subtract(const Duration(days: 365 * 20))
+      : DateTime.now().subtract(const Duration(days: 365 * 20));
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _primaryColor, 
+              onPrimary: Colors.white,
+              onSurface: _primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        tanggalLahirController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
+  // --- LOGIKA UPLOAD FOTO (Tidak Berubah) ---
+  Future<void> pickPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+
+    if (picked != null) {
+      setState(() {
+        newProfilePhoto = File(picked.path);
+      });
+    }
+  }
+
+  Future<void> uploadPhoto() async {
+    if (newProfilePhoto == null) return;
+    
+    setState(() => _isUploadingPhoto = true);
+
     try {
-      final warga = await apiService.getDetailWarga(widget.wargaAwal.id);
-      if (warga != null && mounted) {
+      final auth = context.read<AuthProvider>();
+      final success = await auth.updateProfilePhoto(newProfilePhoto!);
+
+      if (success && mounted) {
+        newProfilePhoto = null;
+        await auth.refreshUserProfile();
+
         setState(() {
-          _wargaDetail = warga;
+          currentPhotoUrl = auth.user!.warga!.fotoKtp;
+          _isUploadingPhoto = false;
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Foto profil berhasil diperbarui."),
+            backgroundColor: _successColor,
+          ),
+        );
+      } else {
+         setState(() => _isUploadingPhoto = false);
+      }
+    } catch (e) {
+       if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Gagal upload foto: ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+       }
+    }
+  }
+
+  // --- LOGIKA SIMPAN PROFIL (Tidak Berubah) ---
+  Future<void> saveProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      if (!_isExpanded1 && (namaController.text.isEmpty || alamatKtpController.text.isEmpty)) {
+        setState(() => _isExpanded1 = true);
+      }
+      return;
+    }
+    
+    setState(() => _isSavingProfile = true);
+
+    final payload = {
+      'nama_lengkap': namaController.text,
+      'no_hp': noHpController.text,
+      'alamat_ktp': alamatKtpController.text,
+      'tempat_lahir': tempatLahirController.text,
+      'tanggal_lahir': tanggalLahirController.text,
+      'agama': agamaController.text,
+      'status_perkawinan': statusPerkawinanController.text,
+      'pekerjaan': pekerjaanController.text,
+    };
+
+    if (newPasswordController.text.isNotEmpty) {
+      payload['current_password'] = currentPasswordController.text;
+      payload['new_password'] = newPasswordController.text;
+      payload['new_password_confirmation'] = confirmPasswordController.text;
+    }
+
+    final api = ApiService();
+    try {
+      final res = await api.updateProfile(payload);
+      
+      if (mounted) {
+        setState(() => _isSavingProfile = false);
+        if (res != null) {
+          currentPasswordController.clear();
+          newPasswordController.clear();
+          confirmPasswordController.clear();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Profil berhasil diperbarui."),
+              backgroundColor: _successColor,
+            ),
+          );
+          await context.read<AuthProvider>().refreshUserProfile();
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Gagal memuat detail: $e")));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isSavingProfile = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Gagal update profil: ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
 
-  // 2. Fungsi untuk Navigasi ke Edit Warga Screen dengan Animasi Kustom
-  void _goToEditWarga() async {
-    final Warga currentWarga = _wargaDetail ?? widget.wargaAwal;
-    
-    // Navigasi menggunakan PageRouteBuilder untuk animasi kustom
-    final bool? result = await Navigator.of(context).push(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (context, animation, secondaryAnimation) => 
-            EditWargaScreen(warga: currentWarga),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Animasi Slide dari Kanan ke Kiri
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeOut;
-
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
+  // --- WIDGET BANTUAN: SECTION EXPANSION TILE (Diperbaiki) ---
+  Widget _buildSectionTile({
+    required String title, 
+    required List<Widget> fields, 
+    required bool isExpanded,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ExpansionTile(
+        initiallyExpanded: isExpanded,
+        onExpansionChanged: onChanged,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: _primaryColor,
+          ),
+        ),
+        collapsedIconColor: _accentColor,
+        iconColor: _primaryColor,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // *** PERBAIKAN DI SINI: MENAMBAH JARAK VERTIKAL ***
+                const SizedBox(height: 8), 
+                ...fields,
+              ],
+            ),
+          ),
+        ],
       ),
     );
-
-    // Jika result adalah true, artinya data berhasil diupdate, lakukan refresh
-    if (result == true) {
-      _fetchDetailWarga();
-    }
   }
 
-
-  // --- WIDGET BARU: CUSTOM HEADER ---
-  Widget _buildCustomHeader(BuildContext context, String title, Warga warga) {
+  // --- WIDGET: HEADER APP BAR CUSTOM (Tidak Berubah) ---
+  Widget _buildCustomHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        bottom: 16,
+        top: MediaQuery.of(context).padding.top + 8, left: 16, right: 16, bottom: 16,
       ),
       decoration: const BoxDecoration(
         color: _primaryColor,
@@ -108,245 +309,243 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white), 
             onPressed: () => Navigator.pop(context),
           ),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            // Panggil fungsi navigasi yang baru
-            onPressed: _goToEditWarga, 
-          ),
+          const SizedBox(width: 8),
+          const Text("Edit Profil", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  // --- WIDGET BARU: KARTU PROFIL DAN AVATAR ---
-  Widget _buildProfileCard(Warga warga) {
-    return _buildCardWrapper(
-      child: Center(
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: _primaryColor.withOpacity(0.1),
-              child: Text(
-                warga.namaLengkap[0].toUpperCase(),
-                style: const TextStyle(fontSize: 36, color: _primaryColor, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              warga.namaLengkap,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: _accentColor,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "NIK: ${warga.nik}",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 20),
-    );
-  }
-
-  // --- WIDGET BANTUAN: CARD WRAPPER DENGAN SHADOW PROSCAN ---
-  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16, // Shadow menonjol dan lembut
-            offset: const Offset(0, 6),
-          )
-        ],
-      ),
-      padding: padding,
-      child: child,
-    );
-  }
-
-  // --- WIDGET BANTUAN YANG DIMODIFIKASI: DETAIL ROW ---
-  @override
-  Widget _buildDetailRow(String title, String? value, {bool showDivider = true}) {
+  // --- WIDGET: TEXT FIELD UTAMA (Tidak Berubah) ---
+  Widget _buildTextField(String label, TextEditingController controller, {bool isRequired = false, TextInputType keyboardType = TextInputType.text, Widget? suffixIcon, bool readOnly = false, VoidCallback? onTap}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title di kiri
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.grey[600], 
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        decoration: _inputDecoration.copyWith(
+          labelText: label,
+          suffixIcon: suffixIcon,
+        ),
+        keyboardType: keyboardType,
+        readOnly: readOnly,
+        onTap: onTap,
+        validator: (v) {
+          if (isRequired && (v == null || v.isEmpty)) {
+            return '$label wajib diisi.';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  // --- WIDGET: PASSWORD FIELD (Tidak Berubah) ---
+  Widget _buildPasswordField(String label, TextEditingController controller, bool isVisible, bool isCurrentPassword, {required TextEditingController newPasswordController}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        obscureText: !isVisible,
+        decoration: _inputDecoration.copyWith(
+          labelText: label,
+          suffixIcon: IconButton(
+            icon: Icon(
+              isVisible ? Icons.visibility : Icons.visibility_off,
+              color: _accentColor,
+            ),
+            onPressed: () {
+              setState(() {
+                if (isCurrentPassword) {
+                  _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
+                } else {
+                  _isPasswordVisible = !_isPasswordVisible;
+                }
+              });
+            },
+          ),
+        ),
+        validator: (v) {
+          if (label.contains("Konfirmasi") && newPasswordController.text != v) {
+            return 'Konfirmasi password tidak cocok.';
+          }
+          if (isCurrentPassword && newPasswordController.text.isNotEmpty && (v == null || v.isEmpty)) {
+            return 'Password saat ini wajib diisi jika Anda ingin mengganti password.';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  // --- WIDGET UNTUK SECTION FOTO PROFIL (Tidak Berubah) ---
+  Widget _buildProfilePictureSection() {
+    return Column(
+      children: [
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: _primaryColor, width: 3),
+            ),
+            child: CircleAvatar(
+              radius: 55,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: newProfilePhoto != null
+                  ? FileImage(newProfilePhoto!)
+                  : (currentPhotoUrl != null
+                      ? NetworkImage(currentPhotoUrl!)
+                      : null) as ImageProvider?,
+              child: (newProfilePhoto == null && currentPhotoUrl == null)
+                  ? const Icon(Icons.person, size: 50, color: Colors.white)
+                  : null,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton.icon(
+              onPressed: _isUploadingPhoto ? null : pickPhoto,
+              icon: Icon(Icons.camera_alt, color: _isUploadingPhoto ? Colors.grey : _accentColor),
+              label: Text("Ganti Foto", style: TextStyle(color: _isUploadingPhoto ? Colors.grey : _accentColor)),
+              style: TextButton.styleFrom(padding: EdgeInsets.zero),
+            ),
+            if (newProfilePhoto != null) ...[
               const SizedBox(width: 16),
-              // Value di kanan
-              Expanded(
-                child: Text(
-                  value ?? "-",
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 15, 
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+              ElevatedButton.icon(
+                onPressed: _isUploadingPhoto ? null : uploadPhoto,
+                icon: _isUploadingPhoto 
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.upload, size: 18),
+                label: Text(_isUploadingPhoto ? "Mengunggah..." : "Upload Foto"),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor, 
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 3,
                 ),
               ),
             ],
-          ),
-          if (showDivider)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Divider(height: 1, color: Colors.grey[200]),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // --- WIDGET BANTUAN YANG DIMODIFIKASI: SECTION TITLE ---
-  @override
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 4),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: _primaryColor, // Menggunakan Primary Color
-          fontWeight: FontWeight.w700, // Font tebal
-          fontSize: 18,
+          ],
         ),
-      ),
+      ],
     );
   }
 
-  // --- FUNGSI UTAMA BUILD ---
+  // --- WIDGET UTAMA BUILD (Tidak Berubah) ---
   @override
   Widget build(BuildContext context) {
-    final warga = _wargaDetail ?? widget.wargaAwal;
+    final isLoading = context.watch<AuthProvider>().isLoading || _isSavingProfile;
 
     return Scaffold(
-      backgroundColor: _backgroundColor, // Latar belakang abu-abu muda
+      backgroundColor: _backgroundColor,
       body: Column(
         children: [
-          _buildCustomHeader(context, "Detail Warga", warga),
+          _buildCustomHeader(context),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _fetchDetailWarga,
-              color: _primaryColor,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-                children: [
-                  // Kartu Profil (Avatar dan Nama)
-                  _buildProfileCard(warga),
-                  
-                  // Menampilkan Loading State di sini
-                  if (_isLoading) 
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(color: _primaryColor),
-                      ),
-                    ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // --- AREA FOTO PROFIL ---
+                    _buildProfilePictureSection(),
+                    const SizedBox(height: 30),
 
-                  // --- KARTU DATA DIRI ---
-                  _buildSectionTitle(context, "Data Diri"),
-                  _buildCardWrapper(
-                    child: Column(
-                      children: [
-                        _buildDetailRow("Tempat Lahir", warga.tempatLahir),
-                        _buildDetailRow("Tgl. Lahir", warga.tanggalLahir),
-                        _buildDetailRow(
-                          "Jenis Kelamin",
-                          warga.jenisKelamin == 'L' ? "Laki-laki" : "Perempuan",
+                    // --- 1. DATA DIRI KTP ---
+                    _buildSectionTile(
+                      title: "Data Diri (Sesuai KTP)",
+                      isExpanded: _isExpanded1,
+                      onChanged: (val) => setState(() => _isExpanded1 = val),
+                      fields: [
+                        _buildTextField("Nama Lengkap", namaController, isRequired: true),
+                        _buildTextField("No HP", noHpController, keyboardType: TextInputType.phone),
+                        _buildTextField("Alamat KTP", alamatKtpController, isRequired: true),
+                        _buildTextField("Tempat Lahir", tempatLahirController, isRequired: true),
+                        _buildTextField(
+                          "Tanggal Lahir (YYYY-MM-DD)",
+                          tanggalLahirController,
+                          isRequired: true,
+                          readOnly: true,
+                          onTap: isLoading ? null : () => _selectDate(context),
+                          suffixIcon: const Icon(Icons.calendar_today, color: _accentColor),
                         ),
-                        _buildDetailRow("Agama", warga.agama),
-                        _buildDetailRow("Pekerjaan", warga.pekerjaan),
-                        _buildDetailRow("Status", warga.statusPerkawinan),
-                        _buildDetailRow("No. HP", warga.noHp ?? "-", showDivider: false), // Baris terakhir tanpa divider
+                        _buildTextField("Agama", agamaController, isRequired: true),
+                        _buildTextField("Status Perkawinan", statusPerkawinanController, isRequired: true),
+                        _buildTextField("Pekerjaan", pekerjaanController, isRequired: true),
                       ],
                     ),
-                  ),
-
-                  // --- KARTU ALAMAT & DOMISILI ---
-                  _buildSectionTitle(context, "Alamat & Domisili"),
-                  _buildCardWrapper(
-                    child: Column(
-                      children: [
-                        _buildDetailRow("Alamat KTP", warga.alamatKtp),
-                        _buildDetailRow("RT / RW", "${warga.rt} / ${warga.rw}", showDivider: false),
+                    
+                    // --- 2. GANTI PASSWORD ---
+                    _buildSectionTile(
+                      title: "Ganti Password",
+                      isExpanded: _isExpanded2,
+                      onChanged: (val) => setState(() => _isExpanded2 = val),
+                      fields: [
+                        _buildPasswordField(
+                          "Password Saat Ini",
+                          currentPasswordController,
+                          _isCurrentPasswordVisible,
+                          true,
+                          newPasswordController: newPasswordController,
+                        ),
+                        _buildPasswordField(
+                          "Password Baru",
+                          newPasswordController,
+                          _isPasswordVisible,
+                          false,
+                          newPasswordController: newPasswordController,
+                        ),
+                        _buildPasswordField(
+                          "Konfirmasi Password Baru",
+                          confirmPasswordController,
+                          _isPasswordVisible,
+                          false,
+                          newPasswordController: newPasswordController,
+                        ),
                       ],
                     ),
-                  ),
 
-                  // --- KARTU DATA KELUARGA ---
-                  if (warga.keluarga != null) ...[
-                    _buildSectionTitle(context, "Data Keluarga"),
-                    _buildCardWrapper(
-                      child: Column(
-                        children: [
-                          _buildDetailRow("No. KK", warga.keluarga!.noKk),
-                          _buildDetailRow("Status di KK", warga.statusDalamKeluarga),
-                          _buildDetailRow("Alamat KK", warga.keluarga!.alamat, showDivider: false),
-                        ],
+                    const SizedBox(height: 30),
+                    
+                    // --- TOMBOL SIMPAN ---
+                    ElevatedButton(
+                      onPressed: isLoading ? null : saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 5,
                       ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
+                              "SIMPAN PERUBAHAN", 
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
                     ),
+                    const SizedBox(height: 30),
                   ],
-
-                  // --- KARTU AKUN TERHUBUNG ---
-                  if (warga.user != null) ...[
-                    _buildSectionTitle(context, "Akun Terhubung"),
-                    _buildCardWrapper(
-                      child: Column(
-                        children: [
-                          _buildDetailRow("Email", warga.user!.email),
-                          _buildDetailRow("Role", warga.user!.role.toUpperCase(), showDivider: false),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 40), // Ruang di bawah
-                ],
+                ),
               ),
             ),
           ),
