@@ -1,193 +1,261 @@
-// screens/warga/keluarga_warga_screen.dart
+// File: lib/screens/warga/keluarga_warga_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:frontend/models/user_model.dart'; // Untuk class Warga dan Keluarga
-import 'package:frontend/state/auth_provider.dart';
-import 'package:frontend/screens/warga/Detail_Keluarga_Screen.dart'; // <<< IMPORT INI
 
+// Konstanta warna (Bisa juga dipindah ke file theme terpisah agar lebih rapi)
 const Color _primaryColor = Color(0xFF0E2F60);
-const Color _backgroundColor = Color(0xFFF5F5F5);
 const Color _accentColor = Color(0xFF3C486B);
+const Color _backgroundColor = Color(0xFFF5F5F5);
 
 class KeluargaWargaScreen extends StatelessWidget {
   const KeluargaWargaScreen({super.key});
 
-  // Widget Bantuan: Detail Row
-  Widget _buildDetailRow(String title, String? value, {bool showDivider = true}) {
-    String displayValue = value ?? "-";
-    
-    // Menghandle status dalam keluarga (menghilangkan underscore)
-    if (title.toLowerCase().contains("status dalam keluarga")) {
-      displayValue = displayValue.replaceAll('_', ' ');
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  displayValue,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
-              ),
-            ],
-          ),
-          if (showDivider)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Divider(height: 1, color: Colors.grey[200]),
-            ),
-        ],
-      ),
-    );
-  }
-  
-  // Widget Bantuan: Card Wrapper
-  // DIBUAT DENGAN OPTION ONTAP
-  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16), VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            )
-          ],
-        ),
-        padding: padding,
-        child: child,
-      ),
-    );
-  }
-
-  // Widget Bantuan: Section Title
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 4),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: _primaryColor,
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final warga = authProvider.user?.warga;
+    // --- DATA DUMMY ---
+    final Map<String, String> infoKK = {
+      "No. KK": "3201123456780001",
+      "Kepala Keluarga": "Budi Santoso",
+      "Alamat": "Jl. Mawar No. 12, RT 01 / RW 02",
+      "Desa/Kelurahan": "Sukamaju",
+    };
 
-    if (warga == null) {
-      return const Center(child: Text("Data Warga tidak ditemukan."));
-    }
-
-    final Keluarga? keluarga = warga.keluarga;
+    final List<Map<String, String>> anggotaKeluarga = [
+      {
+        "nama": "Budi Santoso",
+        "nik": "3201123456780001",
+        "status": "Kepala Keluarga",
+        "jk": "Laki-laki",
+        "ttl": "Bandung, 12-08-1980",
+        "agama": "Islam",
+        "pekerjaan": "Wiraswasta",
+      },
+      {
+        "nama": "Siti Aminah",
+        "nik": "3201123456780002",
+        "status": "Istri",
+        "jk": "Perempuan",
+        "ttl": "Jakarta, 05-03-1985",
+        "agama": "Islam",
+        "pekerjaan": "Ibu Rumah Tangga",
+      },
+      {
+        "nama": "Rizky Pratama",
+        "nik": "3201123456780003",
+        "status": "Anak",
+        "jk": "Laki-laki",
+        "ttl": "Bandung, 20-01-2010",
+        "agama": "Islam",
+        "pekerjaan": "Pelajar/Mahasiswa",
+      },
+      {
+        "nama": "Anya Putri",
+        "nik": "3201123456780004",
+        "status": "Anak",
+        "jk": "Perempuan",
+        "ttl": "Bandung, 15-06-2015",
+        "agama": "Islam",
+        "pekerjaan": "Belum/Tidak Bekerja",
+      },
+    ];
+    // -------------------
 
     return Scaffold(
       backgroundColor: _backgroundColor,
-      appBar: AppBar(
-        title: const Text("Data Keluarga Saya"),
-        backgroundColor: _primaryColor,
-        foregroundColor: Colors.white,
-      ),
+      // AppBar opsional, jika ingin ada tombol back atau judul di atas
+      // appBar: AppBar(title: const Text("Data Keluarga"), backgroundColor: _primaryColor), 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- KARTU DATA PRIBADI ---
-            _buildSectionTitle(context, "Data Pribadi"),
-            _buildCardWrapper(
+            // 1. Header Kartu Keluarga
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [_primaryColor, _accentColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primaryColor.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildDetailRow("Nama Lengkap", warga.namaLengkap),
-                  _buildDetailRow("NIK", warga.nik),
-                  _buildDetailRow("Status Dalam Keluarga", warga.statusDalamKeluarga),
-                  _buildDetailRow("No. HP", warga.noHp, showDivider: false),
+                  const Row(
+                    children: [
+                      Icon(Icons.credit_card, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        "KARTU KELUARGA",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          letterSpacing: 1.5,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    infoKK['No. KK']!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildHeaderInfo("Kepala Keluarga", infoKK['Kepala Keluarga']!),
+                  const SizedBox(height: 8),
+                  _buildHeaderInfo("Alamat", infoKK['Alamat']!),
                 ],
               ),
             ),
             
-            // --- KARTU DATA KELUARGA (KK) - BLOK KONDISIONAL DENGAN NAVIGASI ---
+            const SizedBox(height: 24),
             
-            if (keluarga != null) ...[ // KONDISI 1: Keluarga Lengkap
-              _buildSectionTitle(context, "Informasi Kartu Keluarga"),
-              _buildCardWrapper(
-                onTap: () {
-                    // NAVIGASI KE DETAIL KELUARGA (Anggap keluarga.noKk adalah nama keluarga)
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (ctx) => DetailKeluargaScreen(
-                          idKeluarga: keluarga.id, // ID Keluarga
-                          namaKeluarga: keluarga.noKk, // Menggunakan No KK sebagai nama/judul
-                        ),
-                      ),
-                    );
-                },
-                child: Column(
-                  children: [
-                    _buildDetailRow("Nomor KK", keluarga.noKk),
-                    _buildDetailRow("Kepala Keluarga ID", keluarga.kepalaKeluargaId?.toString()),
-                    _buildDetailRow("RT/RW Domisili", "${keluarga.rt} / ${keluarga.rw}"),
-                    // Tambahkan indikator bahwa card dapat diklik
-                    const Align(
-                        alignment: Alignment.centerRight,
-                        child: Text("KETUK UNTUK DETAIL >", style: TextStyle(color: _primaryColor, fontSize: 12, fontWeight: FontWeight.bold))),
-                    const SizedBox(height: 4), 
-                  ],
+            // 2. Judul Section Anggota
+            const Padding(
+              padding: EdgeInsets.only(left: 4, bottom: 12),
+              child: Text(
+                "Anggota Keluarga",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _primaryColor,
                 ),
               ),
-            ] else if (warga.keluargaId != null) ...[ 
-            // KONDISI 2: KK ID ada, tapi detail keluarga kosong (Tidak bisa diklik karena data kurang)
-              _buildSectionTitle(context, "Informasi Kartu Keluarga"),
-              _buildCardWrapper(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      "Nomor KK: ${warga.keluargaId}\nDetail data keluarga tidak termuat. Harap hubungi Admin.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[700]),
-                    ),
-                  ),
-                ),
-              ),
-            ] else ...[ // KONDISI 3: Belum terdaftar dalam KK
-              _buildSectionTitle(context, "Informasi Kartu Keluarga"),
-              _buildCardWrapper(
-                  child: Center(
-                      child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text("Anda belum terdaftar dalam Kartu Keluarga mana pun.", style: TextStyle(color: Colors.grey[700]),
-                          ),
-                      ),
-                  ),
-              ),
-            ],
+            ),
 
-            const SizedBox(height: 40),
+            // 3. List Anggota Keluarga
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: anggotaKeluarga.length,
+              itemBuilder: (context, index) {
+                final member = anggotaKeluarga[index];
+                return _buildMemberCard(member);
+              },
+            ),
+             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderInfo(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(color: Colors.white54, fontSize: 10),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMemberCard(Map<String, String> member) {
+    bool isHead = member['status'] == "Kepala Keluarga";
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ExpansionTile(
+        shape: const Border(),
+        leading: CircleAvatar(
+          backgroundColor: isHead ? _primaryColor : _primaryColor.withOpacity(0.1),
+          child: Icon(
+            member['jk'] == "Laki-laki" ? Icons.face : Icons.face_3,
+            color: isHead ? Colors.white : _primaryColor,
+          ),
+        ),
+        title: Text(
+          member['nama']!,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          member['status']!,
+          style: TextStyle(
+            color: isHead ? _primaryColor : Colors.grey[600],
+            fontWeight: isHead ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(),
+          _buildDetailRow(Icons.badge, "NIK", member['nik']!),
+          _buildDetailRow(Icons.cake, "TTL", member['ttl']!),
+          _buildDetailRow(Icons.people, "Jenis Kelamin", member['jk']!),
+          _buildDetailRow(Icons.mosque, "Agama", member['agama']!),
+          _buildDetailRow(Icons.work, "Pekerjaan", member['pekerjaan']!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[400]),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
