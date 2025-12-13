@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\KegiatanController;
 use App\Http\Controllers\Api\V1\AcaraController;
 use App\Http\Controllers\Api\V1\WargaFiturController;
 use App\Http\Controllers\Api\V1\WalletController;
+use App\Http\Controllers\CvGatewayController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -18,6 +19,9 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::post('/login-face', [AuthController::class, 'loginFace']);
 
+Route::post('/cv/extract-features', [CvGatewayController::class, 'extractFeatures']);
+Route::post('/cv/check-liveness', [CvGatewayController::class, 'checkLiveness']);
+Route::post('/cv/predict', [CvGatewayController::class, 'predict']);
 
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {

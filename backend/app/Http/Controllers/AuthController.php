@@ -239,7 +239,7 @@ class AuthController extends Controller
         $path = $file->storeAs('foto_profil', $filename, 'public');
 
         // update ke database (tetap pakai field foto_ktp)
-        $warga->foto_ktp = 'https://64df3290146c.ngrok-free.app/storage/'.$path;
+        $warga->foto_ktp = 'https://intelligential-argentina-goutily.ngrok-free.dev/storage/'.$path;
         $warga->save();
 
         return response()->json([
