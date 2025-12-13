@@ -84,6 +84,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
       labelStyle: TextStyle(color: Colors.grey.shade600),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       
+      // KUNCI: Sudut membulat (12dp) pada border
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(_kBorderRadius),
         borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
@@ -99,6 +100,57 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
       ),
     );
   }
+
+  // --- WIDGET HEADER MELENGKUNG (Gaya Manajemen Kegiatan) ---
+  Widget _buildCurvedHeader(BuildContext context) {
+    final bool canPop = Navigator.of(context).canPop();
+
+    return Container(
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 20),
+      decoration: BoxDecoration(
+        color: widget.primaryColor,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            // Tombol Back
+            if (canPop)
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              )
+            else
+              const SizedBox(width: 0),
+
+            // Judul
+            Expanded(
+              child: Text(
+                "Pembelian Paket Data",
+                textAlign: canPop ? TextAlign.left : TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (canPop) const SizedBox(width: 48)
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Future<void> _buyPackage(Map<String, dynamic> pkg) async {
     final phone = _phoneController.text.trim();
@@ -192,15 +244,11 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text("Paket Data"),
-        backgroundColor: widget.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
       body: Column(
         children: [
+          // Panggil Header Kustom
+          _buildCurvedHeader(context),
+          
           // --- FORM INPUT AREA ---
           Container(
             padding: const EdgeInsets.symmetric(
@@ -209,18 +257,16 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
             ),
             decoration: const BoxDecoration(
               color: Colors.white,
-              // Tambahkan shadow atau border bawah opsional
-              border: Border(bottom: BorderSide(color: Colors.grey, width: 0.1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Pilih paket data untuk nomor Anda.",
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: widget.primaryColor,
-                      ),
+                  "Masukkan Detail Pembelian",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: widget.primaryColor,
+                        ),
                 ),
                 const SizedBox(height: 16),
                 
@@ -267,7 +313,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
           // --- DAFTAR PAKET DATA (Gaya ProScan) ---
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
               itemCount: _dummyPackages.length,
               itemBuilder: (context, index) {
                 final pkg = _dummyPackages[index];
@@ -276,20 +322,18 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   color: Colors.white,
-                  elevation: 2, // Tambahkan sedikit elevasi
+                  elevation: 3, // Sedikit lebih jelas
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(_kCardRadius),
-                    side: BorderSide(
-                        color: Colors.grey.shade200), // Border lembut
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0), // Padding lebih besar
+                    padding: const EdgeInsets.all(16.0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Kotak Quota (Icon-like)
                         Container(
-                          width: 60, // Ukuran lebih besar
+                          width: 60,
                           height: 60,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
@@ -300,7 +344,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                             pkg['quota'],
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontWeight: FontWeight.w800, // Sangat tebal
+                              fontWeight: FontWeight.w800,
                               fontSize: 12,
                               color: widget.primaryColor,
                             ),
@@ -316,7 +360,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                               Text(
                                 pkg['name'],
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.w700, // Tebal
+                                  fontWeight: FontWeight.w700,
                                   fontSize: 15,
                                 ),
                               ),
@@ -357,6 +401,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            elevation: 0, // Datar
                           ),
                           child: _submitting
                               ? const SizedBox(
@@ -371,7 +416,7 @@ class _DesaPayPaketDataScreenState extends State<DesaPayPaketDataScreen> {
                               : const Text(
                                   "Beli",
                                   style: TextStyle(
-                                      fontSize: 14, fontWeight: FontWeight.w600),
+                                      fontSize: 14, fontWeight: FontWeight.w700),
                                 ),
                         ),
                       ],

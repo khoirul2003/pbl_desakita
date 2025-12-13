@@ -207,12 +207,25 @@ class ApiService {
     }
   }
 
-  Future<List<Warga>> getManajemenWarga({String? search}) async {
+  Future<List<Warga>> getManajemenWarga({String? search, String? rt, String? rw}) async {
     try {
+      final Map<String, dynamic> params = {};
+
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      if (rt != null && rt.isNotEmpty) {
+        params['rt'] = rt;
+      }
+      if (rw != null && rw.isNotEmpty) {
+        params['rw'] = rw;
+      }
+
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/warga',
-        queryParameters: {'search': search},
+        queryParameters: params,
       );
+
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Warga.fromJson(json)).toList();
@@ -286,51 +299,25 @@ class ApiService {
     }
   }
 
-  Future<List<String>> getRwList() async {
+  Future<List<Iuran>> getManajemenIuran({String? search, String? rt, String? rw}) async {
     try {
-      final response = await _dioProtected.get('$_baseUrlLaravel/v1/master/rw');
+      final Map<String, dynamic> params = {};
 
-      return List<String>.from(response.data);
-    } on DioException catch (e) {
-      print("Error getRwList: ${e.response?.data}");
-      rethrow;
-    }
-  }
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      if (rt != null && rt.isNotEmpty) {
+        params['rt'] = rt;
+      }
+      if (rw != null && rw.isNotEmpty) {
+        params['rw'] = rw;
+      }
 
-  Future<List<Keluarga>> getAllKeluarga() async {
-    try {
-      final response = await _dioProtected.get(
-        '$_baseUrlLaravel/v1/master/keluarga',
-      );
-
-      return (response.data as List).map((e) => Keluarga.fromJson(e)).toList();
-    } on DioException catch (e) {
-      print("Error getAllKeluarga: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-
-  Future<List<String>> getRtList(String rw) async {
-    try {
-      final response = await _dioProtected.get(
-        '$_baseUrlLaravel/v1/master/rt',
-        queryParameters: {'rw': rw},
-      );
-
-      return List<String>.from(response.data);
-    } on DioException catch (e) {
-      print("Error getRtList: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-  Future<List<Iuran>> getManajemenIuran({String? search}) async {
-    try {
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/iuran',
-        queryParameters: {'search': search},
+        queryParameters: params, 
       );
+      
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Iuran.fromJson(json)).toList();
@@ -504,6 +491,7 @@ class ApiService {
     }
   }
 
+
   Future<WalletSummary?> getWalletSummary() async {
     try {
       final response = await _dioProtected.get(
@@ -647,7 +635,7 @@ class ApiService {
     }
   }
 
-  Future<User?> fetchProfile() async {
+    Future<User?> fetchProfile() async {
     try {
       final response = await _dioProtected.get('$_baseUrlLaravel/v1/profile');
 
@@ -673,7 +661,8 @@ class ApiService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final userJson = response.data['user'] ?? response.data;
+        final userJson =
+            response.data['user'] ?? response.data;
         final user = User.fromJson(userJson);
 
         await _storage.write(key: 'user_data', value: user.toJsonString());
@@ -683,6 +672,45 @@ class ApiService {
       return null;
     } on DioException catch (e) {
       print("Error updateProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<String>> getRwList() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/master/rw');
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRwList: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<Keluarga>> getAllKeluarga() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/keluarga',
+      );
+
+      return (response.data as List).map((e) => Keluarga.fromJson(e)).toList();
+    } on DioException catch (e) {
+      print("Error getAllKeluarga: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+
+  Future<List<String>> getRtList(String rw) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/rt',
+        queryParameters: {'rw': rw},
+      );
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRtList: ${e.response?.data}");
       rethrow;
     }
   }
@@ -710,4 +738,6 @@ class ApiService {
       return null;
     }
   }
+
+
 }

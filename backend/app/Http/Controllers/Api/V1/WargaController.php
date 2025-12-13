@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Warga;
-use App\Models\Keluarga;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -53,12 +52,7 @@ class WargaController extends Controller
             'agama' => 'required|string',
             'status_perkawinan' => 'required|string',
             'pekerjaan' => 'required|string',
-
-            'rt' => 'required|string|max:3',
-            'rw' => 'required|string|max:3',
-            'keluarga_id' => 'required|exists:keluarga,id',
         ]);
-
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
@@ -122,26 +116,4 @@ class WargaController extends Controller
 
         return response()->json(null, 204);
     }
-
-    public function listRw()
-    {
-        return Warga::select('rw')
-            ->distinct()
-            ->orderBy('rw')
-            ->pluck('rw');
-    }
-
-    public function listRtByRw(Request $request)
-    {
-        $request->validate(['rw' => 'required']);
-
-        return Warga::where('rw', $request->rw)
-            ->select('rt')
-            ->distinct()
-            ->orderBy('rt')
-            ->pluck('rt');
-    }
-
-
-    
 }

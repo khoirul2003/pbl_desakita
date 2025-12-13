@@ -6,6 +6,7 @@ import 'package:frontend/services/api_service.dart';
 
 // Konstanta untuk Gaya ProScan
 const double _kBorderRadius = 12.0;
+const double _kCardRadius = 16.0;
 
 class DesaPayTransferScreen extends StatefulWidget {
   final Color primaryColor;
@@ -100,7 +101,7 @@ class _DesaPayTransferScreenState extends State<DesaPayTransferScreen> {
                 Navigator.of(context).pop(true); // screen, trigger refresh
               },
               // Warna TextButton menggunakan Primary Color
-              child: Text("Tutup", style: TextStyle(color: widget.primaryColor)), 
+              child: Text("Tutup", style: TextStyle(color: widget.primaryColor)),
             ),
           ],
         ),
@@ -125,137 +126,200 @@ class _DesaPayTransferScreenState extends State<DesaPayTransferScreen> {
     }
   }
 
+  // --- WIDGET HEADER MELENGKUNG (DIADAPTASI DARI MANAJEMEN KEGIATAN) ---
+  Widget _buildCurvedHeader(BuildContext context) {
+    final bool canPop = Navigator.of(context).canPop();
+
+    return Container(
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 20),
+      decoration: BoxDecoration(
+        color: widget.primaryColor,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            // Tombol Back
+            if (canPop)
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              )
+            else
+              const SizedBox(width: 0),
+
+            // Judul
+            Expanded(
+              child: Text(
+                "Transfer Antar Desapay",
+                textAlign: canPop ? TextAlign.left : TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            // Placeholder di kanan (untuk menyeimbangkan tombol back)
+            if (canPop) const SizedBox(width: 48)
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Fungsi untuk mendapatkan InputDecoration bergaya ProScan
+  InputDecoration _proscanInputDecoration({
+    required String labelText,
+    String? hintText,
+    String? prefixText,
+    Widget? suffixIcon, // Tambahkan suffixIcon untuk kontak
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixText: prefixText,
+      suffixIcon: suffixIcon,
+      labelStyle: TextStyle(color: Colors.grey.shade600),
+
+      // KUNCI: Sudut membulat (12dp) pada border
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+      ),
+      // Aksen Warna saat fokus
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_kBorderRadius),
+        borderSide: BorderSide(color: widget.accentColor, width: 2),
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+    );
+  }
+
   // --- START WIDGET BUILD ---
   @override
   Widget build(BuildContext context) {
-    // Fungsi untuk mendapatkan InputDecoration bergaya ProScan
-    InputDecoration _proscanInputDecoration(
-        {required String labelText, String? hintText, String? prefixText}) {
-      return InputDecoration(
-        labelText: labelText,
-        hintText: hintText,
-        prefixText: prefixText,
-        labelStyle: TextStyle(color: Colors.grey.shade600),
-        
-        // KUNCI: Sudut membulat (12dp) pada border
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_kBorderRadius),
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_kBorderRadius),
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
-        ),
-        // Aksen Warna saat fokus
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_kBorderRadius),
-          borderSide: BorderSide(color: widget.accentColor, width: 2),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      );
-    }
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Transfer Antar Desapay"),
-        backgroundColor: widget.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0), // Padding lebih besar
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- HEADER (Gaya ProScan) ---
-            Text(
-              "Transfer saldo antar akun Desapay.",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800, // Lebih tebal
-                    color: widget.primaryColor, // Warna Primary
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Masukkan nomor akun tujuan dan nominal transfer.",
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 30),
-            
-            // --- INPUT NO. AKUN TUJUAN ---
-            TextField(
-              controller: _targetAccountController,
-              keyboardType: TextInputType.text,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-              decoration: _proscanInputDecoration(
-                labelText: "No. Akun Tujuan",
-                hintText: "Mis. DSP-001-00012346",
-              ),
-            ),
-            const SizedBox(height: 20),
+      backgroundColor: Colors.grey.shade50,
+      body: Column(
+        children: [
+          // Panggil header kustom
+          _buildCurvedHeader(context),
 
-            // --- INPUT NOMINAL TRANSFER ---
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-              decoration: _proscanInputDecoration(
-                labelText: "Nominal Transfer",
-                prefixText: "Rp ",
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // --- INPUT CATATAN (OPSIONAL) ---
-            TextField(
-              controller: _noteController,
-              maxLines: 3, // Perbesar field catatan
-              style: const TextStyle(fontWeight: FontWeight.w500),
-              decoration: _proscanInputDecoration(
-                labelText: "Catatan (opsional)",
-              ),
-            ),
-            const SizedBox(height: 40),
-
-            // --- TOMBOL SUBMIT (Gaya ProScan) ---
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitting ? null : _submitTransfer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18), // Padding lebih besar
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(_kBorderRadius),
-                  ),
-                  elevation: 5,
-                  shadowColor: widget.primaryColor.withOpacity(0.4),
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+          // Konten Utama
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0), // Padding lebih besar
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- HEADER DESKRIPSI (Gaya ProScan) ---
+                  Text(
+                    "Transfer Saldo",
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800, // Lebih tebal
+                          color: widget.primaryColor, // Warna Primary
                         ),
-                      )
-                    : const Text(
-                        "Kirim",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Masukkan nomor akun tujuan dan nominal transfer.",
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // --- INPUT NO. AKUN TUJUAN ---
+                  TextField(
+                    controller: _targetAccountController,
+                    keyboardType: TextInputType.text,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    decoration: _proscanInputDecoration(
+                      labelText: "No. Akun Tujuan",
+                      hintText: "DSP-00**",
+                      suffixIcon: Icon(Icons.person_search_rounded,
+                          color: widget.accentColor),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // --- INPUT NOMINAL TRANSFER ---
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    decoration: _proscanInputDecoration(
+                      labelText: "Nominal Transfer",
+                      prefixText: "Rp ",
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // --- INPUT CATATAN (OPSIONAL) ---
+                  TextField(
+                    controller: _noteController,
+                    maxLines: 3, // Perbesar field catatan
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    decoration: _proscanInputDecoration(
+                      labelText: "Catatan (opsional)",
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // --- TOMBOL SUBMIT (Gaya ProScan) ---
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _submitting ? null : _submitTransfer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: widget.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 18), // Padding lebih besar
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(_kBorderRadius),
                         ),
+                        elevation: 5,
+                        shadowColor: widget.primaryColor.withOpacity(0.4),
                       ),
+                      child: _submitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              "Kirim",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
