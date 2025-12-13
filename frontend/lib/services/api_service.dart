@@ -11,13 +11,7 @@ import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/models/tagihan_iuran_model.dart';
 
 class ApiService {
-<<<<<<< HEAD
-  // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
-  final String _baseUrlLaravel = "https://64df3290146c.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://b6d8ff767f85.ngrok-free.app";
-=======
   final String _baseUrlLaravel = "https://intelligential-argentina-goutily.ngrok-free.dev/api";
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
 
   final _storage = const FlutterSecureStorage();
   final Dio _dioPublic = Dio();
@@ -67,11 +61,6 @@ class ApiService {
           print("MESSAGE : ${e.message}");
           print("❌❌❌ END ERROR");
 
-    _dioPublic.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          options.headers['Bypass-Tunnel-Reminder'] = 'true';
-          return handler.next(options);
           return handler.next(e);
         },
       ),
@@ -218,11 +207,7 @@ class ApiService {
     }
   }
 
-  Future<List<Warga>> getManajemenWarga({
-    String? search,
-    String? rt,
-    String? rw,
-  }) async {
+  Future<List<Warga>> getManajemenWarga({String? search, String? rt, String? rw}) async {
     try {
       final Map<String, dynamic> params = {};
 
@@ -314,11 +299,6 @@ class ApiService {
     }
   }
 
-  Future<List<Iuran>> getManajemenIuran({
-    String? search,
-    String? rt,
-    String? rw,
-  }) async {
   Future<List<Iuran>> getManajemenIuran({String? search, String? rt, String? rw}) async {
     try {
       final Map<String, dynamic> params = {};
@@ -335,9 +315,9 @@ class ApiService {
 
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/iuran',
-        queryParameters: params,
+        queryParameters: params, 
       );
-
+      
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Iuran.fromJson(json)).toList();
@@ -638,13 +618,10 @@ class ApiService {
       );
       return response.statusCode == 200;
     } on DioException catch (e) {
-      print("Error transferDesapay: ${e.message}");
-      // Re-throw exception agar TransferScreen dapat menangkap error spesifik (misal 422 Saldo tidak cukup)
+      print("Error bayarTagihanIuran: ${e.response?.data}");
       rethrow;
     }
   }
-<<<<<<< HEAD
-=======
 
   Future<Response> getBalanceAndTransactions() async {
     try {
@@ -763,5 +740,4 @@ class ApiService {
   }
 
 
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
 }
