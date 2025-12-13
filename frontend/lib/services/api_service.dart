@@ -2,14 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:frontend/models/user_model.dart';
-import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/models/kegiatan_model.dart';
 import 'package:frontend/models/acara_model.dart';
 import 'package:frontend/models/keuangan_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-// INI ADALAH SATU-SATUNYA FILE SERVICE YANG DIGUNAKAN
+import 'package:frontend/models/wallet_models.dart';
+import 'package:frontend/models/tagihan_iuran_model.dart';
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
@@ -17,19 +16,15 @@ class ApiService {
   final String _baseUrlFastApi = "https://b6d8ff767f85.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
-
   final Dio _dioPublic = Dio();
   late Dio _dioProtected;
 
-  // --- KONSTRUKTOR ---
   ApiService() {
     _dioProtected = Dio();
 
-    // Interceptor untuk PROTECTED API (Menambahkan Token & Bypass)
     _dioProtected.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Ngrok/Loca.lt Bypass
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
@@ -44,7 +39,6 @@ class ApiService {
       ),
     );
 
-    // Interceptor untuk PUBLIC API (Hanya Bypass)
     _dioPublic.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -55,7 +49,8 @@ class ApiService {
     );
   }
 
-  // --- FUNGSI HELPER (INTERNAL) ---
+  Dio get dioProtected => _dioProtected;
+  String get baseUrlLaravel => _baseUrlLaravel;
 
   Future<User?> getUserDataFromStorage() async {
     final userString = await _storage.read(key: 'user_data');
@@ -72,8 +67,6 @@ class ApiService {
     await _storage.write(key: 'auth_token', value: token);
     await _storage.write(key: 'user_data', value: user.toJsonString());
   }
-
-  // --- FUNGSI AUTH SERVICE ---
 
   Future<bool> login(String email, String password) async {
     try {
@@ -122,7 +115,7 @@ class ApiService {
     try {
       final response = await _dioPublic.post(
         '$_baseUrlLaravel/login-face',
-        // PENTING: Menggunakan jsonEncode untuk memenuhi validasi Laravel (String JSON)
+
         data: {'face_features': jsonEncode(features)},
       );
       if (response.statusCode == 200 && response.data['token'] != null) {
@@ -140,7 +133,7 @@ class ApiService {
     try {
       final response = await _dioProtected.post(
         '$_baseUrlLaravel/v1/profile/register-face',
-        // PENTING: Menggunakan jsonEncode untuk memenuhi validasi Laravel (String JSON)
+
         data: {'face_features': jsonEncode(features)},
       );
       return response.statusCode == 200;
@@ -149,8 +142,6 @@ class ApiService {
       return false;
     }
   }
-
-  // --- FUNGSI CV SERVICE (FASTAPI) ---
 
   Future<List<double>?> getFaceFeatures(File image) async {
     try {
@@ -198,14 +189,29 @@ class ApiService {
     }
   }
 
-  // --- FUNGSI WARGA SERVICE (ADMIN) ---
-
-  Future<List<Warga>> getManajemenWarga({String? search}) async {
+  Future<List<Warga>> getManajemenWarga({
+    String? search,
+    String? rt,
+    String? rw,
+  }) async {
     try {
+      final Map<String, dynamic> params = {};
+
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      if (rt != null && rt.isNotEmpty) {
+        params['rt'] = rt;
+      }
+      if (rw != null && rw.isNotEmpty) {
+        params['rw'] = rw;
+      }
+
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/warga',
-        queryParameters: {'search': search},
+        queryParameters: params,
       );
+
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Warga.fromJson(json)).toList();
@@ -279,14 +285,29 @@ class ApiService {
     }
   }
 
-  // --- FUNGSI IURAN SERVICE (ADMIN) ---
-
-  Future<List<Iuran>> getManajemenIuran({String? search}) async {
+  Future<List<Iuran>> getManajemenIuran({
+    String? search,
+    String? rt,
+    String? rw,
+  }) async {
     try {
+      final Map<String, dynamic> params = {};
+
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      if (rt != null && rt.isNotEmpty) {
+        params['rt'] = rt;
+      }
+      if (rw != null && rw.isNotEmpty) {
+        params['rw'] = rw;
+      }
+
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/iuran',
-        queryParameters: {'search': search},
+        queryParameters: params,
       );
+
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Iuran.fromJson(json)).toList();
@@ -335,8 +356,6 @@ class ApiService {
       return false;
     }
   }
-
-  // --- FUNGSI KEGIATAN SERVICE (ADMIN) ---
 
   Future<List<Kegiatan>> getManajemenKegiatan({String? search}) async {
     try {
@@ -393,8 +412,6 @@ class ApiService {
     }
   }
 
-  // --- FUNGSI ACARA SERVICE (ADMIN) ---
-
   Future<List<Acara>> getManajemenAcara({String? search}) async {
     try {
       final response = await _dioProtected.get(
@@ -450,8 +467,6 @@ class ApiService {
     }
   }
 
-  // --- FUNGSI KEUANGAN SERVICE (ADMIN) ---
-
   Future<List<Keuangan>> getManajemenKeuangan() async {
     try {
       final response = await _dioProtected.get('$_baseUrlLaravel/v1/keuangan');
@@ -466,96 +481,218 @@ class ApiService {
     }
   }
 
-  // --- FUNGSI DESAPAY / WALLET SERVICE ---
-
-  /// [WALLET] Mengambil Saldo dan 10 Transaksi Terakhir
-  Future<Map<String, dynamic>?> getWalletData() async {
+  Future<WalletSummary?> getWalletSummary() async {
     try {
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/wallet/balance',
       );
 
-      if (response.statusCode == 200 && response.data['wallet'] != null) {
-        final List<Transaction> transactions =
-            (response.data['transactions'] as List)
-                .map((json) => Transaction.fromJson(json))
-                .toList();
-
-        return {
-          'wallet': Wallet.fromJson(response.data['wallet']),
-          'transactions': transactions,
-        };
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['wallet'] != null) {
+        return WalletSummary.fromJson(response.data);
       }
       return null;
     } on DioException catch (e) {
-      print("Error getWalletData: ${e.response?.data}");
-      return null;
+      print("Error getWalletSummary: ${e.response?.data}");
+      rethrow;
     }
   }
 
-  /// [WALLET] Simulasi Top Up Saldo
   Future<double?> topUpWallet(double amount) async {
     try {
       final response = await _dioProtected.post(
         '$_baseUrlLaravel/v1/wallet/topup',
         data: {'amount': amount},
       );
-      if (response.statusCode == 200 && response.data['new_balance'] != null) {
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['new_balance'] != null) {
         return double.tryParse(response.data['new_balance'].toString());
       }
       return null;
     } on DioException catch (e) {
       print("Error topUpWallet: ${e.response?.data}");
-      return null;
+      rethrow;
     }
   }
 
-  /// [WALLET] Pembayaran Pulsa/PPOB
-  Future<bool> payPPOB({
+  Future<double?> transferWallet({
+    required String accountNumberReceiver,
     required double amount,
-    required double fee,
+    String? notes,
+  }) async {
+    try {
+      final response = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/wallet/transfer',
+        data: {
+          'account_number_receiver': accountNumberReceiver,
+          'amount': amount,
+          'notes': notes,
+        },
+      );
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['new_balance'] != null) {
+        return double.tryParse(response.data['new_balance'].toString());
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error transferWallet: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<double?> payPPOB({
+    required double amount,
     required String productName,
     required String targetNumber,
+    double fee = 0,
   }) async {
     try {
       final response = await _dioProtected.post(
         '$_baseUrlLaravel/v1/wallet/pay-ppob',
         data: {
           'amount': amount,
-          'fee': fee,
           'product_name': productName,
           'target_number': targetNumber,
+          'fee': fee,
         },
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['new_balance'] != null) {
+        return double.tryParse(response.data['new_balance'].toString());
+      }
+      return null;
     } on DioException catch (e) {
       print("Error payPPOB: ${e.response?.data}");
-      return false;
+      rethrow;
     }
   }
 
-  // *** FUNGSI BARU: TRANSFER SALDO DESAPAY ***
-  /// [WALLET] Transfer Saldo ke ID Akun Desapay Lain
-  Future<bool> transferDesapay({
-    required double amount,
-    required double fee,
-    required String receiverDesapayId,
-  }) async {
+  Future<List<TagihanIuran>> getTagihanIuranWarga() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/fitur/tagihan',
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+
+        List<dynamic> listJson;
+        if (data is Map && data['data'] != null) {
+          listJson = data['data'] as List<dynamic>;
+        } else if (data is List) {
+          listJson = data;
+        } else {
+          return [];
+        }
+
+        return listJson
+            .map((e) => TagihanIuran.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print("Error getTagihanIuranWarga: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<bool> bayarTagihanIuran(int tagihanId) async {
     try {
       final response = await _dioProtected.post(
-        '$_baseUrlLaravel/v1/wallet/transfer', // Asumsi endpoint transfer
-        data: {
-          'amount': amount,
-          'fee': fee,
-          'receiver_desapay_id': receiverDesapayId,
-        },
+        '$_baseUrlLaravel/v1/fitur/tagihan/$tagihanId/bayar',
       );
-      // Asumsi server mengembalikan 200 OK jika transfer berhasil
       return response.statusCode == 200;
     } on DioException catch (e) {
+<<<<<<< HEAD
       print("Error transferDesapay: ${e.message}");
       // Re-throw exception agar TransferScreen dapat menangkap error spesifik (misal 422 Saldo tidak cukup)
       rethrow;
     }
   }
+=======
+      print("Error bayarTagihanIuran: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<Response> getBalanceAndTransactions() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/wallet/balance',
+      );
+      return response;
+    } on DioException catch (e) {
+      print("Error getBalanceAndTransactions: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<User?> fetchProfile() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/profile');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final user = User.fromJson(response.data);
+
+        await _storage.write(key: 'user_data', value: user.toJsonString());
+
+        return user;
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error fetchProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<User?> updateProfile(Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.put(
+        '$_baseUrlLaravel/v1/profile',
+        data: data,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final userJson = response.data['user'] ?? response.data;
+        final user = User.fromJson(userJson);
+
+        await _storage.write(key: 'user_data', value: user.toJsonString());
+
+        return user;
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error updateProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<String?> uploadProfilePhoto(File file) async {
+    try {
+      final fileName = file.path.split('/').last;
+
+      final formData = FormData.fromMap({
+        'foto': await MultipartFile.fromFile(file.path, filename: fileName),
+      });
+
+      final res = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/profile/upload-photo',
+        data: formData,
+      );
+
+      if (res.statusCode == 200) {
+        return res.data['foto_url'];
+      }
+
+      return null;
+    } on DioException catch (e) {
+      print("Upload Foto Error: ${e.response?.data}");
+      return null;
+    }
+  }
+>>>>>>> 6b47a25c040bf8bcb348cb2d034694f4993ba8cc
 }

@@ -2,9 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-// Sesuaikan path ini
 import 'package:frontend/state/auth_provider.dart';
-// import 'package:frontend/screens/home/home_screen.dart'; // Hapus: Tidak perlu lagi
+
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _successColor = Color(0xFF28A745); // Hijau
 
 class RegisterFaceScreen extends StatefulWidget {
   const RegisterFaceScreen({super.key});
@@ -16,13 +20,13 @@ class RegisterFaceScreen extends StatefulWidget {
 class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  bool _isProcessing = false; // Gunakan state lokal untuk loading UI
 
   Future<void> _pickImage() async {
-    // Ambil gambar dari kamera depan
     final XFile? image = await _picker.pickImage(
       source: ImageSource.camera,
       preferredCameraDevice: CameraDevice.front,
-      imageQuality: 80, // Kompresi gambar
+      imageQuality: 80, 
     );
 
     if (image != null) {
@@ -34,113 +38,179 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
 
   Future<void> _submitRegisterFace() async {
     if (_imageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap ambil foto terlebih dahulu.")),
-      );
+      _showSnackBar("Harap ambil foto terlebih dahulu.");
       return;
     }
 
+    setState(() {
+      _isProcessing = true;
+    });
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // Panggil fungsi di provider
-    final String? error = await authProvider.registerFace(_imageFile!);
+    try {
+      // Panggil fungsi di provider
+      final String? error = await authProvider.registerFace(_imageFile!);
 
-    if (mounted) {
-      if (error == null) {
-        // Sukses
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Wajah berhasil terdaftar!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(
-          context,
-        ).pop(); // Kembali ke halaman sebelumnya (ProfileMainScreen)
-      } else {
-        // Gagal
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
-        );
+      if (mounted) {
+        if (error == null) {
+          _showSnackBar("Wajah berhasil terdaftar!", isSuccess: true);
+          Navigator.of(context).pop(true); // Pop dengan sinyal sukses
+        } else {
+          _showSnackBar(error);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar("Gagal memproses pendaftaran wajah: ${e.toString()}");
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
       }
     }
   }
 
+  // Helper untuk Snackbar
+  void _showSnackBar(String message, {bool isSuccess = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? _successColor : Colors.red,
+      ),
+    );
+  }
+
+  // --- WIDGET: CUSTOM HEADER PROSCAN ---
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8, left: 16, right: 16, bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white), 
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          const Text("Atur Login Wajah", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthProvider>().isLoading;
+    // Menggunakan state lokal _isProcessing dan menggabungkannya dengan AuthProvider
+    final isLoadingProvider = context.watch<AuthProvider>().isLoading;
+    final bool isBusy = _isProcessing || isLoadingProvider;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Atur Login Wajah")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              "Ambil Foto Wajah",
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Pastikan wajah Anda terlihat jelas dengan pencahayaan yang baik dan tanpa halangan (kacamata hitam, masker, dll).",
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 24),
-
-            // Preview Gambar
-            Center(
-              child: Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(125), // Lingkaran
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 3,
+      backgroundColor: _backgroundColor,
+      body: Column(
+        children: [
+          _buildCustomHeader(context),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    "Pendaftaran Biometrik Wajah",
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _primaryColor),
                   ),
-                  image: _imageFile != null
-                      ? DecorationImage(
-                          image: FileImage(_imageFile!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: _imageFile == null
-                    ? const Icon(Icons.person, size: 150, color: Colors.grey)
-                    : null,
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Foto wajah Anda akan digunakan untuk autentikasi login cepat (Face ID). Pastikan kualitas gambar tinggi.",
+                    style: TextStyle(fontSize: 15, color: _accentColor),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // --- Preview Foto Wajah (Circular Card) ---
+                  Center(
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(100), 
+                        border: Border.all(
+                          color: _imageFile == null ? _accentColor : _successColor,
+                          width: 4,
+                        ),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+                        image: _imageFile != null
+                            ? DecorationImage(
+                                image: FileImage(_imageFile!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: _imageFile == null
+                          ? const Icon(Icons.face_retouching_natural, size: 100, color: Colors.grey)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // --- Tombol Ambil Foto ---
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.camera_alt_rounded),
+                    label: Text(_imageFile == null ? "Buka Kamera Depan" : "Ambil Ulang Foto"),
+                    onPressed: isBusy ? null : _pickImage,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _primaryColor,
+                      side: const BorderSide(color: _primaryColor, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // --- Tombol Simpan ---
+                  ElevatedButton(
+                    onPressed: (_imageFile == null || isBusy) ? null : _submitRegisterFace,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _successColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 5,
+                    ),
+                    child: isBusy
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            "SIMPAN WAJAH SEBAGAI FACE ID",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                  ),
+                  
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-
-            // Tombol Ambil Foto
-            OutlinedButton.icon(
-              icon: const Icon(Icons.camera_alt),
-              label: Text(_imageFile == null ? "Buka Kamera" : "Ambil Ulang"),
-              onPressed: isLoading ? null : _pickImage,
-            ),
-            const SizedBox(height: 16),
-
-            // Tombol Simpan
-            ElevatedButton.icon(
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.save),
-              label: Text(isLoading ? "MEMPROSES..." : "SIMPAN WAJAH"),
-              onPressed: (_imageFile == null || isLoading)
-                  ? null
-                  : _submitRegisterFace,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart'; // Untuk FilteringTextInputFormatter
+import 'package:flutter/services.dart'; 
+import 'package:dio/dio.dart'; // Import Dio untuk menangkap DioException
 
 // --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
-const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
-const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _primaryColor = Color(0xFF0E2F60); 
+const Color _backgroundColor = Color(0xFFF5F5F5); 
+const Color _accentColor = Color(0xFF3C486B); 
 
 class TambahWargaScreen extends StatefulWidget {
   const TambahWargaScreen({super.key});
@@ -31,22 +32,23 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
   final _rwController = TextEditingController();
   final _alamatKtpController = TextEditingController();
   final _keluargaIdController = TextEditingController();
-  final _noHpController = TextEditingController(); // Ditambahkan: No HP
+  final _noHpController = TextEditingController(); 
 
   // State untuk Dropdown
   String? _jenisKelaminValue;
   String? _statusDalamKeluargaValue;
+  String? _roleValue = 'warga'; // Default Role
   DateTime? _selectedDate;
   bool _isLoading = false;
 
   // Custom Input Decoration (Gaya ProScan)
   final InputDecoration _inputDecoration = InputDecoration(
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12), // Sudut membulat
-      borderSide: BorderSide.none, // Menghilangkan border default
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
     ),
     filled: true,
-    fillColor: Colors.white, // Latar belakang input field putih
+    fillColor: Colors.white,
     contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
     hintStyle: const TextStyle(color: Colors.grey),
     labelStyle: const TextStyle(color: _accentColor),
@@ -69,9 +71,7 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
     super.dispose();
   }
 
-  // Fungsi untuk menampilkan Date Picker
   Future<void> _selectDate(BuildContext context) async {
-    // Menggunakan tema kustom untuk Date Picker
     final ThemeData datePickerTheme = ThemeData.light().copyWith(
       colorScheme: const ColorScheme.light(
         primary: _primaryColor,
@@ -94,7 +94,6 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        // Memastikan format YYYY-MM-DD
         _tanggalLahirController.text =
             "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
@@ -112,7 +111,6 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
 
     final apiService = context.read<ApiService>();
 
-    // PERHATIAN: Pastikan data yang dikirim sesuai dengan validasi Laravel
     final Map<String, dynamic> data = {
       "nama_lengkap": _namaController.text,
       "nik": _nikController.text,
@@ -130,7 +128,8 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
       "kewarganegaraan": "WNI",
       "no_hp": _noHpController.text.isNotEmpty
           ? _noHpController.text
-          : null, // Tambahan No HP
+          : null,
+      "role": _roleValue, // Field Role yang baru
     };
 
     try {
@@ -146,15 +145,27 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
 
         Navigator.of(context).pop(true);
       } else {
-        // Server mengembalikan respons 200/201 tapi data null, ini jarang terjadi
         throw Exception("Respons berhasil, tetapi data warga tidak diterima.");
       }
     } catch (e) {
-      // Ini menangkap error 422 dari Dio/ApiService
-      String errorMessage = "Terjadi kesalahan: $e";
-      if (e.toString().contains('422')) {
-        errorMessage =
-            "Gagal validasi data. Pastikan ID Keluarga (KK) dan format lainnya benar.";
+      // <<< PERBAIKAN: DEBUGGING ERROR 500/400 DARI BACKEND >>>
+      String errorMessage = "Terjadi kesalahan server yang tidak diketahui.";
+      
+      if (e is DioException) {
+        if (e.response?.statusCode == 500) {
+           errorMessage = "Gagal internal server (500). Cek log Laravel!";
+        } else if (e.response?.statusCode == 422) {
+           // Error Validasi Laravel
+           errorMessage = "Gagal validasi data. Pastikan semua field wajib diisi dan benar.";
+           if (e.response?.data is Map && e.response!.data['message'] != null) {
+              errorMessage = "Validasi gagal: ${e.response!.data['message']}";
+              // Jika Anda ingin menampilkan error detail, Anda perlu parsing e.response!.data['errors']
+           }
+        } else {
+           errorMessage = "Error API: ${e.message} (Status: ${e.response?.statusCode})";
+        }
+      } else {
+        errorMessage = e.toString();
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -209,7 +220,7 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
     );
   }
 
-  // --- WIDGET: SECTION TITLE (Padding disesuaikan) ---
+  // --- WIDGET: SECTION TITLE ---
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -248,112 +259,25 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                       "Data Kependudukan (Sesuai KTP)",
                     ),
 
-                    TextFormField(
-                      controller: _namaController,
-                      decoration: _inputDecoration.copyWith(
-                        labelText: "Nama Lengkap",
-                      ),
-                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                    ),
+                    // ... Field-field data kependudukan
+                    TextFormField(controller: _namaController, decoration: _inputDecoration.copyWith(labelText: "Nama Lengkap"), validator: (v) => v!.isEmpty ? "Wajib diisi" : null),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nikController,
-                      decoration: _inputDecoration.copyWith(
-                        labelText: "NIK (16 Digit)",
-                      ),
-                      keyboardType: TextInputType.number,
-                      // Memastikan hanya angka yang diizinkan untuk NIK
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) =>
-                          v!.length != 16 ? "NIK harus 16 digit" : null,
-                    ),
+                    TextFormField(controller: _nikController, decoration: _inputDecoration.copyWith(labelText: "NIK (16 Digit)"), keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly], validator: (v) => v!.length != 16 ? "NIK harus 16 digit" : null),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _tempatLahirController,
-                            decoration: _inputDecoration.copyWith(
-                              labelText: "Tempat Lahir",
-                            ),
-                            validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _tanggalLahirController,
-                            decoration: _inputDecoration.copyWith(
-                              labelText: "Tanggal Lahir (YYYY-MM-DD)",
-                              suffixIcon: const Icon(
-                                Icons.calendar_today,
-                                color: _primaryColor,
-                              ),
-                            ),
-                            readOnly: true,
-                            onTap: () => _selectDate(context),
-                            validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                          ),
-                        ),
-                      ],
-                    ),
+                    Row(children: [Expanded(child: TextFormField(controller: _tempatLahirController, decoration: _inputDecoration.copyWith(labelText: "Tempat Lahir"), validator: (v) => v!.isEmpty ? "Wajib diisi" : null)), const SizedBox(width: 16), Expanded(child: TextFormField(controller: _tanggalLahirController, decoration: _inputDecoration.copyWith(labelText: "Tanggal Lahir (YYYY-MM-DD)", suffixIcon: const Icon(Icons.calendar_today, color: _primaryColor)), readOnly: true, onTap: () => _selectDate(context), validator: (v) => v!.isEmpty ? "Wajib diisi" : null))]),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _jenisKelaminValue,
-                      decoration: _inputDecoration.copyWith(
-                        labelText: "Jenis Kelamin",
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: "L", child: Text("Laki-laki")),
-                        DropdownMenuItem(value: "P", child: Text("Perempuan")),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _jenisKelaminValue = value;
-                        });
-                      },
-                      validator: (v) => v == null ? "Wajib dipilih" : null,
-                    ),
+                    DropdownButtonFormField<String>(value: _jenisKelaminValue, decoration: _inputDecoration.copyWith(labelText: "Jenis Kelamin"), items: const [DropdownMenuItem(value: "L", child: Text("Laki-laki")), DropdownMenuItem(value: "P", child: Text("Perempuan"))], onChanged: (value) {setState(() {_jenisKelaminValue = value;});}, validator: (v) => v == null ? "Wajib dipilih" : null),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _agamaController,
-                      decoration: _inputDecoration.copyWith(labelText: "Agama"),
-                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                    ),
+                    TextFormField(controller: _agamaController, decoration: _inputDecoration.copyWith(labelText: "Agama"), validator: (v) => v!.isEmpty ? "Wajib diisi" : null),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _statusPerkawinanController,
-                      decoration: _inputDecoration.copyWith(
-                        labelText: "Status Perkawinan",
-                      ),
-                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                    ),
+                    TextFormField(controller: _statusPerkawinanController, decoration: _inputDecoration.copyWith(labelText: "Status Perkawinan"), validator: (v) => v!.isEmpty ? "Wajib diisi" : null),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _pekerjaanController,
-                      decoration: _inputDecoration.copyWith(
-                        labelText: "Pekerjaan",
-                      ),
-                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                    ),
+                    TextFormField(controller: _pekerjaanController, decoration: _inputDecoration.copyWith(labelText: "Pekerjaan"), validator: (v) => v!.isEmpty ? "Wajib diisi" : null),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _noHpController,
-                      decoration: _inputDecoration.copyWith(
-                        labelText: "No. HP (Opsional)",
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
+                    TextFormField(controller: _noHpController, decoration: _inputDecoration.copyWith(labelText: "No. HP (Opsional)"), keyboardType: TextInputType.phone),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _alamatKtpController,
-                      decoration: _inputDecoration.copyWith(
-                        labelText: "Alamat KTP",
-                      ),
-                      maxLines: null,
-                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
-                    ),
-
+                    TextFormField(controller: _alamatKtpController, decoration: _inputDecoration.copyWith(labelText: "Alamat KTP"), maxLines: null, validator: (v) => v!.isEmpty ? "Wajib diisi" : null),
+                    
                     // --- Data Domisili & Keluarga ---
                     const SizedBox(height: 24),
                     _buildSectionTitle(context, "Data Domisili & Keluarga"),
@@ -413,12 +337,10 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                         labelText: "Status Dalam Keluarga",
                       ),
                       items: const [
-                        // OPSI BARU: KEPALA KELUARGA
                         DropdownMenuItem(
                           value: "KEPALA_KELUARGA",
                           child: Text("Kepala Keluarga"),
                         ),
-                        // OPSI LAMA
                         DropdownMenuItem(value: "ISTRI", child: Text("Istri")),
                         DropdownMenuItem(value: "ANAK", child: Text("Anak")),
                         DropdownMenuItem(
@@ -433,6 +355,28 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                       },
                       validator: (v) => v == null ? "Wajib dipilih" : null,
                     ),
+                    
+                    // DROPDOWN UNTUK MEMILIH ROLE
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _roleValue,
+                      decoration: _inputDecoration.copyWith(
+                        labelText: "Role/Jabatan (Default: Warga)",
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "warga", child: Text("Warga")),
+                        DropdownMenuItem(value: "rt", child: Text("Ketua RT")),
+                        DropdownMenuItem(value: "rw", child: Text("Ketua RW")),
+                        DropdownMenuItem(value: "admin", child: Text("Admin")),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _roleValue = value;
+                        });
+                      },
+                      validator: (v) => v == null ? "Wajib dipilih" : null,
+                    ),
+
                     const SizedBox(height: 30),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _submitTambahWarga,

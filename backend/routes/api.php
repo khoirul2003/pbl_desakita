@@ -31,6 +31,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/profile/register-face', [AuthController::class, 'registerFace']);
+    Route::post('/profile/upload-photo', [AuthController::class, 'uploadPhoto']);
 
     Route::apiResource('/warga', WargaController::class);
     Route::apiResource('/keluarga', KeluargaController::class);
@@ -45,7 +46,6 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('/transfer', [WalletController::class, 'transfer']);
         Route::post('/pay-ppob', [WalletController::class, 'payPPOB']);
     });
-    
 
     Route::prefix('fitur')->group(function () {
         Route::get('/tagihan', [WargaFiturController::class, 'getTagihan']);

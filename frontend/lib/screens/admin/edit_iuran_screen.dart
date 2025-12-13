@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/models/iuran_model.dart';
+import 'package:intl/intl.dart'; // Wajib diimpor untuk DateFormat
 
 // --- DEFINISI WARNA PROSCAN ---
 const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
@@ -24,6 +25,11 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
   late TextEditingController _jumlahController;
   late TextEditingController _rtController;
   late TextEditingController _rwController;
+  
+  // *** STATE BARU UNTUK TANGGAL ***
+  late TextEditingController _tanggalJatuhTempoController;
+  DateTime? _selectedDate; 
+  // ******************************
 
   String? _tipeIuranValue;
   bool _isLoading = false;
@@ -53,6 +59,14 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
     _rtController = TextEditingController(text: iuran.rt);
     _rwController = TextEditingController(text: iuran.rw);
     _tipeIuranValue = iuran.tipe;
+    
+    // Asumsi: Model Iuran memiliki field 'jatuhTempo' bertipe DateTime
+    // Jika Iuran tidak memiliki field ini, Anda harus menambahkannya di model Iuran Anda.
+    final DateTime initialDate = iuran.jatuhTempo ?? DateTime.now(); 
+    _tanggalJatuhTempoController = TextEditingController(
+        text: DateFormat('yyyy-MM-dd').format(initialDate));
+    _selectedDate = initialDate;
+
   }
 
   @override
@@ -62,7 +76,25 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
     _jumlahController.dispose();
     _rtController.dispose();
     _rwController.dispose();
+    _tanggalJatuhTempoController.dispose(); // Dispose controller baru
     super.dispose();
+  }
+  
+  // *** METHOD UNTUK MEMILIH TANGGAL ***
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 7)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        // Format tanggal ke YYYY-MM-DD
+        _tanggalJatuhTempoController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
   }
 
   Future<void> _submitUpdateIuran() async {
@@ -83,6 +115,9 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
       'tipe': _tipeIuranValue,
       'rt': _rtController.text.isNotEmpty ? _rtController.text : null,
       'rw': _rwController.text.isNotEmpty ? _rwController.text : null,
+      // *** TAMBAHKAN TANGGAL JATUH TEMPO ***
+      'tanggal_jatuh_tempo': _tanggalJatuhTempoController.text,
+      // **********************************
     };
 
     try {
@@ -198,12 +233,14 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
                       validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
                     ),
                     const SizedBox(height: 16),
+                    
                     TextFormField(
                       controller: _deskripsiController,
                       decoration: _inputDecoration.copyWith(labelText: "Deskripsi (Opsional)"),
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),
+                    
                     TextFormField(
                       controller: _jumlahController,
                       decoration: _inputDecoration.copyWith(
@@ -225,6 +262,23 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
                     // --- Bagian Target & Tipe ---
                     _buildSectionTitle(context, "Target & Tipe"),
                     
+                    // *** FIELD TANGGAL JATUH TEMPO ***
+                    TextFormField(
+                      controller: _tanggalJatuhTempoController,
+                      decoration: _inputDecoration.copyWith(
+                        labelText: "Tanggal Jatuh Tempo Pertama",
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.calendar_today, color: _primaryColor),
+                          onPressed: _isLoading ? null : () => _selectDate(context),
+                        ),
+                      ),
+                      readOnly: true,
+                      onTap: _isLoading ? null : () => _selectDate(context),
+                      validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // ********************************
+
                     DropdownButtonFormField<String>(
                       value: _tipeIuranValue,
                       decoration: _inputDecoration.copyWith(labelText: "Tipe Penagihan"),
@@ -248,9 +302,7 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
                           child: TextFormField(
                             controller: _rtController,
                             decoration: _inputDecoration.copyWith(
-                              labelText: "RT (Opsional)",
-                              counterText: "", // Menghilangkan counter
-                            ),
+                                labelText: "RT (Opsional)", counterText: ""),
                             keyboardType: TextInputType.number,
                             maxLength: 3,
                           ),
@@ -260,9 +312,7 @@ class _EditIuranScreenState extends State<EditIuranScreen> {
                           child: TextFormField(
                             controller: _rwController,
                             decoration: _inputDecoration.copyWith(
-                              labelText: "RW (Opsional)",
-                              counterText: "", // Menghilangkan counter
-                            ),
+                                labelText: "RW (Opsional)", counterText: ""),
                             keyboardType: TextInputType.number,
                             maxLength: 3,
                           ),

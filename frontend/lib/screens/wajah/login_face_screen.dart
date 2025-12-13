@@ -21,9 +21,8 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   bool _isCameraReady = false;
-  String _feedbackMessage = "Meminta izin kamera...";
+  String _feedbackMessage = "Requesting camera permission...";
 
-  // Animation untuk efek scanning
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -35,7 +34,8 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
     _pulseController =
         AnimationController(vsync: this, duration: const Duration(seconds: 2))
           ..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.1).animate(
+
+    _pulseAnimation = Tween<double>(begin: 0.92, end: 1.03).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
@@ -50,133 +50,88 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
   Future<void> _initCamera() async {
     final status = await Permission.camera.request();
     if (status != PermissionStatus.granted) {
-      if (mounted) {
-        setState(() {
-          _feedbackMessage =
-              "Izin kamera ditolak. Harap izinkan di setelan HP.";
-        });
-      }
+      setState(() {
+        _feedbackMessage =
+            "Camera permission denied. Please enable it in settings.";
+      });
       return;
     }
 
-    if (_cameras.isEmpty) {
-      try {
+    try {
+      if (_cameras.isEmpty) {
         _cameras = await availableCameras();
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _feedbackMessage = "Gagal mendapatkan list kamera: $e";
-          });
-        }
+      }
+
+      if (_cameras.isEmpty) {
+        setState(() => _feedbackMessage = "No camera detected.");
         return;
       }
+
+      final frontCamera = _cameras.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+        orElse: () => _cameras.first,
+      );
+
+      _controller = CameraController(
+        frontCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+
+      _initializeControllerFuture = _controller!.initialize();
+
+      await _initializeControllerFuture;
+
+      setState(() {
+        _isCameraReady = true;
+        _feedbackMessage = "Align your face and blink";
+      });
+
+      _attemptLogin();
+    } catch (e) {
+      setState(() => _feedbackMessage = "Camera error: $e");
     }
-
-    if (_cameras.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _feedbackMessage = "Tidak ada kamera yang ditemukan.";
-        });
-      }
-      return;
-    }
-
-    final frontCamera = _cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.front,
-      orElse: () => _cameras.first,
-    );
-
-    _controller = CameraController(
-      frontCamera,
-      ResolutionPreset.medium,
-      enableAudio: false,
-    );
-
-    _initializeControllerFuture = _controller!.initialize();
-
-    _initializeControllerFuture!
-        .then((_) {
-          if (!mounted) return;
-          setState(() {
-            _isCameraReady = true;
-            _feedbackMessage = "Arahkan wajah ke kamera dan berkedip";
-          });
-
-          _attemptLogin();
-        })
-        .catchError((e) {
-          if (mounted) {
-            setState(() {
-              _feedbackMessage = "Gagal memuat kamera: $e";
-            });
-          }
-        });
   }
 
   Future<void> _attemptLogin() async {
-    if (!_isCameraReady || !_controller!.value.isInitialized) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Kamera belum siap.")));
-      return;
-    }
+    if (!_isCameraReady) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.isLoading) return;
 
     List<File> frames = [];
     File? bestFrame;
 
     try {
-      setState(() {
-        _feedbackMessage = "Tahan... Memindai wajah Anda...";
-      });
+      setState(() => _feedbackMessage = "Scanning face...");
 
       for (int i = 0; i < 10; i++) {
-        final XFile imageFile = await _controller!.takePicture();
-        frames.add(File(imageFile.path));
-        if (i == 3) {
-          bestFrame = File(imageFile.path);
-        }
-        await Future.delayed(const Duration(milliseconds: 200));
+        final XFile img = await _controller!.takePicture();
+        frames.add(File(img.path));
+        if (i == 3) bestFrame = File(img.path);
+        await Future.delayed(const Duration(milliseconds: 180));
       }
 
-      setState(() {
-        _feedbackMessage = "Memproses liveness dan fitur wajah...";
-      });
+      setState(() => _feedbackMessage = "Analyzing liveness...");
 
-      final String? error = await authProvider.loginWithFace(
-        frames,
-        bestFrame!,
-      );
+      final error = await authProvider.loginWithFace(frames, bestFrame!);
 
-      if (mounted) {
-        if (error == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Login Wajah Berhasil!"),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-            (route) => false,
-          );
-        } else {
-          setState(() {
-            _feedbackMessage = error;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error), backgroundColor: Colors.red),
-          );
-        }
+      if (error == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Face Login Success"),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        setState(() => _feedbackMessage = error);
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _feedbackMessage = "Error: $e";
-        });
-      }
+      setState(() => _feedbackMessage = "Error: $e");
     } finally {
       for (var file in frames) {
         try {
@@ -186,75 +141,112 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
     }
   }
 
+  /// 🔵 Overlay Scanner Light (Neon Blue 0xFF0E2F60)
+  Widget _buildScanOverlay() {
+    return Positioned.fill(
+      child: IgnorePointer(
+        ignoring: true,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: const Color(0xFF0E2F60).withOpacity(0.4),
+              width: 2,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 1200),
+                  height: 3,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF0E2F60).withOpacity(0),
+                        const Color(0xFF0E2F60).withOpacity(0.9),
+                        const Color(0xFF0E2F60).withOpacity(0),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthProvider>().isLoading;
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text("Face Login"),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF1F1C2C),
-              Color(0xFF928DAB),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-
+      backgroundColor: const Color(0xFF0A0F1F),
+      body: SafeArea(
         child: Column(
           children: [
+            const SizedBox(height: 20),
+
+            /// HEADER
+            Text(
+              "FACE ID",
+              style: TextStyle(
+                fontSize: 22,
+                letterSpacing: 6,
+                color: const Color(0xFFFFFFFF).withOpacity(0.9),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
             Expanded(
               flex: 4,
               child: Center(
                 child: AnimatedBuilder(
                   animation: _pulseAnimation,
-                  builder: (context, child) {
+                  builder: (context, _) {
                     return Transform.scale(
                       scale: _pulseAnimation.value,
                       child: Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.4),
-                            width: 2,
-                          ),
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0E2F60).withOpacity(0.4),
+                              blurRadius: 30,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: FutureBuilder<void>(
-                            future: _initializeControllerFuture,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                      ConnectionState.done &&
-                                  _isCameraReady) {
-                                return AspectRatio(
-                                  aspectRatio:
-                                      1 / _controller!.value.aspectRatio,
-                                  child: CameraPreview(_controller!),
-                                );
-                              } else {
-                                return const SizedBox(
-                                  width: 120,
-                                  height: 120,
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          child: Stack(
+                            children: [
+                              _isCameraReady
+                                  ? AspectRatio(
+                                      aspectRatio:
+                                          1 / _controller!.value.aspectRatio,
+                                      child: CameraPreview(_controller!),
+                                    )
+                                  : const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Color(0xFF0E2F60),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            },
+
+                              /// Overlay scanner neon
+                              _buildScanOverlay(),
+                            ],
                           ),
                         ),
                       ),
@@ -267,33 +259,35 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
             Expanded(
               flex: 2,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (isLoading)
-                      const CircularProgressIndicator(color: Colors.white),
+                      const CircularProgressIndicator(
+                        color: Color(0xFF0E2F60),
+                      ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     Text(
-                      isLoading ? "MEMPROSES..." : _feedbackMessage,
+                      isLoading ? "PROCESSING..." : _feedbackMessage,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        height: 1.4,
+                        color: Color(0xFFFFFFFF),
+                        fontSize: 17,
+                        height: 1.5,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
                     Text(
-                      "Pastikan wajah terlihat jelas & pencahayaan cukup.",
+                      "Ensure your face is clearly visible.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withOpacity(0.6),
                         fontSize: 14,
                       ),
                     ),

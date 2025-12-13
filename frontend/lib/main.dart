@@ -5,13 +5,16 @@ import 'package:frontend/state/auth_provider.dart';
 import 'package:frontend/screens/splash_screen.dart';
 import 'package:frontend/screens/login/login_screen.dart';
 import 'package:frontend/screens/home/home_screen.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 
 const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B); 
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
+  runApp(const MyApp()); 
 }
 
 class MyApp extends StatelessWidget {
@@ -79,7 +82,6 @@ class MyApp extends StatelessWidget {
               ),
             ),
           ),
-          
           
           appBarTheme: const AppBarTheme(
             backgroundColor: _primaryColor,
