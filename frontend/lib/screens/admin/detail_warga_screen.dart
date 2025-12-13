@@ -4,11 +4,7 @@ import 'package:frontend/services/api_service.dart';
 import 'package:provider/provider.dart';
 
 // 1. Impor EditWargaScreen
-<<<<<<< HEAD
 import 'package:frontend/screens/admin/edit_warga_screen.dart'; 
-=======
-import 'package:frontend/screens/admin/edit_warga_screen.dart'; // <--- PASTIKAN PATH INI BENAR
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
 
 // --- DEFINISI WARNA PROSCAN ---
 const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
@@ -64,21 +60,12 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     }
   }
 
-<<<<<<< HEAD
   // <<< FUNGSI YANG DIMODIFIKASI >>>
   void _goToEditWarga() async {
     final Warga currentWarga = _wargaDetail ?? widget.wargaAwal; 
     
     // UBAH: Menangkap hasil (result) sebagai objek Warga, bukan boolean
     final result = await Navigator.of(context).push(
-=======
-  // 2. Fungsi untuk Navigasi ke Edit Warga Screen dengan Animasi Kustom
-  void _goToEditWarga() async {
-    final Warga currentWarga = _wargaDetail ?? widget.wargaAwal;
-    
-    // Navigasi menggunakan PageRouteBuilder untuk animasi kustom
-    final bool? result = await Navigator.of(context).push(
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (context, animation, secondaryAnimation) => 
@@ -146,10 +133,6 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
-<<<<<<< HEAD
-=======
-            // Panggil fungsi navigasi yang baru
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
             onPressed: _goToEditWarga, 
           ),
         ],
@@ -174,13 +157,8 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
               radius: 40,
               backgroundColor: _primaryColor.withOpacity(0.1),
               child: Text(
-<<<<<<< HEAD
                 getInitials(warga.namaLengkap), 
                 style: const TextStyle(fontSize: 30, color: _primaryColor, fontWeight: FontWeight.bold),
-=======
-                warga.namaLengkap[0].toUpperCase(),
-                style: const TextStyle(fontSize: 36, color: _primaryColor, fontWeight: FontWeight.bold),
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
               ),
             ),
             const SizedBox(height: 12),
@@ -217,11 +195,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
-<<<<<<< HEAD
             blurRadius: 16, 
-=======
-            blurRadius: 16, // Shadow menonjol dan lembut
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
             offset: const Offset(0, 6),
           )
         ],
@@ -231,7 +205,6 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     );
   }
 
-<<<<<<< HEAD
   // --- WIDGET BANTUAN UTAMA: DETAIL ROW (Disesuaikan untuk Role dan JK) ---
   Widget _buildDetailRow(String title, String? value, {bool showDivider = true}) {
     String displayValue = value ?? "-";
@@ -247,11 +220,6 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     }
 
 
-=======
-  // --- WIDGET BANTUAN YANG DIMODIFIKASI: DETAIL ROW ---
-  @override
-  Widget _buildDetailRow(String title, String? value, {bool showDivider = true}) {
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(

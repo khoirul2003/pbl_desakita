@@ -13,17 +13,12 @@ import 'package:frontend/screens/profile/profile_main_screen.dart';
 import 'package:frontend/screens/wallet/desapay_wallet_section.dart';
 import 'package:frontend/screens/rt_rw/manajemen_warga_rt_rw_screen.dart'; 
 import 'package:frontend/screens/rt_rw/manajemen_iuran_rt_rw_screen.dart'; 
-<<<<<<< HEAD
 // <<< IMPORT SCREEN WARGA BARU >>>
 import 'package:frontend/screens/warga/keluarga_warga_screen.dart';
 import 'package:frontend/screens/warga/acara_warga_screen.dart';
 import 'package:frontend/screens/warga/kegiatan_warga_screen.dart';
 // <<< AKHIR IMPORT SCREEN WARGA BARU >>>
 
-=======
-import 'package:frontend/screens/warga/kegiatan_warga_screen.dart';
-import 'package:frontend/screens/warga/acara_warga_screen.dart';
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
 
 const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B);
@@ -105,7 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // Logika untuk Warga Biasa (user.role == 'warga')
       
       pages.addAll([
-<<<<<<< HEAD
         // Halaman 1: Keluarga
         const KeluargaWargaScreen(), // <<< DIGANTI: KeluargaWargaScreen
         
@@ -116,11 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
         const KegiatanWargaScreen(), // <<< DIGANTI: KegiatanWargaScreen
 
         // Halaman 4: Profil
-=======
-        const PlaceholderScreen(title: "Data Keluarga Saya"),
-        const KegiatanWargaScreen(),
-        const AcaraWargaScreen(),
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
         const ProfileMainScreen(),
       ]);
 
@@ -130,21 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
           label: 'Keluarga',
         ),
         const BottomNavigationBarItem(
-<<<<<<< HEAD
           icon: Icon(Icons.calendar_month), 
           label: 'Acara',
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.event_note), 
           label: 'Kegiatan',
-=======
-          icon: Icon(Icons.event),
-          label: 'Kegiatan',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.local_activity),
-          label: 'Acara',
->>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
