@@ -13,6 +13,8 @@ import 'package:frontend/screens/profile/profile_main_screen.dart';
 import 'package:frontend/screens/wallet/desapay_wallet_section.dart';
 import 'package:frontend/screens/rt_rw/manajemen_warga_rt_rw_screen.dart'; 
 import 'package:frontend/screens/rt_rw/manajemen_iuran_rt_rw_screen.dart'; 
+import 'package:frontend/screens/warga/kegiatan_warga_screen.dart';
+import 'package:frontend/screens/warga/acara_warga_screen.dart';
 
 const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B);
@@ -93,7 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Logika untuk Warga Biasa
       pages.addAll([
         const PlaceholderScreen(title: "Data Keluarga Saya"),
-        const PlaceholderScreen(title: "Tagihan Iuran"),
+        const KegiatanWargaScreen(),
+        const AcaraWargaScreen(),
         const ProfileMainScreen(),
       ]);
 
@@ -103,8 +106,12 @@ class _HomeScreenState extends State<HomeScreen> {
           label: 'Keluarga',
         ),
         const BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long),
-          label: 'Iuran',
+          icon: Icon(Icons.event),
+          label: 'Kegiatan',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.local_activity),
+          label: 'Acara',
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
