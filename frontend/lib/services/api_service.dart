@@ -175,7 +175,7 @@ class ApiService {
         'file': await MultipartFile.fromFile(image.path, filename: fileName),
       });
       final response = await _dioPublic.post(
-        '$_baseUrlFastApi/extract-features',
+        '$_baseUrlLaravel/cv/extract-features',
         data: formData,
       );
       if (response.statusCode == 200 && response.data['features'] != null) {
@@ -201,7 +201,7 @@ class ApiService {
       }
       final formData = FormData.fromMap({'files': fileList});
       final response = await _dioPublic.post(
-        '$_baseUrlFastApi/check-liveness',
+        '$_baseUrlLaravel/cv/check-liveness',
         data: formData,
       );
       if (response.statusCode == 200 && response.data['liveness'] != null) {
