@@ -275,20 +275,6 @@ class ProfileMainScreen extends StatelessWidget {
       });
     }
 
-    if (user.role == 'warga') {
-      items.add({
-        'title': 'Data Keluarga Saya',
-        'icon': Icons.family_restroom,
-        'color': _accentColor,
-        'onTap': (BuildContext context) => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                const PlaceholderScreen(title: "Data Keluarga Saya"),
-          ),
-        ),
-      });
-    }
-
     items.add({
       'title': 'Logout',
       'icon': Icons.logout,

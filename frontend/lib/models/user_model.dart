@@ -165,9 +165,9 @@ class Keluarga {
     return Keluarga(
       id: json['id'],
       noKk: json['no_kk'],
-      alamat: json['alamat'],
-      rt: json['rt'],
-      rw: json['rw'],
+      alamat: json['alamat'] ?? '',
+      rt: json['rt'] ?? '',
+      rw: json['rw'] ?? '',
       kepalaKeluargaId: json['kepala_keluarga_id'] != null
           ? int.tryParse(json['kepala_keluarga_id'].toString())
           : null,

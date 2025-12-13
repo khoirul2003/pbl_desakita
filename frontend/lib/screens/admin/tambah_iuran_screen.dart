@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:intl/intl.dart'; // Import untuk DateFormat
+import 'package:intl/intl.dart';
 
-// --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
-const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
-const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
-
+const Color _primaryColor = Color(0xFF0E2F60);
+const Color _accentColor = Color(0xFF3C486B);
+const Color _backgroundColor = Color(0xFFF5F5F5);
 
 class TambahIuranScreen extends StatefulWidget {
   const TambahIuranScreen({super.key});
@@ -24,16 +22,13 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
   final _jumlahController = TextEditingController();
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
-  
-  // *** STATE BARU UNTUK TANGGAL ***
+
   final _tanggalJatuhTempoController = TextEditingController();
-  DateTime? _selectedDate; 
-  // ******************************
+  DateTime? _selectedDate;
 
   String? _tipeIuranValue;
   bool _isLoading = false;
 
-  // Custom Input Decoration (Gaya ProScan)
   final InputDecoration _inputDecoration = InputDecoration(
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -43,9 +38,11 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
     fillColor: Colors.white,
     contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
     labelStyle: const TextStyle(color: _accentColor),
-    prefixStyle: const TextStyle(fontWeight: FontWeight.bold, color: _primaryColor),
+    prefixStyle: const TextStyle(
+      fontWeight: FontWeight.bold,
+      color: _primaryColor,
+    ),
   );
-
 
   @override
   void dispose() {
@@ -54,11 +51,10 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
     _jumlahController.dispose();
     _rtController.dispose();
     _rwController.dispose();
-    _tanggalJatuhTempoController.dispose(); // Dispose controller baru
+    _tanggalJatuhTempoController.dispose();
     super.dispose();
   }
 
-  // *** METHOD UNTUK MEMILIH TANGGAL ***
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -69,8 +65,10 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        // Format tanggal ke YYYY-MM-DD
-        _tanggalJatuhTempoController.text = DateFormat('yyyy-MM-dd').format(picked);
+
+        _tanggalJatuhTempoController.text = DateFormat(
+          'yyyy-MM-dd',
+        ).format(picked);
       });
     }
   }
@@ -92,10 +90,11 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
       'tipe': _tipeIuranValue,
       'rt': _rtController.text.isNotEmpty ? _rtController.text : null,
       'rw': _rwController.text.isNotEmpty ? _rwController.text : null,
-      // *** TAMBAHKAN TANGGAL KE PAYLOAD ***
-      'tanggal_jatuh_tempo': _tanggalJatuhTempoController.text, 
-      // **********************************
+      'tanggal_jatuh_tempo': _tanggalJatuhTempoController.text,
     };
+
+    print("Request Data: ");
+    print(data);
 
     try {
       final success = await apiService.createIuran(data);
@@ -106,7 +105,7 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(true); // Pop dengan hasil true untuk refresh
+        Navigator.of(context).pop(true);
       } else {
         throw Exception("Gagal menyimpan data ke server.");
       }
@@ -125,11 +124,14 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
     }
   }
 
-  // --- WIDGET: CUSTOM HEADER PROSCAN ---
+
   Widget _buildCustomHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8, left: 16, right: 16, bottom: 16,
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
       ),
       decoration: const BoxDecoration(
         color: _primaryColor,
@@ -137,37 +139,44 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white), 
+            icon: const Icon(Icons.close, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 8),
-          const Text("Tambah Jenis Iuran Baru", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text(
+            "Tambah Jenis Iuran Baru",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
   }
-  
-  // --- WIDGET BANTUAN YANG DIMODIFIKASI: SECTION TITLE ---
+
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 4),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: _primaryColor, // Menggunakan Primary Color
-          fontWeight: FontWeight.w700, // Font tebal
+          color: _primaryColor,
+          fontWeight: FontWeight.w700,
           fontSize: 18,
         ),
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -178,15 +187,17 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
           _buildCustomHeader(context),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 24.0,
+              ),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // --- Bagian Detail Iuran ---
                     _buildSectionTitle(context, "Detail Iuran"),
-                    
+
                     TextFormField(
                       controller: _namaController,
                       decoration: _inputDecoration.copyWith(
@@ -195,14 +206,16 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
                       validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     TextFormField(
                       controller: _deskripsiController,
-                      decoration: _inputDecoration.copyWith(labelText: "Deskripsi"),
+                      decoration: _inputDecoration.copyWith(
+                        labelText: "Deskripsi",
+                      ),
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     TextFormField(
                       controller: _jumlahController,
                       decoration: _inputDecoration.copyWith(
@@ -221,16 +234,17 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // --- Bagian Target & Jadwal ---
                     _buildSectionTitle(context, "Target & Jadwal"),
-                    
-                    // Field Tanggal Jatuh Tempo
+
                     TextFormField(
                       controller: _tanggalJatuhTempoController,
                       decoration: _inputDecoration.copyWith(
                         labelText: "Tanggal Jatuh Tempo Pertama",
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.calendar_today, color: _primaryColor),
+                          icon: const Icon(
+                            Icons.calendar_today,
+                            color: _primaryColor,
+                          ),
                           onPressed: () => _selectDate(context),
                         ),
                       ),
@@ -239,10 +253,12 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
                       validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     DropdownButtonFormField<String>(
                       value: _tipeIuranValue,
-                      decoration: _inputDecoration.copyWith(labelText: "Tipe Penagihan"),
+                      decoration: _inputDecoration.copyWith(
+                        labelText: "Tipe Penagihan",
+                      ),
                       items: const [
                         DropdownMenuItem(
                           value: "PER_WARGA",
@@ -253,17 +269,20 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
                           child: Text("Per Keluarga (KK)"),
                         ),
                       ],
-                      onChanged: (value) => setState(() => _tipeIuranValue = value),
+                      onChanged: (value) =>
+                          setState(() => _tipeIuranValue = value),
                       validator: (v) => v == null ? "Wajib dipilih" : null,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     Row(
                       children: [
                         Expanded(
                           child: TextFormField(
                             controller: _rtController,
-                            decoration: _inputDecoration.copyWith(labelText: "RT (Opsional)"),
+                            decoration: _inputDecoration.copyWith(
+                              labelText: "RT (Opsional)",
+                            ),
                             keyboardType: TextInputType.number,
                             maxLength: 3,
                           ),
@@ -272,7 +291,9 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _rwController,
-                            decoration: _inputDecoration.copyWith(labelText: "RW (Opsional)"),
+                            decoration: _inputDecoration.copyWith(
+                              labelText: "RW (Opsional)",
+                            ),
                             keyboardType: TextInputType.number,
                             maxLength: 3,
                           ),
@@ -280,7 +301,7 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
                       ],
                     ),
                     const SizedBox(height: 30),
-                    
+
                     ElevatedButton(
                       onPressed: _isLoading ? null : _submitIuran,
                       child: _isLoading
