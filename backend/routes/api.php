@@ -45,14 +45,6 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('/keuangan', KeuanganController::class);
     Route::apiResource('/kegiatan', KegiatanController::class);
     Route::apiResource('/acara', AcaraController::class);
-    Route::get('/iuran/rt-rw-list', [IuranController::class, 'getRtRwList']);
-    Route::get('/master/rw', [WargaController::class, 'listRw']);
-    Route::get('/master/rt', [WargaController::class, 'listRtByRw']);
-    Route::get('/master/keluarga', [KeluargaController::class, 'listAll']);
-
-
-
-
 
     Route::prefix('wallet')->group(function () {
         Route::get('/balance', [WalletController::class, 'getBalanceAndTransactions']);

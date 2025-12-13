@@ -90,11 +90,9 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
       'tipe': _tipeIuranValue,
       'rt': _rtController.text.isNotEmpty ? _rtController.text : null,
       'rw': _rwController.text.isNotEmpty ? _rwController.text : null,
+
       'tanggal_jatuh_tempo': _tanggalJatuhTempoController.text,
     };
-
-    print("Request Data: ");
-    print(data);
 
     try {
       final success = await apiService.createIuran(data);
@@ -123,7 +121,6 @@ class _TambahIuranScreenState extends State<TambahIuranScreen> {
       }
     }
   }
-
 
   Widget _buildCustomHeader(BuildContext context) {
     return Container(

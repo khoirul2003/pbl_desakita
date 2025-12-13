@@ -26,32 +26,11 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
-
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-
-          // 🔍 DEBUG REQUEST
-          print("➡️➡️➡️ REQUEST");
-          print("URL     : ${options.uri}");
-          print("METHOD  : ${options.method}");
-          print("HEADERS : ${options.headers}");
-          print("DATA    : ${options.data}");
-          print("QUERY   : ${options.queryParameters}");
-          print("➡️➡️➡️ END REQUEST");
-
           return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          // ✅ DEBUG RESPONSE
-          print("✅✅✅ RESPONSE");
-          print("URL     : ${response.requestOptions.uri}");
-          print("STATUS  : ${response.statusCode}");
-          print("DATA    : ${response.data}");
-          print("✅✅✅ END RESPONSE");
-
-          return handler.next(response);
         },
         onError: (DioException e, handler) {
           // ❌ DEBUG ERROR
@@ -69,6 +48,15 @@ class ApiService {
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
           return handler.next(options);
           return handler.next(e);
+        },
+      ),
+    );
+
+    _dioPublic.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          options.headers['Bypass-Tunnel-Reminder'] = 'true';
+          return handler.next(options);
         },
       ),
     );

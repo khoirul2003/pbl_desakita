@@ -104,10 +104,10 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
     try {
       setState(() => _feedbackMessage = "Scanning face...");
 
-      for (int i = 0; i < 20; i++) {
+      for (int i = 0; i < 10; i++) {
         final XFile img = await _controller!.takePicture();
         frames.add(File(img.path));
-        if (i == 10) bestFrame = File(img.path);
+        if (i == 3) bestFrame = File(img.path);
         await Future.delayed(const Duration(milliseconds: 180));
       }
 
