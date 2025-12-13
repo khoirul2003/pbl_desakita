@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart'; // Wajib ada untuk DateFormat
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/models/acara_model.dart'; 
-// Asumsi Anda juga memerlukan model Warga/User untuk konteks tampilan, 
-// tapi kita hanya fokus pada Acara di sini.
+// Pastikan path ini benar (sesuaikan jika lokasi DetailAcaraScreen berbeda)
+import 'package:frontend/screens/warga/Detail_Acara_Screen.dart'; 
 
 const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B);
@@ -47,6 +47,7 @@ class _AcaraWargaScreenState extends State<AcaraWargaScreen> {
 
     final apiService = context.read<ApiService>();
     try {
+      // Perlu diingat: getManajemenAcara harus mengembalikan List<Acara>
       final acara = await apiService.getManajemenAcara(search: search); 
       if (!mounted) return;
       setState(() {
@@ -67,7 +68,7 @@ class _AcaraWargaScreenState extends State<AcaraWargaScreen> {
     _fetchAcara(search: query);
   }
 
-  // Header Disederhanakan (Hanya Judul dan Search Bar)
+  // Header Disederhanakan (Tidak ada perubahan)
   Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -115,7 +116,6 @@ class _AcaraWargaScreenState extends State<AcaraWargaScreen> {
               ),
             ),
           ),
-          // TOMBOL TAMBAH DIHILANGKAN
         ],
       ),
     );
@@ -130,51 +130,63 @@ class _AcaraWargaScreenState extends State<AcaraWargaScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            const Icon(Icons.event, color: _primaryColor, size: 30),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    acara.namaAcara, 
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    // Menggunakan DateTime dan formatter yang benar
-                    "Mulai: ${_dateTimeFormatter.format(acara.tanggalMulai)}",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                  ),
-                  Text(
-                    "Selesai: ${_dateTimeFormatter.format(acara.tanggalSelesai)}",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                   Text(
-                    "Lokasi: ${acara.lokasi} ($scope)", 
-                    style: TextStyle(color: _accentColor, fontSize: 13, fontWeight: FontWeight.w500),
-                  ),
-                ],
+      child: GestureDetector( // <-- DITAMBAHKAN: GestureDetector untuk navigasi
+        onTap: () {
+          // Navigasi ke DetailAcaraScreen dan lewati objek acara
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => DetailAcaraScreen(
+                acara: acara, // <-- Melewatkan objek Acara lengkap
               ),
             ),
-            // TOMBOL POPUP MENU (EDIT/HAPUS) DIHILANGKAN
-          ],
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              const Icon(Icons.event, color: _primaryColor, size: 30),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      acara.namaAcara, 
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Mulai: ${_dateTimeFormatter.format(acara.tanggalMulai)}",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    Text(
+                      "Selesai: ${_dateTimeFormatter.format(acara.tanggalSelesai)}",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Lokasi: ${acara.lokasi} ($scope)", 
+                      style: TextStyle(color: _accentColor, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              // Indikator bahwa card bisa diklik
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ],
+          ),
         ),
       ),
     );
@@ -183,6 +195,15 @@ class _AcaraWargaScreenState extends State<AcaraWargaScreen> {
   Widget _buildBody() {
     if (_isLoading)
       return const Center(child: CircularProgressIndicator(color: _primaryColor));
+      
+    if (_errorMessage.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(_errorMessage, textAlign: TextAlign.center, style: TextStyle(color: Colors.red)),
+        ),
+      );
+    }
       
     if (_acaraList.isEmpty) {
       return Center(

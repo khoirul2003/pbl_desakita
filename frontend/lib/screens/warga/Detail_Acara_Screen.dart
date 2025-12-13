@@ -1,65 +1,244 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+// Asumsi model Acara ada di sini
+import 'package:frontend/models/acara_model.dart'; 
+import 'package:frontend/services/api_service.dart';
 
-const Color _primaryColor = Color(0xFF0E2F60); 
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
+const Color _eventColor = Color(0xFFDC3545); // Merah untuk Biaya (Lebih mendekati standard Bootstrap red)
+const Color _upcomingColor = Color(0xFF28A745); // Hijau untuk Status Akan Datang
 
 class DetailAcaraScreen extends StatelessWidget {
-  final int idAcara;
-  final String judulAcara;
+  final Acara acara;
+  const DetailAcaraScreen({super.key, required this.acara});
 
-  const DetailAcaraScreen({
-    super.key,
-    required this.idAcara,
-    required this.judulAcara,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Detail Acara: $judulAcara"),
-        backgroundColor: _primaryColor,
-        foregroundColor: Colors.white,
+  // --- WIDGET BANTUAN: CARD WRAPPER DENGAN SHADOW PROSCAN ---
+  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16, // Shadow menonjol dan lembut
+            offset: const Offset(0, 6),
+          )
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(judulAcara, style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: _primaryColor)),
-            const Divider(height: 30),
-            _buildDetailRow(Icons.event, "Tanggal", "15 Desember 2025"),
-            _buildDetailRow(Icons.schedule, "Waktu", "19:00 - Selesai"),
-            _buildDetailRow(Icons.location_on, "Lokasi", "Balai Warga RW 001"),
-            const Divider(height: 30),
-            Text("Deskripsi Acara:", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text(
-              "Acara Syukuran Akhir Tahun dan Pembagian Donasi untuk anak yatim. Diharapkan kehadiran seluruh warga.",
-              style: TextStyle(fontSize: 16),
+      padding: padding,
+      child: child,
+    );
+  }
+
+  // Helper widget untuk membuat baris detail
+  Widget _buildDetailRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
-            const SizedBox(height: 20),
-            Text("Kontak Panitia:", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const Text("Bapak Joko (RT 002) - 0812xxxxxx"),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper widget untuk judul bagian
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0, left: 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: _primaryColor,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+  // --- WIDGET: CUSTOM HEADER PROSCAN (tanpa aksi edit/hapus) ---
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        color: _primaryColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: _primaryColor, size: 24),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(value, style: const TextStyle(fontSize: 16)),
-            ],
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Text(
+            "Detail Acara",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 48), // Spacer pengganti ikon aksi
+        ],
+      ),
+    );
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    final NumberFormat rupiahFormatter = NumberFormat.currency(
+      locale: 'id',
+      symbol: 'Rp',
+      decimalDigits: 0,
+    );
+    
+    // Logika Status Acara
+    final bool isFinished = acara.tanggalSelesai.isBefore(DateTime.now());
+    final String statusText = isFinished ? 'SELESAI' : 'AKAN DATANG';
+    final Color statusColor = isFinished ? Colors.grey : _upcomingColor;
+    
+    // Logika Lingkup Area
+    String scope = 'Desa (Umum)';
+    if (acara.rt != null && acara.rt!.isNotEmpty) {
+        scope = "RT ${acara.rt} / RW ${acara.rw ?? '-'}";
+    } else if (acara.rw != null && acara.rw!.isNotEmpty) {
+        scope = "RW ${acara.rw}";
+    }
+
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      body: Column(
+        children: [
+          _buildCustomHeader(context), // Mengganti AppBar
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
+              children: [
+                // --- KARTU RINGKASAN ACARA ---
+                _buildCardWrapper(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            statusText, // Status: SELESAI / AKAN DATANG
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleSmall?.copyWith(color: statusColor, fontWeight: FontWeight.bold),
+                          ),
+                          Icon(Icons.celebration, color: statusColor, size: 24),
+                        ],
+                      ),
+                      const Divider(height: 20, thickness: 1),
+                      
+                      Text(
+                        acara.namaAcara,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: _primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Lokasi: ${acara.lokasi}",
+                        style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      Text(
+                        "Biaya Total (Target Dana): ${rupiahFormatter.format(acara.totalBiaya)}",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: _eventColor,
+                        ),
+                      ),
+                      
+                      // Informasi tambahan Pembuat Acara
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          "Dibuat oleh User ID: ${acara.createdByUserId ?? 'Admin/Sistem'}",
+                          style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // --- KARTU RINCIAN JADWAL & LINGKUP ---
+                _buildSectionTitle(context, "Jadwal dan Lingkup"),
+                _buildCardWrapper(
+                  child: Column(
+                    children: [
+                      _buildDetailRow(
+                        "Mulai",
+                        DateFormat('dd MMMM yyyy, HH:mm').format(acara.tanggalMulai) + ' WIB',
+                      ),
+                      _buildDetailRow(
+                        "Selesai",
+                        DateFormat('dd MMMM yyyy, HH:mm').format(acara.tanggalSelesai) + ' WIB',
+                      ),
+                      const Divider(height: 1, thickness: 1, color: Colors.black12),
+                      _buildDetailRow("Lingkup Area", scope),
+                    ],
+                  ),
+                ),
+
+                // --- KARTU KETERANGAN ---
+                _buildSectionTitle(context, "Deskripsi Acara"),
+                _buildCardWrapper(
+                  child: Text(
+                    acara.deskripsi, 
+                    style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                  ),
+                ),
+                
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ],
       ),

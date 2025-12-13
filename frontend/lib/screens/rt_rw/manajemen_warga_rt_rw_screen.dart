@@ -1,41 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/state/auth_provider.dart';
-import 'package:frontend/screens/admin/tambah_warga_screen.dart'; 
 import 'package:frontend/screens/admin/detail_warga_screen.dart';
-import 'package:frontend/screens/admin/edit_warga_screen.dart';
 
 class ManajemenWargaRtRwScreen extends StatefulWidget {
   const ManajemenWargaRtRwScreen({super.key});
 
   @override
-  State<ManajemenWargaRtRwScreen> createState() => _ManajemenWargaRtRwScreenState();
+  State<ManajemenWargaRtRwScreen> createState() =>
+      _ManajemenWargaRtRwScreenState();
 }
 
 class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
+  // =========================
+  // STATE
+  // =========================
   List<Warga> _wargaList = [];
   bool _isLoading = true;
   String _errorMessage = "";
+
   final TextEditingController _searchController = TextEditingController();
 
   String? _userRole;
   String? _userRT;
   String? _userRW;
 
-  static const Color _primaryColor = Color(0xFF0e2f60);
+  static const Color _primaryColor = Color(0xFF0E2F60);
   static const Color _cardIndicator = _primaryColor;
 
+  // =========================
+  // LIFECYCLE
+  // =========================
   @override
   void initState() {
     super.initState();
     _initializeUserAndFetchWarga();
   }
 
+  // =========================
+  // INIT & API
+  // =========================
   void _initializeUserAndFetchWarga() {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    
+    final user = context.read<AuthProvider>().user;
+
     if (user != null && user.warga != null) {
       _userRole = user.role;
       _userRT = user.warga!.rt;
@@ -51,12 +61,10 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
 
   Future<void> _fetchWarga({String? search}) async {
     if (_userRole == null || _userRW == null) {
-      setState(() {
-        _isLoading = false;
-        return;
-      });
+      setState(() => _isLoading = false);
+      return;
     }
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = "";
@@ -64,18 +72,16 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
 
     final apiService = context.read<ApiService>();
 
-    // Logika Pemfilteran:
-    // 1. RW akan mengirim filter RW-nya saja.
-    // 2. RT akan mengirim filter RT dan RW-nya.
-    String? filterRw = _userRW;
-    String? filterRt = (_userRole == 'rt') ? _userRT : null; // Hanya kirim RT jika rolenya 'rt'
+    final String? filterRw = _userRW;
+    final String? filterRt = (_userRole == 'rt') ? _userRT : null;
 
     try {
       final warga = await apiService.getManajemenWarga(
         search: search,
-        rt: filterRt, 
+        rt: filterRt,
         rw: filterRw,
       );
+
       setState(() {
         _wargaList = warga;
         _isLoading = false;
@@ -83,92 +89,38 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = "Gagal memuat data warga di wilayah Anda: $e";
+        _errorMessage = "Gagal memuat data warga di wilayah Anda.";
       });
+
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Gagal memuat data warga: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memuat data warga: $e")),
+        );
       }
     }
   }
 
-  void _onSearchChanged(String query) => _fetchWarga(search: query);
-
-  void _tambahWarga() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const TambahWargaScreen(),
-        fullscreenDialog: true,
-      ),
-    );
-    if (result == true) _fetchWarga(search: _searchController.text);
+  void _onSearchChanged(String query) {
+    _fetchWarga(search: query);
   }
 
+  // =========================
+  // NAVIGATION
+  // =========================
   void _goToDetail(Warga warga) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => DetailWargaScreen(wargaAwal: warga)),
-    );
-  }
-
-  Future<void> _goToEditWarga(Warga warga) async {
-    final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => EditWargaScreen(warga: warga),
-        fullscreenDialog: true,
+        builder: (_) => DetailWargaScreen(wargaAwal: warga),
       ),
     );
-    if (result == true) _fetchWarga(search: _searchController.text);
   }
 
-  Future<void> _deleteWarga(Warga warga) async {
-    
-    final bool? confirmed = await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Hapus Warga"),
-        content: Text(
-          "Apakah Anda yakin ingin menghapus ${warga.namaLengkap}? Tindakan ini tidak dapat dibatalkan.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Batal"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      final apiService = context.read<ApiService>();
-      try {
-        final success = await apiService.deleteWarga(warga.id);
-        if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("${warga.namaLengkap} berhasil dihapus."),
-              backgroundColor: Colors.green,
-            ),
-          );
-          _fetchWarga(search: _searchController.text);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-          );
-        }
-      }
-    }
-  }
-
-
+  // =========================
+  // UI COMPONENT
+  // =========================
   Widget _buildHeader() {
     String wilayah = "";
+
     if (_userRole == 'rt' && _userRT != null && _userRW != null) {
       wilayah = "RT $_userRT / RW $_userRW";
     } else if (_userRole == 'rw' && _userRW != null) {
@@ -183,27 +135,24 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
         16,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF0E2F60),
+        color: _primaryColor,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Text(
-              "Manajemen Warga $wilayah", 
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+          Text(
+            "Manajemen Warga $wilayah",
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          
           Container(
             height: 48,
             decoration: BoxDecoration(
@@ -224,43 +173,28 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 14),
-          
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _tambahWarga,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text("Tambah Warga"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.25),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoading)
+    if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: _primaryColor),
       );
-    if (_errorMessage.isNotEmpty)
-      return Center(child: Text("Error: $_errorMessage"));
+    }
+
+    if (_errorMessage.isNotEmpty) {
+      return Center(child: Text(_errorMessage));
+    }
 
     if (_wargaList.isEmpty) {
       return Center(
         child: Text(
           _searchController.text.isEmpty
               ? "Tidak ada data warga di wilayah Anda."
-              : "Tidak ada kecocokan untuk '${_searchController.text}' di wilayah Anda.",
+              : "Tidak ada kecocokan untuk '${_searchController.text}'.",
           style: const TextStyle(color: Colors.black54),
         ),
       );
@@ -272,15 +206,16 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 12, bottom: 24),
         itemCount: _wargaList.length,
-        itemBuilder: (context, index) => _buildWargaCard(_wargaList[index]),
+        itemBuilder: (context, index) {
+          return _buildWargaCard(_wargaList[index]);
+        },
       ),
     );
   }
 
   Widget _buildWargaCard(Warga warga) {
-    final String inisial = warga.namaLengkap.isNotEmpty
-        ? warga.namaLengkap[0].toUpperCase()
-        : "?";
+    final String inisial =
+        warga.namaLengkap.isNotEmpty ? warga.namaLengkap[0].toUpperCase() : "?";
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -289,6 +224,7 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
         child: Stack(
           children: [
             Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -300,26 +236,18 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 24,
+                    radius: 22,
                     backgroundColor: _primaryColor.withOpacity(0.1),
-                    backgroundImage:
-                        warga.fotoKtp != null && warga.fotoKtp!.isNotEmpty
-                        ? NetworkImage(warga.fotoKtp!)
-                        : null,
-                    child: warga.fotoKtp == null || warga.fotoKtp!.isEmpty
-                        ? Text(
-                            inisial,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: _primaryColor,
-                            ),
-                          )
-                        : null,
+                    child: Text(
+                      inisial,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: _primaryColor,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -352,35 +280,10 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
                       ],
                     ),
                   ),
-                  // PopUpMenuButton (Edit dan Hapus)
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.grey),
-                    onSelected: (value) {
-                      if (value == 'edit') _goToEditWarga(warga);
-                      if (value == 'delete') _deleteWarga(warga);
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, size: 20, color: _primaryColor),
-                            SizedBox(width: 8),
-                            Text("Edit"),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, color: Colors.red, size: 20),
-                            SizedBox(width: 8),
-                            Text("Hapus", style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: Colors.grey,
                   ),
                 ],
               ),
@@ -408,7 +311,9 @@ class _ManajemenWargaRtRwScreenState extends State<ManajemenWargaRtRwScreen> {
     );
   }
 
-
+  // =========================
+  // BUILD
+  // =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
