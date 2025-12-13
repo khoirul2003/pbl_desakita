@@ -42,9 +42,6 @@ class IuranController extends Controller
         return $query->paginate(10);
     }
 
-    /**
-     * Buat Iuran baru. (Admin, RW, RT)
-     */
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -74,11 +71,9 @@ class IuranController extends Controller
             $data['rw'] = $user->warga->rw;
         }
 
-
         $iuran = Iuran::create($data);
 
-
-
+        $this->generateTagihan($iuran);
 
         return response()->json($iuran, 201);
     }
@@ -87,7 +82,6 @@ class IuranController extends Controller
 
     public function show(Iuran $iuran)
     {
-
         return $iuran;
     }
 
@@ -129,6 +123,5 @@ class IuranController extends Controller
                 );
             }
         }
-
     }
 }

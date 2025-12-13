@@ -468,11 +468,15 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, size: 32, color: color),
           const SizedBox(height: 16),
+          // MODIFIKASI: Mengubah headlineMedium menjadi titleLarge
+          // atau menentukan fontSize eksplisit untuk mengatasi overflow
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: color,
+                  // Jika titleLarge masih terlalu besar, coba turunkan fontSize secara eksplisit:
+                  // fontSize: 24, 
                 ),
           ),
           const SizedBox(height: 4),
