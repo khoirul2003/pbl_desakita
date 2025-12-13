@@ -208,12 +208,25 @@ class ApiService {
     }
   }
 
-  Future<List<Warga>> getManajemenWarga({String? search}) async {
+  Future<List<Warga>> getManajemenWarga({String? search, String? rt, String? rw}) async {
     try {
+      final Map<String, dynamic> params = {};
+
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      if (rt != null && rt.isNotEmpty) {
+        params['rt'] = rt;
+      }
+      if (rw != null && rw.isNotEmpty) {
+        params['rw'] = rw;
+      }
+
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/warga',
-        queryParameters: {'search': search},
+        queryParameters: params,
       );
+
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Warga.fromJson(json)).toList();
@@ -287,6 +300,7 @@ class ApiService {
     }
   }
 
+  Future<List<Iuran>> getManajemenIuran({String? search, String? rt, String? rw}) async {
   Future<List<String>> getRwList() async {
     try {
       final response = await _dioProtected.get('$_baseUrlLaravel/v1/master/rw');
@@ -328,10 +342,23 @@ class ApiService {
 
   Future<List<Iuran>> getManajemenIuran({String? search}) async {
     try {
+      final Map<String, dynamic> params = {};
+
+      if (search != null && search.isNotEmpty) {
+        params['search'] = search;
+      }
+      if (rt != null && rt.isNotEmpty) {
+        params['rt'] = rt;
+      }
+      if (rw != null && rw.isNotEmpty) {
+        params['rw'] = rw;
+      }
+
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/iuran',
-        queryParameters: {'search': search},
+        queryParameters: params, 
       );
+      
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Iuran.fromJson(json)).toList();

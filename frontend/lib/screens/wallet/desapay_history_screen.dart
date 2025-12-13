@@ -150,6 +150,7 @@ class DesaPayHistoryScreen extends StatelessWidget {
       symbol: "Rp ",
       decimalDigits: 0,
     );
+    Intl.defaultLocale = 'id_ID'; 
     final dateFormatter = DateFormat("dd MMM yyyy, HH:mm", "id_ID");
 
     return Scaffold(

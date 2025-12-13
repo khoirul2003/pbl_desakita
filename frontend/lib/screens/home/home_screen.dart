@@ -11,6 +11,8 @@ import 'package:frontend/screens/admin/manajemen_iuran_screen.dart';
 import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart';
 import 'package:frontend/screens/profile/profile_main_screen.dart';
 import 'package:frontend/screens/wallet/desapay_wallet_section.dart';
+import 'package:frontend/screens/rt_rw/manajemen_warga_rt_rw_screen.dart'; 
+import 'package:frontend/screens/rt_rw/manajemen_iuran_rt_rw_screen.dart'; 
 
 const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B);
@@ -48,15 +50,30 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     if (user.role == 'admin' || user.role == 'rt' || user.role == 'rw') {
+
+      // 1. Tentukan halaman Manajemen Warga
+      Widget manajemenWargaPage;
+      if (user.role == 'admin') {
+        manajemenWargaPage = const ManajemenWargaScreen(); // Admin melihat SEMUA Warga
+      } else { 
+        // Role 'rt' dan 'rw' akan diarahkan ke screen yang sudah difilter
+        manajemenWargaPage = const ManajemenWargaRtRwScreen();
+      }
+
+      // 2. Tentukan halaman Manajemen Iuran
+      Widget manajemenIuranPage;
+      if (user.role == 'admin') {
+        manajemenIuranPage = const ManajemenIuranScreen(); // Admin melihat SEMUA Iuran
+      } else {
+        // Role 'rt' dan 'rw' akan diarahkan ke screen Iuran yang difilter
+        manajemenIuranPage = const ManajemenIuranRtRwScreen(); 
+      }
+
+      // 3. Tambahkan semua halaman ke list pages
       pages.addAll([
-        user.role == 'admin'
-            ? const ManajemenWargaScreen()
-            : const PlaceholderScreen(title: "Data Warga & Keluarga"),
-
-        const ManajemenIuranScreen(),
-
-        const ManajemenKegiatanScreen(),
-
+        manajemenWargaPage,
+        manajemenIuranPage,
+        const ManajemenKegiatanScreen(), // Kegiatan bisa dilihat semua
         const ProfileMainScreen(),
       ]);
 
@@ -73,11 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ]);
     } else {
+      // Logika untuk Warga Biasa
       pages.addAll([
         const PlaceholderScreen(title: "Data Keluarga Saya"),
-
         const PlaceholderScreen(title: "Tagihan Iuran"),
-
         const ProfileMainScreen(),
       ]);
 
@@ -198,9 +214,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           user.warga?.namaLengkap ?? user.email,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: _primaryColor,
-          ),
+                fontWeight: FontWeight.w800,
+                color: _primaryColor,
+              ),
         ),
         if (warga != null)
           Text(
@@ -265,9 +281,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           "Ringkasan Data ${user.role.toUpperCase()} ${user.warga?.rt ?? ''}/${user.warga?.rw ?? ''}",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: _accentColor,
-          ),
+                fontWeight: FontWeight.w700,
+                color: _accentColor,
+              ),
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -322,9 +338,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           "Ringkasan Tagihan Anda",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: _accentColor,
-          ),
+                fontWeight: FontWeight.w700,
+                color: _accentColor,
+              ),
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -375,9 +391,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           "Ringkasan Data (Admin)",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: _accentColor,
-          ),
+                fontWeight: FontWeight.w700,
+                color: _accentColor,
+              ),
         ),
         const SizedBox(height: 16),
 
@@ -413,7 +429,7 @@ class _StatCard extends StatelessWidget {
   final String value;
   final Color color;
   final Widget Function({required Widget child, EdgeInsets padding})
-  cardWrapper;
+      cardWrapper;
 
   const _StatCard({
     required this.icon,
@@ -432,12 +448,16 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, size: 32, color: color),
           const SizedBox(height: 16),
+          // MODIFIKASI: Mengubah headlineMedium menjadi titleLarge
+          // atau menentukan fontSize eksplisit untuk mengatasi overflow
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  // Jika titleLarge masih terlalu besar, coba turunkan fontSize secara eksplisit:
+                  // fontSize: 24, 
+                ),
           ),
           const SizedBox(height: 4),
           Text(

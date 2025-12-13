@@ -45,6 +45,14 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
     super.dispose();
   }
 
+  void _fillQuickAmount(int amount) {
+    // Logika pengisian nominal pulsa tidak memerlukan formatting seperti Top Up
+    // karena input pulsa seringkali diabaikan oleh sistem PPOB.
+    setState(() {
+      _selectedDenom = amount;
+    });
+  }
+
   Future<void> _submitPurchase() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty || _selectedOperator == null || _selectedDenom == null) {
@@ -154,6 +162,56 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
     );
   }
 
+  // --- WIDGET HEADER MELENGKUNG (Gaya Manajemen Kegiatan) ---
+  Widget _buildCurvedHeader(BuildContext context) {
+    final bool canPop = Navigator.of(context).canPop();
+
+    return Container(
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 20),
+      decoration: BoxDecoration(
+        color: widget.primaryColor,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            // Tombol Back
+            if (canPop)
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              )
+            else
+              const SizedBox(width: 0),
+
+            // Judul
+            Expanded(
+              child: Text(
+                "Pembelian Pulsa",
+                textAlign: canPop ? TextAlign.left : TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (canPop) const SizedBox(width: 48)
+          ],
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -164,159 +222,160 @@ class _DesaPayPulsaScreenState extends State<DesaPayPulsaScreen> {
     );
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Pembelian Pulsa"),
-        backgroundColor: widget.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0), // Padding lebih besar
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- HEADER DESKRIPSI (Gaya ProScan) ---
-            Text(
-              "Beli Pulsa & Paket Data.",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800, // Sangat tebal
-                    color: widget.primaryColor,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Isi pulsa menggunakan saldo Desapay (demo).",
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 30),
+      backgroundColor: Colors.grey.shade50, // Latar belakang sedikit kontras
+      body: Column(
+        children: [
+          // Panggil header kustom
+          _buildCurvedHeader(context),
 
-            // --- INPUT NOMOR HP ---
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-              decoration: _proscanInputDecoration(
-                labelText: "Nomor HP Tujuan",
-                hintText: "08xxxxxxxxxx",
-                // Tambahkan ikon opsional untuk kontak
-                suffixIcon: Icon(Icons.contact_phone, color: widget.accentColor),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // --- DROP DOWN OPERATOR ---
-            DropdownButtonFormField<String>(
-              value: _selectedOperator,
-              style: const TextStyle(
-                  color: Colors.black, fontSize: 16), // Penting agar teks tidak hilang
-              decoration: _proscanInputDecoration(
-                labelText: "Pilih Operator",
-              ),
-              items: _operators
-                  .map(
-                    (op) =>
-                        DropdownMenuItem<String>(value: op, child: Text(op)),
-                  )
-                  .toList(),
-              onChanged: (val) {
-                setState(() {
-                  _selectedOperator = val;
-                });
-              },
-            ),
-            const SizedBox(height: 30),
-
-            // --- PILIH NOMINAL / DENOMINASI ---
-            Text(
-              "Pilih Nominal Pulsa",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: widget.primaryColor,
-                  ),
-            ),
-            const SizedBox(height: 12),
-
-            Wrap(
-              spacing: 10, // Jarak antar chip
-              runSpacing: 10,
-              children: _denomList.map((amount) {
-                final selected = _selectedDenom == amount;
-                return ChoiceChip(
-                  label: Text(formatter.format(amount)),
-                  selected: selected,
-                  onSelected: (_) {
-                    setState(() {
-                      _selectedDenom = amount;
-                    });
-                  },
-                  // KUNCI: Styling ChoiceChip ProScan
-                  selectedColor: widget.primaryColor, // Warna primary saat terpilih
-                  backgroundColor: Colors.grey.shade100,
-                  side: BorderSide(
-                    color: selected ? widget.primaryColor : Colors.grey.shade300,
-                    width: selected ? 1.5 : 1,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10), // Sudut membulat
-                  ),
-                  labelStyle: TextStyle(
-                    color: selected ? Colors.white : Colors.black87, // Teks putih saat terpilih
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 40),
-
-            // --- TOMBOL SUBMIT (Gaya ProScan) ---
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitting ? null : _submitPurchase,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18), // Padding besar
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(_kBorderRadius),
-                  ),
-                  elevation: 5,
-                  shadowColor: widget.primaryColor.withOpacity(0.4),
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0), // Padding lebih besar
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- HEADER DESKRIPSI (Gaya ProScan) ---
+                  Text(
+                    "Beli Pulsa & Paket Data.",
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800, // Sangat tebal
+                          color: widget.primaryColor, // Warna Primary
                         ),
-                      )
-                    : const Text(
-                        "Bayar Sekarang (Demo)",
-                        style: TextStyle(
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Isi pulsa menggunakan saldo Desapay (demo).",
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // --- INPUT NOMOR HP ---
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    decoration: _proscanInputDecoration(
+                      labelText: "Nomor HP Tujuan",
+                      hintText: "08xxxxxxxxxx",
+                      suffixIcon: Icon(Icons.contact_phone, color: widget.accentColor),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // --- DROP DOWN OPERATOR ---
+                  DropdownButtonFormField<String>(
+                    value: _selectedOperator,
+                    style: const TextStyle(
+                        color: Colors.black, fontSize: 16),
+                    decoration: _proscanInputDecoration(
+                      labelText: "Pilih Operator",
+                    ),
+                    items: _operators
+                        .map(
+                          (op) =>
+                              DropdownMenuItem<String>(value: op, child: Text(op)),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedOperator = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 30),
+
+                  // --- PILIH NOMINAL / DENOMINASI ---
+                  Text(
+                    "Pilih Nominal Pulsa",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          fontSize: 18,
+                          color: widget.primaryColor,
                         ),
-                      ),
-              ),
-            ),
+                  ),
+                  const SizedBox(height: 12),
 
-            const SizedBox(height: 12),
-            const Center(
-              child: Text(
-                "Catatan: hanya simulasi. Integrasikan dengan API operator / payment gateway untuk transaksi nyata.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                  Wrap(
+                    spacing: 12, // Jarak antar chip
+                    runSpacing: 12,
+                    children: _denomList.map((amount) {
+                      final selected = _selectedDenom == amount;
+                      return ChoiceChip(
+                        label: Text(formatter.format(amount)),
+                        selected: selected,
+                        onSelected: (_) {
+                          setState(() {
+                            _selectedDenom = amount;
+                          });
+                        },
+                        // KUNCI: Styling ChoiceChip ProScan
+                        selectedColor: widget.primaryColor, // Warna primary saat terpilih
+                        backgroundColor: Colors.white, // Latar belakang putih
+                        side: BorderSide(
+                          color: selected ? widget.primaryColor : Colors.grey.shade400,
+                          width: selected ? 1.5 : 1,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10), // Sudut membulat
+                        ),
+                        labelStyle: TextStyle(
+                          color: selected ? Colors.white : Colors.black87, // Teks putih saat terpilih
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // --- TOMBOL SUBMIT (Gaya ProScan) ---
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _submitting ? null : _submitPurchase,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: widget.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18), // Padding besar
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(_kBorderRadius),
+                        ),
+                        elevation: 5,
+                        shadowColor: widget.primaryColor.withOpacity(0.4),
+                      ),
+                      child: _submitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              "Bayar Sekarang (Demo)",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800, // Lebih tebal
+                                fontSize: 18,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+                  const Center(
+                    child: Text(
+                      "Catatan: hanya simulasi. Integrasikan dengan API operator / payment gateway untuk transaksi nyata.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
