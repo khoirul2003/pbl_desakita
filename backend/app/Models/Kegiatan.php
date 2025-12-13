@@ -5,13 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property-read \App\Models\User|null $pembuat
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Kegiatan newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Kegiatan newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Kegiatan query()
- * @mixin \Eloquent
- */
 class Kegiatan extends Model
 {
     use HasFactory;
@@ -30,9 +23,6 @@ class Kegiatan extends Model
         'created_by_user_id',
     ];
 
-    /**
-     * Dapatkan user yang membuat kegiatan ini.
-     */
     public function pembuat()
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
