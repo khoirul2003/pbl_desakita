@@ -36,6 +36,8 @@ class _EditWargaScreenState extends State<EditWargaScreen> {
   // State untuk Dropdown
   String? _jenisKelaminValue;
   String? _statusDalamKeluargaValue;
+  // State BARU untuk Role/Jabatan (Mengambil dari Warga.user.role)
+  String? _roleValue; 
   DateTime? _selectedDate;
   bool _isLoading = false;
   
@@ -58,6 +60,7 @@ class _EditWargaScreenState extends State<EditWargaScreen> {
     super.initState();
     // --- (PENTING) Inisialisasi Controller dengan data warga ---
     final warga = widget.warga;
+    
     _namaController = TextEditingController(text: warga.namaLengkap);
     _nikController = TextEditingController(text: warga.nik);
     _tempatLahirController = TextEditingController(text: warga.tempatLahir);
@@ -73,6 +76,12 @@ class _EditWargaScreenState extends State<EditWargaScreen> {
 
     _jenisKelaminValue = warga.jenisKelamin;
     _statusDalamKeluargaValue = warga.statusDalamKeluarga;
+    
+    // <<< INISIALISASI ROLE BARU >>>
+    // Role diambil dari objek User yang terlampir pada Warga
+    _roleValue = warga.user?.role; 
+    // <<< AKHIR INISIALISASI ROLE BARU >>>
+    
     if (warga.tanggalLahir != null && warga.tanggalLahir!.isNotEmpty) {
       _selectedDate = DateTime.tryParse(warga.tanggalLahir!);
     }
@@ -127,10 +136,10 @@ class _EditWargaScreenState extends State<EditWargaScreen> {
   }
 
   Future<void> _submitUpdateWarga() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    setState(() { _isLoading = true; });
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+  setState(() { _isLoading = true; });
 
     // --- MENGGANTI: Gunakan ApiService ---
     final apiService = context.read<ApiService>();
@@ -151,37 +160,39 @@ class _EditWargaScreenState extends State<EditWargaScreen> {
       "keluarga_id": int.tryParse(_keluargaIdController.text),
       "status_dalam_keluarga": _statusDalamKeluargaValue,
       "no_hp": _noHpController.text,
-    };
+      "role": _roleValue,
+  };
 
     try {
-      // Panggil fungsi update dari ApiService
-      final Warga? updatedWarga = await apiService.updateManajemenWarga(widget.warga.id, data);
+        final Warga? updatedWarga = await apiService.updateManajemenWarga(widget.warga.id, data);
 
-      if (updatedWarga != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Berhasil memperbarui ${updatedWarga.namaLengkap}."),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (updatedWarga != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Berhasil memperbarui ${updatedWarga.namaLengkap}."),
+              backgroundColor: Colors.green,
+            ),
+          );
         // Kembalikan 'true' untuk memberitahu layar detail agar me-refresh
-        Navigator.of(context).pop(true);
-      } else {
-        throw Exception("Gagal memperbarui data");
+      Navigator.of(context).pop(updatedWarga); 
+          } else {
+            throw Exception("Gagal memperbarui data");
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Terjadi kesalahan: $e"),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Kembalikan null saat terjadi error agar layar sebelumnya tahu
+          Navigator.of(context).pop(null); 
+        } finally {
+          if (mounted) {
+            setState(() { _isLoading = false; });
+          }
+        }
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Terjadi kesalahan: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() { _isLoading = false; });
-      }
-    }
-  }
   
   // --- WIDGET: CUSTOM HEADER PROSCAN ---
   Widget _buildCustomHeader(BuildContext context) {
@@ -396,6 +407,32 @@ class _EditWargaScreenState extends State<EditWargaScreen> {
                       },
                       validator: (v) => v == null ? "Wajib dipilih" : null,
                     ),
+                    
+                    const SizedBox(height: 16),
+                    // <<< DROPDOWN ROLE/JABATAN (HURUF KECIL) >>>
+                    DropdownButtonFormField<String>(
+                      value: _roleValue,
+                      decoration: _inputDecoration.copyWith(labelText: "Role/Jabatan"),
+                      items: const [
+                        // Nilai (value) ini menggunakan huruf kecil 
+                        // agar cocok dengan string 'role' di database Laravel Anda ('admin', 'rw', 'rt').
+                        DropdownMenuItem(value: "admin", child: Text("Admin")),
+                        DropdownMenuItem(value: "rw", child: Text("Ketua RW")),
+                        DropdownMenuItem(value: "rt", child: Text("Ketua RT")),
+                        DropdownMenuItem(value: "warga", child: Text("Warga")),
+                        // Anda bisa menambahkan role lain di sini jika ada di backend
+                        // Contoh:
+                        // DropdownMenuItem(value: "bendahara", child: Text("Bendahara")),
+                        // DropdownMenuItem(value: "sekretaris", child: Text("Sekretaris")),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _roleValue = value;
+                        });
+                      },
+                      validator: (v) => v == null ? "Wajib dipilih" : null,
+                    ),
+                    // <<< AKHIR DROPDOWN ROLE/JABATAN >>>
                     
                     const SizedBox(height: 30),
                     // --- Tombol SIMPAN ---

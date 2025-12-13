@@ -39,7 +39,7 @@ class ApiService {
       ),
     );
 
-     _dioPublic.interceptors.add(
+    _dioPublic.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           options.headers['Bypass-Tunnel-Reminder'] = 'true';
@@ -189,7 +189,11 @@ class ApiService {
     }
   }
 
-  Future<List<Warga>> getManajemenWarga({String? search, String? rt, String? rw}) async {
+  Future<List<Warga>> getManajemenWarga({
+    String? search,
+    String? rt,
+    String? rw,
+  }) async {
     try {
       final Map<String, dynamic> params = {};
 
@@ -281,7 +285,11 @@ class ApiService {
     }
   }
 
-  Future<List<Iuran>> getManajemenIuran({String? search, String? rt, String? rw}) async {
+  Future<List<Iuran>> getManajemenIuran({
+    String? search,
+    String? rt,
+    String? rw,
+  }) async {
     try {
       final Map<String, dynamic> params = {};
 
@@ -297,9 +305,9 @@ class ApiService {
 
       final response = await _dioProtected.get(
         '$_baseUrlLaravel/v1/iuran',
-        queryParameters: params, 
+        queryParameters: params,
       );
-      
+
       if (response.statusCode == 200 && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Iuran.fromJson(json)).toList();
@@ -473,7 +481,6 @@ class ApiService {
     }
   }
 
-
   Future<WalletSummary?> getWalletSummary() async {
     try {
       final response = await _dioProtected.get(
@@ -617,7 +624,7 @@ class ApiService {
     }
   }
 
-    Future<User?> fetchProfile() async {
+  Future<User?> fetchProfile() async {
     try {
       final response = await _dioProtected.get('$_baseUrlLaravel/v1/profile');
 
@@ -643,8 +650,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final userJson =
-            response.data['user'] ?? response.data;
+        final userJson = response.data['user'] ?? response.data;
         final user = User.fromJson(userJson);
 
         await _storage.write(key: 'user_data', value: user.toJsonString());
@@ -681,6 +687,4 @@ class ApiService {
       return null;
     }
   }
-
-
 }
