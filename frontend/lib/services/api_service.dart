@@ -13,8 +13,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
-  final String _baseUrlLaravel = "https://2dd9b5758e82.ngrok-free.app/api";
-  final String _baseUrlFastApi = "https://4ed23276db90.ngrok-free.app";
+  final String _baseUrlLaravel = "https://64df3290146c.ngrok-free.app/api";
+  final String _baseUrlFastApi = "https://b6d8ff767f85.ngrok-free.app";
 
   final _storage = const FlutterSecureStorage();
 
@@ -558,10 +558,4 @@ class ApiService {
       rethrow;
     }
   }
-<<<<<<< HEAD
 }
-=======
-
-  Future<dynamic> payIuran({required double totalAmount, required List<String> tagihanIds}) async {}
-}
->>>>>>> de98e585bbef38db3fac422e796976c278b943a3
