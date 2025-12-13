@@ -4,11 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/state/auth_provider.dart';
 
-// --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
-const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
-const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
-const Color _successColor = Color(0xFF28A745); // Hijau
+const Color _primaryColor = Color(0xFF0E2F60);
+const Color _backgroundColor = Color(0xFFF5F5F5);
+const Color _accentColor = Color(0xFF3C486B);
+const Color _successColor = Color(0xFF28A745);
 
 class RegisterFaceScreen extends StatefulWidget {
   const RegisterFaceScreen({super.key});
@@ -20,13 +19,13 @@ class RegisterFaceScreen extends StatefulWidget {
 class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
-  bool _isProcessing = false; // Gunakan state lokal untuk loading UI
+  bool _isProcessing = false;
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(
       source: ImageSource.camera,
       preferredCameraDevice: CameraDevice.front,
-      imageQuality: 80, 
+      imageQuality: 80,
     );
 
     if (image != null) {
@@ -49,13 +48,12 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      // Panggil fungsi di provider
       final String? error = await authProvider.registerFace(_imageFile!);
 
       if (mounted) {
         if (error == null) {
           _showSnackBar("Wajah berhasil terdaftar!", isSuccess: true);
-          Navigator.of(context).pop(true); // Pop dengan sinyal sukses
+          Navigator.of(context).pop(true);
         } else {
           _showSnackBar(error);
         }
@@ -73,7 +71,6 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
     }
   }
 
-  // Helper untuk Snackbar
   void _showSnackBar(String message, {bool isSuccess = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -83,11 +80,13 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
     );
   }
 
-  // --- WIDGET: CUSTOM HEADER PROSCAN ---
   Widget _buildCustomHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8, left: 16, right: 16, bottom: 16,
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 16,
       ),
       decoration: const BoxDecoration(
         color: _primaryColor,
@@ -95,17 +94,26 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white), 
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 8),
-          const Text("Atur Login Wajah", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text(
+            "Atur Login Wajah",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -113,7 +121,6 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Menggunakan state lokal _isProcessing dan menggabungkannya dengan AuthProvider
     final isLoadingProvider = context.watch<AuthProvider>().isLoading;
     final bool isBusy = _isProcessing || isLoadingProvider;
 
@@ -124,13 +131,20 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
           _buildCustomHeader(context),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 24.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
                     "Pendaftaran Biometrik Wajah",
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _primaryColor),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryColor,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -139,19 +153,26 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // --- Preview Foto Wajah (Circular Card) ---
                   Center(
                     child: Container(
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(100), 
+                        borderRadius: BorderRadius.circular(100),
                         border: Border.all(
-                          color: _imageFile == null ? _accentColor : _successColor,
+                          color: _imageFile == null
+                              ? _accentColor
+                              : _successColor,
                           width: 4,
                         ),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                         image: _imageFile != null
                             ? DecorationImage(
                                 image: FileImage(_imageFile!),
@@ -160,34 +181,46 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
                             : null,
                       ),
                       child: _imageFile == null
-                          ? const Icon(Icons.face_retouching_natural, size: 100, color: Colors.grey)
+                          ? const Icon(
+                              Icons.face_retouching_natural,
+                              size: 100,
+                              color: Colors.grey,
+                            )
                           : null,
                     ),
                   ),
                   const SizedBox(height: 30),
 
-                  // --- Tombol Ambil Foto ---
                   OutlinedButton.icon(
                     icon: const Icon(Icons.camera_alt_rounded),
-                    label: Text(_imageFile == null ? "Buka Kamera Depan" : "Ambil Ulang Foto"),
+                    label: Text(
+                      _imageFile == null
+                          ? "Buka Kamera Depan"
+                          : "Ambil Ulang Foto",
+                    ),
                     onPressed: isBusy ? null : _pickImage,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: _primaryColor,
                       side: const BorderSide(color: _primaryColor, width: 2),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // --- Tombol Simpan ---
                   ElevatedButton(
-                    onPressed: (_imageFile == null || isBusy) ? null : _submitRegisterFace,
+                    onPressed: (_imageFile == null || isBusy)
+                        ? null
+                        : _submitRegisterFace,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _successColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       elevation: 5,
                     ),
                     child: isBusy
@@ -201,10 +234,13 @@ class _RegisterFaceScreenState extends State<RegisterFaceScreen> {
                           )
                         : const Text(
                             "SIMPAN WAJAH SEBAGAI FACE ID",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                   ),
-                  
+
                   const SizedBox(height: 40),
                 ],
               ),
