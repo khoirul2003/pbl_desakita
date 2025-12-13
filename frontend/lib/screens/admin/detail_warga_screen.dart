@@ -3,7 +3,8 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:provider/provider.dart';
 
-import 'package:frontend/screens/admin/edit_warga_screen.dart';
+// 1. Impor EditWargaScreen
+import 'package:frontend/screens/admin/edit_warga_screen.dart'; 
 
 const Color _primaryColor = Color(0xFF0E2F60);
 const Color _accentColor = Color(0xFF3C486B);
@@ -37,7 +38,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
 
     final apiService = context.read<ApiService>();
     try {
-      final warga = await apiService.getDetailWarga(widget.wargaAwal.id);
+      final warga = await apiService.getDetailWarga(widget.wargaAwal.id); 
       if (warga != null && mounted) {
         setState(() {
           _wargaDetail = warga;
@@ -58,10 +59,12 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     }
   }
 
+  // <<< FUNGSI YANG DIMODIFIKASI >>>
   void _goToEditWarga() async {
-    final Warga currentWarga = _wargaDetail ?? widget.wargaAwal;
-
-    final bool? result = await Navigator.of(context).push(
+    final Warga currentWarga = _wargaDetail ?? widget.wargaAwal; 
+    
+    // UBAH: Menangkap hasil (result) sebagai objek Warga, bukan boolean
+    final result = await Navigator.of(context).push(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -124,8 +127,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
-
-            onPressed: _goToEditWarga,
+            onPressed: _goToEditWarga, 
           ),
         ],
       ),
@@ -133,6 +135,13 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
   }
 
   Widget _buildProfileCard(Warga warga) {
+    String getInitials(String name) {
+      List<String> parts = name.trim().split(' ');
+      if (parts.isEmpty) return "";
+      if (parts.length == 1) return parts[0][0].toUpperCase();
+      return (parts[0][0] + parts.last[0]).toUpperCase();
+    }
+
     return _buildCardWrapper(
       child: Center(
         child: Column(
@@ -141,12 +150,8 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
               radius: 40,
               backgroundColor: _primaryColor.withOpacity(0.1),
               child: Text(
-                warga.namaLengkap[0].toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 36,
-                  color: _primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
+                getInitials(warga.namaLengkap), 
+                style: const TextStyle(fontSize: 30, color: _primaryColor, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 12),
@@ -182,7 +187,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
+            blurRadius: 16, 
             offset: const Offset(0, 6),
           ),
         ],
@@ -192,12 +197,21 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     );
   }
 
-  @override
-  Widget _buildDetailRow(
-    String title,
-    String? value, {
-    bool showDivider = true,
-  }) {
+  // --- WIDGET BANTUAN UTAMA: DETAIL ROW (Disesuaikan untuk Role dan JK) ---
+  Widget _buildDetailRow(String title, String? value, {bool showDivider = true}) {
+    String displayValue = value ?? "-";
+
+    // Penyesuaian nilai untuk Jenis Kelamin
+    if (title.toLowerCase().contains("jenis kelamin")) {
+      displayValue = value == 'L' ? "Laki-laki" : (value == 'P' ? "Perempuan" : "-");
+    }
+    
+    // Penyesuaian nilai untuk Role (Kembali ke toUpperCase)
+    if (title.toLowerCase().contains("role")) {
+      displayValue = value?.toUpperCase() ?? "-";
+    }
+
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -218,7 +232,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
 
               Expanded(
                 child: Text(
-                  value ?? "-",
+                  displayValue,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     fontSize: 15,
@@ -289,10 +303,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
                       children: [
                         _buildDetailRow("Tempat Lahir", warga.tempatLahir),
                         _buildDetailRow("Tgl. Lahir", warga.tanggalLahir),
-                        _buildDetailRow(
-                          "Jenis Kelamin",
-                          warga.jenisKelamin == 'L' ? "Laki-laki" : "Perempuan",
-                        ),
+                        _buildDetailRow("Jenis Kelamin", warga.jenisKelamin),
                         _buildDetailRow("Agama", warga.agama),
                         _buildDetailRow("Pekerjaan", warga.pekerjaan),
                         _buildDetailRow("Status", warga.statusPerkawinan),

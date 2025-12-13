@@ -4,7 +4,7 @@ import 'package:frontend/models/wallet_models.dart';
 class User {
   final int id;
   final String email;
-  final String role;
+  final String role; // Role UTAMA ada di sini
   final Warga? warga;
 
   User({required this.id, required this.email, required this.role, this.warga});
@@ -49,13 +49,14 @@ class Warga {
 
   // Foto path dari database
   final String? fotoKtp;
-
   // URL hasil accessor Laravel: foto_url
   final String? fotoUrl;
 
   final Keluarga? keluarga;
-  final User? user;
+  final User? user; // Role diakses via user.role
   final Wallet? wallet;
+  
+  // (Role yang redundan Dihilangkan dari class Warga)
 
   Warga({
     required this.id,
@@ -104,7 +105,9 @@ class Warga {
 
       fotoKtp: json['foto_ktp'],
       fotoUrl: json['foto_url'],
-
+      
+      // Role tidak lagi diambil di sini
+      
       keluarga: json['keluarga'] != null
           ? Keluarga.fromJson(json['keluarga'])
           : null,
@@ -130,7 +133,9 @@ class Warga {
     'keluarga_id': keluargaId,
     'status_dalam_keluarga': statusDalamKeluarga,
     'no_hp': noHp,
-
+    
+    // Role tidak lagi disertakan di sini
+    
     'foto_ktp': fotoKtp,
     
     'keluarga': keluarga?.toJsonMap(),

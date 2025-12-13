@@ -20,13 +20,18 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   static const Color _primaryColor = Color(0xFF0e2f60);
-
   static const Color _cardIndicator = _primaryColor;
 
   @override
   void initState() {
     super.initState();
     _fetchWarga();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchWarga({String? search}) async {
@@ -74,15 +79,63 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
     );
   }
 
+  // <<< FUNGSI YANG DIPERBAIKI: FETCH DETAIL SEBELUM EDIT >>>
   Future<void> _goToEditWarga(Warga warga) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => EditWargaScreen(warga: warga),
-        fullscreenDialog: true,
-      ),
+    final apiService = context.read<ApiService>();
+    
+    // 1. Tampilkan Dialog Loading
+    // Menggunakan rootNavigator: true agar dialog tampil di atas semua.
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(color: _primaryColor),
+              SizedBox(width: 20),
+              Text("Memuat data lengkap..."),
+            ],
+          ),
+        );
+      },
     );
-    if (result == true) _fetchWarga(search: _searchController.text);
+
+    Warga? detailWarga;
+    try {
+      // 2. Fetch Detail Warga Lengkap (termasuk relasi User dan Role)
+      detailWarga = await apiService.getDetailWarga(warga.id);
+      
+      // 3. Tutup Dialog Loading
+      Navigator.of(context, rootNavigator: true).pop(); 
+
+      if (detailWarga != null && mounted) {
+        // 4. Navigasi ke Edit Screen dengan Data Lengkap
+        final result = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EditWargaScreen(warga: detailWarga!), 
+            fullscreenDialog: true,
+          ),
+        );
+        // 5. Refresh List jika edit berhasil
+        if (result == true) _fetchWarga(search: _searchController.text);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal mendapatkan detail warga.")),
+        );
+      }
+    } catch (e) {
+      // 3. Tutup Dialog Loading saat terjadi Error
+      Navigator.of(context, rootNavigator: true).pop(); 
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error memuat detail warga: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
+  // <<< AKHIR FUNGSI YANG DIPERBAIKI >>>
 
   Future<void> _deleteWarga(Warga warga) async {
     final bool? confirmed = await showDialog(
@@ -151,14 +204,12 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
               "Halaman Warga",
               style: TextStyle(
                 color: Colors.white,
-
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
           const SizedBox(height: 12),
-
           Container(
             height: 48,
             decoration: BoxDecoration(
@@ -312,7 +363,7 @@ class _ManajemenWargaScreenState extends State<ManajemenWargaScreen> {
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, color: Colors.grey),
                     onSelected: (value) {
-                      if (value == 'edit') _goToEditWarga(warga);
+                      if (value == 'edit') _goToEditWarga(warga); // Menggunakan fungsi yang telah diperbaiki
                       if (value == 'delete') _deleteWarga(warga);
                     },
                     itemBuilder: (context) => [
