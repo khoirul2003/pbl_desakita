@@ -4,11 +4,16 @@ import 'package:frontend/services/api_service.dart';
 import 'package:provider/provider.dart';
 
 // 1. Impor EditWargaScreen
+<<<<<<< HEAD
 import 'package:frontend/screens/admin/edit_warga_screen.dart'; 
+=======
+import 'package:frontend/screens/admin/edit_warga_screen.dart'; // <--- PASTIKAN PATH INI BENAR
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
 
-const Color _primaryColor = Color(0xFF0E2F60);
-const Color _accentColor = Color(0xFF3C486B);
-const Color _backgroundColor = Color(0xFFF5F5F5);
+// --- DEFINISI WARNA PROSCAN ---
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
+const Color _backgroundColor = Color(0xFFF5F5F5); // Abu-abu muda untuk Scaffold
 
 class DetailWargaScreen extends StatefulWidget {
   final Warga wargaAwal;
@@ -59,25 +64,32 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     }
   }
 
+<<<<<<< HEAD
   // <<< FUNGSI YANG DIMODIFIKASI >>>
   void _goToEditWarga() async {
     final Warga currentWarga = _wargaDetail ?? widget.wargaAwal; 
     
     // UBAH: Menangkap hasil (result) sebagai objek Warga, bukan boolean
     final result = await Navigator.of(context).push(
+=======
+  // 2. Fungsi untuk Navigasi ke Edit Warga Screen dengan Animasi Kustom
+  void _goToEditWarga() async {
+    final Warga currentWarga = _wargaDetail ?? widget.wargaAwal;
+    
+    // Navigasi menggunakan PageRouteBuilder untuk animasi kustom
+    final bool? result = await Navigator.of(context).push(
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (context, animation, secondaryAnimation) =>
+        pageBuilder: (context, animation, secondaryAnimation) => 
             EditWargaScreen(warga: currentWarga),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Animasi Slide dari Kanan ke Kiri
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeOut;
 
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
 
           return SlideTransition(
             position: animation.drive(tween),
@@ -87,11 +99,14 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
       ),
     );
 
+    // Jika result adalah true, artinya data berhasil diupdate, lakukan refresh
     if (result == true) {
       _fetchDetailWarga();
     }
   }
 
+
+  // --- WIDGET BARU: CUSTOM HEADER ---
   Widget _buildCustomHeader(BuildContext context, String title, Warga warga) {
     return Container(
       padding: EdgeInsets.only(
@@ -107,7 +122,11 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
           bottomRight: Radius.circular(24),
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -127,6 +146,10 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
+<<<<<<< HEAD
+=======
+            // Panggil fungsi navigasi yang baru
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
             onPressed: _goToEditWarga, 
           ),
         ],
@@ -134,6 +157,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     );
   }
 
+  // --- WIDGET BARU: KARTU PROFIL DAN AVATAR ---
   Widget _buildProfileCard(Warga warga) {
     String getInitials(String name) {
       List<String> parts = name.trim().split(' ');
@@ -150,8 +174,13 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
               radius: 40,
               backgroundColor: _primaryColor.withOpacity(0.1),
               child: Text(
+<<<<<<< HEAD
                 getInitials(warga.namaLengkap), 
                 style: const TextStyle(fontSize: 30, color: _primaryColor, fontWeight: FontWeight.bold),
+=======
+                warga.namaLengkap[0].toUpperCase(),
+                style: const TextStyle(fontSize: 36, color: _primaryColor, fontWeight: FontWeight.bold),
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
               ),
             ),
             const SizedBox(height: 12),
@@ -166,7 +195,10 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
             const SizedBox(height: 4),
             Text(
               "NIK: ${warga.nik}",
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
             ),
           ],
         ),
@@ -175,10 +207,8 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     );
   }
 
-  Widget _buildCardWrapper({
-    required Widget child,
-    EdgeInsets padding = const EdgeInsets.all(16),
-  }) {
+  // --- WIDGET BANTUAN: CARD WRAPPER DENGAN SHADOW PROSCAN ---
+  Widget _buildCardWrapper({required Widget child, EdgeInsets padding = const EdgeInsets.all(16)}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -187,9 +217,13 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
+<<<<<<< HEAD
             blurRadius: 16, 
+=======
+            blurRadius: 16, // Shadow menonjol dan lembut
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
             offset: const Offset(0, 6),
-          ),
+          )
         ],
       ),
       padding: padding,
@@ -197,6 +231,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     );
   }
 
+<<<<<<< HEAD
   // --- WIDGET BANTUAN UTAMA: DETAIL ROW (Disesuaikan untuk Role dan JK) ---
   Widget _buildDetailRow(String title, String? value, {bool showDivider = true}) {
     String displayValue = value ?? "-";
@@ -212,6 +247,11 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     }
 
 
+=======
+  // --- WIDGET BANTUAN YANG DIMODIFIKASI: DETAIL ROW ---
+  @override
+  Widget _buildDetailRow(String title, String? value, {bool showDivider = true}) {
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -220,22 +260,23 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title di kiri
               Text(
                 title,
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: Colors.grey[600], 
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(width: 16),
-
+              // Value di kanan
               Expanded(
                 child: Text(
                   displayValue,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 15, 
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
                   ),
@@ -253,6 +294,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
     );
   }
 
+  // --- WIDGET BANTUAN YANG DIMODIFIKASI: SECTION TITLE ---
   @override
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
@@ -260,20 +302,21 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: _primaryColor,
-          fontWeight: FontWeight.w700,
+          color: _primaryColor, // Menggunakan Primary Color
+          fontWeight: FontWeight.w700, // Font tebal
           fontSize: 18,
         ),
       ),
     );
   }
 
+  // --- FUNGSI UTAMA BUILD ---
   @override
   Widget build(BuildContext context) {
     final warga = _wargaDetail ?? widget.wargaAwal;
 
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: _backgroundColor, // Latar belakang abu-abu muda
       body: Column(
         children: [
           _buildCustomHeader(context, "Detail Warga", warga),
@@ -282,14 +325,13 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
               onRefresh: _fetchDetailWarga,
               color: _primaryColor,
               child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 20,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
                 children: [
+                  // Kartu Profil (Avatar dan Nama)
                   _buildProfileCard(warga),
-
-                  if (_isLoading)
+                  
+                  // Menampilkan Loading State di sini
+                  if (_isLoading) 
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(16.0),
@@ -297,6 +339,7 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
                       ),
                     ),
 
+                  // --- KARTU DATA DIRI ---
                   _buildSectionTitle(context, "Data Diri"),
                   _buildCardWrapper(
                     child: Column(
@@ -307,65 +350,49 @@ class _DetailWargaScreenState extends State<DetailWargaScreen> {
                         _buildDetailRow("Agama", warga.agama),
                         _buildDetailRow("Pekerjaan", warga.pekerjaan),
                         _buildDetailRow("Status", warga.statusPerkawinan),
-                        _buildDetailRow(
-                          "No. HP",
-                          warga.noHp ?? "-",
-                          showDivider: false,
-                        ),
+                        _buildDetailRow("No. HP", warga.noHp ?? "-", showDivider: false), // Baris terakhir tanpa divider
                       ],
                     ),
                   ),
 
+                  // --- KARTU ALAMAT & DOMISILI ---
                   _buildSectionTitle(context, "Alamat & Domisili"),
                   _buildCardWrapper(
                     child: Column(
                       children: [
                         _buildDetailRow("Alamat KTP", warga.alamatKtp),
-                        _buildDetailRow(
-                          "RT / RW",
-                          "${warga.rt} / ${warga.rw}",
-                          showDivider: false,
-                        ),
+                        _buildDetailRow("RT / RW", "${warga.rt} / ${warga.rw}", showDivider: false),
                       ],
                     ),
                   ),
 
+                  // --- KARTU DATA KELUARGA ---
                   if (warga.keluarga != null) ...[
                     _buildSectionTitle(context, "Data Keluarga"),
                     _buildCardWrapper(
                       child: Column(
                         children: [
                           _buildDetailRow("No. KK", warga.keluarga!.noKk),
-                          _buildDetailRow(
-                            "Status di KK",
-                            warga.statusDalamKeluarga,
-                          ),
-                          _buildDetailRow(
-                            "Alamat KK",
-                            warga.keluarga!.alamat,
-                            showDivider: false,
-                          ),
+                          _buildDetailRow("Status di KK", warga.statusDalamKeluarga),
+                          _buildDetailRow("Alamat KK", warga.keluarga!.alamat, showDivider: false),
                         ],
                       ),
                     ),
                   ],
 
+                  // --- KARTU AKUN TERHUBUNG ---
                   if (warga.user != null) ...[
                     _buildSectionTitle(context, "Akun Terhubung"),
                     _buildCardWrapper(
                       child: Column(
                         children: [
                           _buildDetailRow("Email", warga.user!.email),
-                          _buildDetailRow(
-                            "Role",
-                            warga.user!.role.toUpperCase(),
-                            showDivider: false,
-                          ),
+                          _buildDetailRow("Role", warga.user!.role.toUpperCase(), showDivider: false),
                         ],
                       ),
                     ),
                   ],
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 40), // Ruang di bawah
                 ],
               ),
             ),

@@ -11,9 +11,13 @@ import 'package:frontend/models/wallet_models.dart';
 import 'package:frontend/models/tagihan_iuran_model.dart';
 
 class ApiService {
+<<<<<<< HEAD
   // --- PROPERTI & KONFIGURASI (NGROK/PUBLIC ACCESS) ---
   final String _baseUrlLaravel = "https://64df3290146c.ngrok-free.app/api";
   final String _baseUrlFastApi = "https://b6d8ff767f85.ngrok-free.app";
+=======
+  final String _baseUrlLaravel = "https://intelligential-argentina-goutily.ngrok-free.dev/api";
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
 
   final _storage = const FlutterSecureStorage();
   final Dio _dioPublic = Dio();
@@ -175,7 +179,7 @@ class ApiService {
         'file': await MultipartFile.fromFile(image.path, filename: fileName),
       });
       final response = await _dioPublic.post(
-        '$_baseUrlFastApi/extract-features',
+        '$_baseUrlLaravel/cv/extract-features',
         data: formData,
       );
       if (response.statusCode == 200 && response.data['features'] != null) {
@@ -201,7 +205,7 @@ class ApiService {
       }
       final formData = FormData.fromMap({'files': fileList});
       final response = await _dioPublic.post(
-        '$_baseUrlFastApi/check-liveness',
+        '$_baseUrlLaravel/cv/check-liveness',
         data: formData,
       );
       if (response.statusCode == 200 && response.data['liveness'] != null) {
@@ -316,46 +320,6 @@ class ApiService {
     String? rw,
   }) async {
   Future<List<Iuran>> getManajemenIuran({String? search, String? rt, String? rw}) async {
-  Future<List<String>> getRwList() async {
-    try {
-      final response = await _dioProtected.get('$_baseUrlLaravel/v1/master/rw');
-
-      return List<String>.from(response.data);
-    } on DioException catch (e) {
-      print("Error getRwList: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-  Future<List<Keluarga>> getAllKeluarga() async {
-    try {
-      final response = await _dioProtected.get(
-        '$_baseUrlLaravel/v1/master/keluarga',
-      );
-
-      return (response.data as List).map((e) => Keluarga.fromJson(e)).toList();
-    } on DioException catch (e) {
-      print("Error getAllKeluarga: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-
-  Future<List<String>> getRtList(String rw) async {
-    try {
-      final response = await _dioProtected.get(
-        '$_baseUrlLaravel/v1/master/rt',
-        queryParameters: {'rw': rw},
-      );
-
-      return List<String>.from(response.data);
-    } on DioException catch (e) {
-      print("Error getRtList: ${e.response?.data}");
-      rethrow;
-    }
-  }
-
-  Future<List<Iuran>> getManajemenIuran({String? search}) async {
     try {
       final Map<String, dynamic> params = {};
 
@@ -547,6 +511,7 @@ class ApiService {
     }
   }
 
+
   Future<WalletSummary?> getWalletSummary() async {
     try {
       final response = await _dioProtected.get(
@@ -678,4 +643,125 @@ class ApiService {
       rethrow;
     }
   }
+<<<<<<< HEAD
+=======
+
+  Future<Response> getBalanceAndTransactions() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/wallet/balance',
+      );
+      return response;
+    } on DioException catch (e) {
+      print("Error getBalanceAndTransactions: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+    Future<User?> fetchProfile() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/profile');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final user = User.fromJson(response.data);
+
+        await _storage.write(key: 'user_data', value: user.toJsonString());
+
+        return user;
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error fetchProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<User?> updateProfile(Map<String, dynamic> data) async {
+    try {
+      final response = await _dioProtected.put(
+        '$_baseUrlLaravel/v1/profile',
+        data: data,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final userJson =
+            response.data['user'] ?? response.data;
+        final user = User.fromJson(userJson);
+
+        await _storage.write(key: 'user_data', value: user.toJsonString());
+
+        return user;
+      }
+      return null;
+    } on DioException catch (e) {
+      print("Error updateProfile: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<String>> getRwList() async {
+    try {
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/master/rw');
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRwList: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<List<Keluarga>> getAllKeluarga() async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/keluarga',
+      );
+
+      return (response.data as List).map((e) => Keluarga.fromJson(e)).toList();
+    } on DioException catch (e) {
+      print("Error getAllKeluarga: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+
+  Future<List<String>> getRtList(String rw) async {
+    try {
+      final response = await _dioProtected.get(
+        '$_baseUrlLaravel/v1/master/rt',
+        queryParameters: {'rw': rw},
+      );
+
+      return List<String>.from(response.data);
+    } on DioException catch (e) {
+      print("Error getRtList: ${e.response?.data}");
+      rethrow;
+    }
+  }
+
+  Future<String?> uploadProfilePhoto(File file) async {
+    try {
+      final fileName = file.path.split('/').last;
+
+      final formData = FormData.fromMap({
+        'foto': await MultipartFile.fromFile(file.path, filename: fileName),
+      });
+
+      final res = await _dioProtected.post(
+        '$_baseUrlLaravel/v1/profile/upload-photo',
+        data: formData,
+      );
+
+      if (res.statusCode == 200) {
+        return res.data['foto_url'];
+      }
+
+      return null;
+    } on DioException catch (e) {
+      print("Upload Foto Error: ${e.response?.data}");
+      return null;
+    }
+  }
+
+
+>>>>>>> 3605e24f61248a8f19cbbd83a929fe6788d6533a
 }
