@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Warga;
+use App\Models\Wallet;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -37,7 +38,7 @@ class WargaController extends Controller
             });
         }
 
-        return $query->paginate(10);
+        return $query->paginate(10000);
     }
 
     public function store(Request $request)
@@ -58,11 +59,34 @@ class WargaController extends Controller
             return response()->json(['error' => $validator->errors()], 422);
         }
 
+        
         $warga = new Warga($request->all());
         $warga->save();
 
-        return response()->json($warga, 201);
+        
+        $wallet = new Wallet([
+            'warga_id' => $warga->id,
+            'desapay_account_number' => 'ACC' . str_pad($warga->id, 6, '0', STR_PAD_LEFT), 
+            'balance' => 0, 
+        ]);
+        $wallet->save();
+
+        
+        $user = new User([
+            'email' => $request->input('email'), 
+            'password' => bcrypt($request->input('password')), 
+            'role' => 'warga', 
+            'warga_id' => $warga->id,
+        ]);
+        $user->save();
+
+        return response()->json([
+            'warga' => $warga,
+            'wallet' => $wallet,
+            'user' => $user
+        ], 201);
     }
+
 
     public function show(Request $request, Warga $warga)
     {

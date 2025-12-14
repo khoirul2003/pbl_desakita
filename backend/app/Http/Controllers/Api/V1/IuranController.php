@@ -25,10 +25,13 @@ class IuranController extends Controller
         if ($user->isRt()) {
             $query->where('rt', $user->warga->rt)
                 ->where('rw', $user->warga->rw);
-        } elseif ($user->isRw()) {
-            $query->where('rw', $user->warga->rw);
-        } elseif (!$user->isAdmin()) {
+        }
 
+        elseif ($user->isRw()) {
+            $query->where('rw', $user->warga->rw);
+        }
+
+        elseif (!$user->isAdmin()) {
             $warga = $user->warga;
             $query->where(function ($q) use ($warga) {
                 $q->whereNull('rt')
@@ -39,7 +42,7 @@ class IuranController extends Controller
             });
         }
 
-        return $query->paginate(10);
+        return $query->paginate(1000);
     }
 
     public function store(Request $request)

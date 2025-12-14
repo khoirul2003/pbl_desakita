@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kegiatan;
-use App\Models\Keuangan; 
-use App\Models\Warga; 
+use App\Models\Keuangan;
+use App\Models\Warga;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,17 +14,15 @@ use Illuminate\Validation\Rule;
 
 class KegiatanController extends Controller
 {
-
     public function index(Request $request)
     {
         $user = Auth::user();
         $query = Kegiatan::query();
-   
+
         if (!$user->isAdmin()) {
             $warga = $user->warga;
 
             if ($warga) {
-                
                 $query->where(function ($q) use ($warga) {
                     $q->whereNull('rt')
                         ->orWhere('rw', $warga->rw)
@@ -33,9 +31,9 @@ class KegiatanController extends Controller
                         });
                 });
             } else {
-                
+
                 if ($user->role !== 'admin') {
-                    $query->whereRaw('1 = 0'); 
+                    $query->whereRaw('1 = 0');
                 }
             }
         }
@@ -44,7 +42,6 @@ class KegiatanController extends Controller
             $query->where('nama_kegiatan', 'like', '%' . $request->input('search') . '%');
         }
 
-        
         return $query->with('pembuat')->latest('tanggal_mulai')->paginate(10);
     }
 
@@ -68,7 +65,7 @@ class KegiatanController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'rt' => 'nullable|string|max:3',
             'rw' => 'nullable|string|max:3',
-            'total_biaya' => 'required|numeric|min:0', 
+            'total_biaya' => 'required|numeric|min:0',
         ]);
 
         if ($validated->fails()) {
@@ -79,17 +76,17 @@ class KegiatanController extends Controller
         $totalBiaya = $data['total_biaya'];
         $data['created_by_user_id'] = $user->id;
 
-        
+
         if ($user->isRt() && ($data['rt'] != $user->warga->rt || $data['rw'] != $user->warga->rw)) {
             return response()->json(['message' => 'RT hanya bisa membuat kegiatan di lingkup RT-nya sendiri.'], 403);
         }
 
         DB::beginTransaction();
         try {
-            
+
             $kegiatan = Kegiatan::create($data);
 
-            
+
             if ($totalBiaya > 0) {
                 $this->processFundAllocation($kegiatan, $totalBiaya, $user);
             }
@@ -162,7 +159,7 @@ class KegiatanController extends Controller
             return response()->json(['message' => 'Akses ditolak. Hanya Admin.'], 403);
         }
 
-        
+
 
         $kegiatan->delete();
         return response()->json(null, 204);
@@ -180,9 +177,9 @@ class KegiatanController extends Controller
         $currentDate = now();
         $eventName = $kegiatan->nama_kegiatan;
 
-        
+
         if ($targetRt !== null && $targetRw !== null) {
-            
+
             Keuangan::create([
                 'tipe' => 'PENGELUARAN',
                 'jumlah' => $totalBiaya,
@@ -193,9 +190,9 @@ class KegiatanController extends Controller
                 'created_by_user_id' => $user->id,
             ]);
         } elseif ($targetRw !== null) {
-            
+
             $rtList = Warga::where('rw', $targetRw)
-                ->whereNotNull('rt') 
+                ->whereNotNull('rt')
                 ->select('rt')
                 ->distinct()
                 ->pluck('rt')
@@ -204,15 +201,15 @@ class KegiatanController extends Controller
 
             $rtCount = count($rtList);
             if ($rtCount === 0) {
-                
-                $rtList = ['000']; 
+
+                $rtList = ['000'];
                 $costPerRt = $totalBiaya;
             } else {
                 $costPerRt = $totalBiaya / $rtCount;
             }
 
             foreach ($rtList as $rt) {
-                
+
                 Keuangan::create([
                     'tipe' => 'PENGELUARAN',
                     'jumlah' => $costPerRt,
@@ -224,7 +221,7 @@ class KegiatanController extends Controller
                 ]);
             }
         } else {
-            
+
             Keuangan::create([
                 'tipe' => 'PENGELUARAN',
                 'jumlah' => $totalBiaya,
