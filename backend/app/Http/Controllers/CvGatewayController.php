@@ -55,11 +55,17 @@ class CvGatewayController extends Controller
 
         $files = $request->file('files');
 
-        // Validasi minimal 5 frame (SESUAI FastAPI)
-        if (count($files) < 5) {
-            return response()->json([
-                'message' => 'Minimal 5 frame diperlukan untuk liveness detection'
-            ], 422);
+        // Periksa jika file yang diterima adalah array atau objek koleksi
+        if (is_array($files) || $files instanceof \Illuminate\Support\Collection) {
+            // Validasi minimal 5 frame
+            if (count($files) < 5) {
+                return response()->json([
+                    'message' => 'Minimal 5 frame diperlukan untuk liveness detection'
+                ], 422);
+            }
+        } else {
+            // Jika hanya satu file, masukkan dalam array untuk pemrosesan lebih lanjut
+            $files = [$files];
         }
 
         try {
@@ -80,8 +86,10 @@ class CvGatewayController extends Controller
                 $response->status()
             );
         } catch (\Exception $e) {
+            // Menambahkan logging error dengan detail lebih lengkap
             \Log::error('Check Liveness Gateway Error', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'response' => $e->getResponse()->body() ?? 'No response body'
             ]);
 
             return response()->json([
@@ -90,6 +98,8 @@ class CvGatewayController extends Controller
             ], 500);
         }
     }
+
+
 
     public function predict(Request $request)
     {

@@ -40,7 +40,7 @@ class AcaraController extends Controller
             $query->where('nama_acara', 'like', '%' . $request->input('search') . '%');
         }
 
-        return $query->latest('tanggal_mulai')->paginate(10);
+        return $query->latest('tanggal_mulai')->paginate(1000);
     }
 
     /**

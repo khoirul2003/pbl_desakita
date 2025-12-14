@@ -89,11 +89,13 @@ class AuthProvider with ChangeNotifier {
     String? error;
 
     try {
+      // Panggil checkLiveness untuk memvalidasi apakah liveness terdeteksi
       final isLive = await _apiService.checkLiveness(frames);
 
       if (!isLive) {
         error = "Deteksi Liveness Gagal. Pastikan Anda berkedip.";
       } else {
+        // Ambil fitur wajah dari frame terbaik
         final features = await _apiService.getFaceFeatures(bestFrame);
 
         if (features == null) {
@@ -115,6 +117,7 @@ class AuthProvider with ChangeNotifier {
     _setLoading(false);
     return error;
   }
+
 
   void updateUser(User user) {
     _user = user;

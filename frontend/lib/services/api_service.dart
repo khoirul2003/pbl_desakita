@@ -192,10 +192,19 @@ class ApiService {
           ),
         );
       }
-      final formData = FormData.fromMap({'files': fileList});
+      // Ubah key 'files' menjadi 'files[]' sesuai dengan yang diterima server
+      final formData = FormData.fromMap({
+        'files[]': fileList,
+      }); // Ubah 'files' menjadi 'files[]'
+
       final response = await _dioPublic.post(
         '$_baseUrlLaravel/cv/check-liveness',
         data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data', // pastikan header multipart
+          },
+        ),
       );
       if (response.statusCode == 200 && response.data['liveness'] != null) {
         return response.data['liveness'];
@@ -206,6 +215,7 @@ class ApiService {
       return false;
     }
   }
+
 
   Future<List<Warga>> getManajemenWarga({String? search, String? rt, String? rw}) async {
     try {
