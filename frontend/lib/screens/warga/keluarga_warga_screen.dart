@@ -62,7 +62,7 @@ class KeluargaWargaScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _backgroundColor,
       // AppBar opsional, jika ingin ada tombol back atau judul di atas
-      // appBar: AppBar(title: const Text("Data Keluarga"), backgroundColor: _primaryColor), 
+      // appBar: AppBar(title: const Text("Data Keluarga"), backgroundColor: _primaryColor),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -116,15 +116,18 @@ class KeluargaWargaScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildHeaderInfo("Kepala Keluarga", infoKK['Kepala Keluarga']!),
+                  _buildHeaderInfo(
+                    "Kepala Keluarga",
+                    infoKK['Kepala Keluarga']!,
+                  ),
                   const SizedBox(height: 8),
                   _buildHeaderInfo("Alamat", infoKK['Alamat']!),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // 2. Judul Section Anggota
             const Padding(
               padding: EdgeInsets.only(left: 4, bottom: 12),
@@ -148,7 +151,7 @@ class KeluargaWargaScreen extends StatelessWidget {
                 return _buildMemberCard(member);
               },
             ),
-             const SizedBox(height: 40),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -196,7 +199,9 @@ class KeluargaWargaScreen extends StatelessWidget {
       child: ExpansionTile(
         shape: const Border(),
         leading: CircleAvatar(
-          backgroundColor: isHead ? _primaryColor : _primaryColor.withOpacity(0.1),
+          backgroundColor: isHead
+              ? _primaryColor
+              : _primaryColor.withOpacity(0.1),
           child: Icon(
             member['jk'] == "Laki-laki" ? Icons.face : Icons.face_3,
             color: isHead ? Colors.white : _primaryColor,
