@@ -32,6 +32,10 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
 
+  // ================= EMAIL AND PASSWORD CONTROLLERS =================
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
   // ================= STATE =================
   String? _jenisKelamin;
   String? _statusDalamKeluarga;
@@ -72,6 +76,8 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
     _noHpController.dispose();
     _rtController.dispose();
     _rwController.dispose();
+    _emailController.dispose(); // Dispose email controller
+    _passwordController.dispose(); // Dispose password controller
     super.dispose();
   }
 
@@ -121,6 +127,8 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
       "rw": _rwController.text,
       "keluarga_id": _selectedKeluargaId,
       "status_dalam_keluarga": _statusDalamKeluarga,
+      "email": _emailController.text, // Added email
+      "password": _passwordController.text, // Added password
     };
 
     try {
@@ -146,7 +154,6 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
     }
   }
 
-  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,6 +236,13 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
                 onChanged: (v) => setState(() => _statusDalamKeluarga = v),
               ),
 
+              const SizedBox(height: 12),
+
+              // Email and Password Input Fields
+              _text(_emailController, "Email"),
+              const SizedBox(height: 12),
+              _text(_passwordController, "Password", obscureText: true),
+
               const SizedBox(height: 24),
 
               ElevatedButton(
@@ -248,13 +262,13 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
     );
   }
 
-  // ================= HELPER =================
   Widget _text(
     TextEditingController c,
     String label, {
     bool number = false,
     bool multi = false,
     int? length,
+    bool obscureText = false, // Added for password field
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -263,6 +277,7 @@ class _TambahWargaScreenState extends State<TambahWargaScreen> {
         maxLines: multi ? null : 1,
         maxLength: length,
         keyboardType: number ? TextInputType.number : TextInputType.text,
+        obscureText: obscureText, // Added to handle password visibility
         inputFormatters: number
             ? [FilteringTextInputFormatter.digitsOnly]
             : null,

@@ -244,7 +244,8 @@ class ApiService {
         data: data,
       );
       if (response.statusCode == 201 && response.data != null) {
-        return Warga.fromJson(response.data);
+        // Assuming the response includes Warga, Wallet, and User
+        return Warga.fromJson(response.data['warga']);
       }
       return null;
     } on DioException catch (e) {
@@ -252,6 +253,7 @@ class ApiService {
       rethrow;
     }
   }
+
 
   Future<Warga?> getDetailWarga(int wargaId) async {
     try {
@@ -689,16 +691,23 @@ class ApiService {
 
   Future<List<Keluarga>> getAllKeluarga() async {
     try {
-      final response = await _dioProtected.get(
-        '$_baseUrlLaravel/v1/master/keluarga',
-      );
+      final response = await _dioProtected.get('$_baseUrlLaravel/v1/keluarga');
 
-      return (response.data as List).map((e) => Keluarga.fromJson(e)).toList();
+      // Periksa apakah response.data adalah Map dan memiliki kunci 'data'
+      if (response.data is Map<String, dynamic> &&
+          response.data['data'] is List) {
+        return (response.data['data'] as List) // Ambil data dari kunci 'data'
+            .map((e) => Keluarga.fromJson(e))
+            .toList();
+      } else {
+        throw Exception("Data tidak valid");
+      }
     } on DioException catch (e) {
       print("Error getAllKeluarga: ${e.response?.data}");
       rethrow;
     }
   }
+
 
 
   Future<List<String>> getRtList(String rw) async {
