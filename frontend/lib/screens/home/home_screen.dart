@@ -7,12 +7,12 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/state/auth_provider.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/admin/manajemen_warga_screen.dart';
-import 'package:frontend/screens/admin/manajemen_iuran_screen.dart';
+import 'package:frontend/screens/admin/manajemen_iuran_screen.dart'; // <--- Digunakan untuk Admin dan RT/RW
 import 'package:frontend/screens/admin/manajemen_kegiatan_screen.dart';
 import 'package:frontend/screens/profile/profile_main_screen.dart';
 import 'package:frontend/screens/wallet/desapay_wallet_section.dart';
 import 'package:frontend/screens/rt_rw/manajemen_warga_rt_rw_screen.dart'; 
-import 'package:frontend/screens/rt_rw/manajemen_iuran_rt_rw_screen.dart'; 
+// import 'package:frontend/screens/rt_rw/manajemen_iuran_rt_rw_screen.dart'; // <--- DIHAPUS
 // <<< IMPORT SCREEN WARGA BARU >>>
 import 'package:frontend/screens/warga/keluarga_warga_screen.dart';
 import 'package:frontend/screens/warga/acara_warga_screen.dart';
@@ -41,15 +41,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Menjalankan setup navigasi setelah widget selesai dibuat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      _setupNavigation(authProvider.user);
+      if (authProvider.user != null) {
+          _setupNavigation(authProvider.user);
+      }
     });
   }
 
   void _setupNavigation(User? user) {
-    if (user == null) return;
+    if (user == null || !mounted) return;
 
     List<Widget> pages = [_HomeTabContent(user: user)];
     List<BottomNavigationBarItem> navItems = [
@@ -57,79 +58,46 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     if (user.role == 'admin' || user.role == 'rt' || user.role == 'rw') {
-
+      // Logic untuk Admin, RT, dan RW
+      
       // 1. Tentukan halaman Manajemen Warga
-      Widget manajemenWargaPage;
-      if (user.role == 'admin') {
-        manajemenWargaPage = const ManajemenWargaScreen(); // Admin melihat SEMUA Warga
-      } else { 
-        // Role 'rt' dan 'rw' akan diarahkan ke screen yang sudah difilter
-        manajemenWargaPage = const ManajemenWargaRtRwScreen();
-      }
-
+      final manajemenWargaPage = (user.role == 'admin') 
+          ? const ManajemenWargaScreen() 
+          : const ManajemenWargaRtRwScreen();
+      
       // 2. Tentukan halaman Manajemen Iuran
-      Widget manajemenIuranPage;
-      if (user.role == 'admin') {
-        manajemenIuranPage = const ManajemenIuranScreen(); // Admin melihat SEMUA Iuran
-      } else {
-        // Role 'rt' dan 'rw' akan diarahkan ke screen Iuran yang difilter
-        manajemenIuranPage = const ManajemenIuranRtRwScreen(); 
-      }
-
+      // RT/RW dan Admin menggunakan satu screen (ManajemenIuranScreen)
+      final manajemenIuranPage = const ManajemenIuranScreen(); 
+          
       // 3. Tambahkan semua halaman ke list pages
       pages.addAll([
         manajemenWargaPage,
         manajemenIuranPage,
-        const ManajemenKegiatanScreen(), // Kegiatan bisa dilihat semua
+        const ManajemenKegiatanScreen(),
         const ProfileMainScreen(),
       ]);
 
       navItems.addAll([
         const BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Warga'),
         const BottomNavigationBarItem(icon: Icon(Icons.paid), label: 'Iuran'),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.event),
-          label: 'Kegiatan',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
+        const BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Kegiatan'),
+        const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
       ]);
     } else {
       // Logika untuk Warga Biasa (user.role == 'warga')
       
       pages.addAll([
-        // Halaman 1: Keluarga
-        const KeluargaWargaScreen(), // <<< DIGANTI: KeluargaWargaScreen
-        
-        // Halaman 2: Acara Warga (View Only)
-        const AcaraWargaScreen(), // <<< DIGANTI: AcaraWargaScreen
-        
-        // Halaman 3: Kegiatan Warga (View Only)
-        const KegiatanWargaScreen(), // <<< DIGANTI: KegiatanWargaScreen
-
-        // Halaman 4: Profil
+        const KeluargaWargaScreen(), 
+        const AcaraWargaScreen(), 
+        const KegiatanWargaScreen(),
         const ProfileMainScreen(),
       ]);
 
       navItems.addAll([
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.family_restroom),
-          label: 'Keluarga',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_month), 
-          label: 'Acara',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.event_note), 
-          label: 'Kegiatan',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
+        const BottomNavigationBarItem(icon: Icon(Icons.family_restroom), label: 'Keluarga'),
+        const BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Acara'),
+        const BottomNavigationBarItem(icon: Icon(Icons.event_note), label: 'Kegiatan'),
+        const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
       ]);
     }
 
@@ -150,6 +118,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
+
+    if (user != null && _pages.isEmpty) {
+        _setupNavigation(user);
+    }
 
     if (!authProvider.isAuthenticated || user == null || _pages.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -234,9 +206,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           user.warga?.namaLengkap ?? user.email,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: _primaryColor,
-              ),
+                  fontWeight: FontWeight.w800,
+                  color: _primaryColor,
+                ),
         ),
         if (warga != null)
           Text(
@@ -301,9 +273,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           "Ringkasan Data ${user.role.toUpperCase()} ${user.warga?.rt ?? ''}/${user.warga?.rw ?? ''}",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: _accentColor,
-              ),
+                  fontWeight: FontWeight.w700,
+                  color: _accentColor,
+                ),
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -358,9 +330,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           "Ringkasan Tagihan Anda",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: _accentColor,
-              ),
+                  fontWeight: FontWeight.w700,
+                  color: _accentColor,
+                ),
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -411,9 +383,9 @@ class _HomeTabContent extends StatelessWidget {
         Text(
           "Ringkasan Data (Admin)",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: _accentColor,
-              ),
+                  fontWeight: FontWeight.w700,
+                  color: _accentColor,
+                ),
         ),
         const SizedBox(height: 16),
 
@@ -468,16 +440,12 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, size: 32, color: color),
           const SizedBox(height: 16),
-          // MODIFIKASI: Mengubah headlineMedium menjadi titleLarge
-          // atau menentukan fontSize eksplisit untuk mengatasi overflow
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                  // Jika titleLarge masih terlalu besar, coba turunkan fontSize secara eksplisit:
-                  // fontSize: 24, 
-                ),
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
           ),
           const SizedBox(height: 4),
           Text(
