@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kegiatan;
-use App\Models\Keuangan; // Tambahkan Keuangan Model
-use App\Models\Warga; // Tambahkan Warga Model
+use App\Models\Keuangan; 
+use App\Models\Warga; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,47 +14,40 @@ use Illuminate\Validation\Rule;
 
 class KegiatanController extends Controller
 {
-    /**
-     * Tampilkan daftar kegiatan, ter-filter berdasarkan role.
-     * Endpoint: GET /api/v1/kegiatan
-     */
+
     public function index(Request $request)
     {
         $user = Auth::user();
         $query = Kegiatan::query();
-
-        // 1. Logika Filter Otorisasi 
+   
         if (!$user->isAdmin()) {
             $warga = $user->warga;
 
-            // Hanya terapkan filter scope jika user adalah RT, RW, atau Warga
             if ($warga) {
+                
                 $query->where(function ($q) use ($warga) {
-                    $q->whereNull('rt') // Kegiatan level Desa
-                        ->orWhere('rw', $warga->rw) // Kegiatan level RW
+                    $q->whereNull('rt')
+                        ->orWhere('rw', $warga->rw)
                         ->orWhere(function ($q2) use ($warga) {
-                            // Kegiatan level RT tertentu
                             $q2->where('rt', $warga->rt)->where('rw', $warga->rw);
                         });
                 });
             } else {
-                // Jika user bukan Admin, tapi tidak terhubung ke data Warga (seperti Admin baru)
-                // Ini akan mencegah user melihat data apapun, yang merupakan perilaku aman.
+                
                 if ($user->role !== 'admin') {
-                    $query->whereRaw('1 = 0'); // Trik untuk mengembalikan set data kosong
+                    $query->whereRaw('1 = 0'); 
                 }
             }
         }
-        // JIKA ADMIN, KODE AKAN MELEWATI BLOK IF DI ATAS DAN MENGAMBIL SEMUA DATA
 
         if ($request->has('search')) {
             $query->where('nama_kegiatan', 'like', '%' . $request->input('search') . '%');
         }
 
-        // Eager load pembuat
-        // Jika 500 error masih terjadi, coba hapus ->with('pembuat') dan jalankan ulang
+        
         return $query->with('pembuat')->latest('tanggal_mulai')->paginate(10);
     }
+
 
     /**
      * Simpan (buat) kegiatan baru. (Admin, RW, RT)
@@ -75,7 +68,7 @@ class KegiatanController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'rt' => 'nullable|string|max:3',
             'rw' => 'nullable|string|max:3',
-            'total_biaya' => 'required|numeric|min:0', // Biaya untuk pendanaan otomatis
+            'total_biaya' => 'required|numeric|min:0', 
         ]);
 
         if ($validated->fails()) {
@@ -86,17 +79,17 @@ class KegiatanController extends Controller
         $totalBiaya = $data['total_biaya'];
         $data['created_by_user_id'] = $user->id;
 
-        // Otorisasi lingkup penambahan data
+        
         if ($user->isRt() && ($data['rt'] != $user->warga->rt || $data['rw'] != $user->warga->rw)) {
             return response()->json(['message' => 'RT hanya bisa membuat kegiatan di lingkup RT-nya sendiri.'], 403);
         }
 
         DB::beginTransaction();
         try {
-            // 1. Buat Kegiatan
+            
             $kegiatan = Kegiatan::create($data);
 
-            // 2. Catat Pengeluaran Kas Otomatis
+            
             if ($totalBiaya > 0) {
                 $this->processFundAllocation($kegiatan, $totalBiaya, $user);
             }
@@ -169,7 +162,7 @@ class KegiatanController extends Controller
             return response()->json(['message' => 'Akses ditolak. Hanya Admin.'], 403);
         }
 
-        // TODO: Tambahkan LOGIKA untuk MENGEMBALIKAN DANA jika kegiatan dihapus.
+        
 
         $kegiatan->delete();
         return response()->json(null, 204);
@@ -187,9 +180,9 @@ class KegiatanController extends Controller
         $currentDate = now();
         $eventName = $kegiatan->nama_kegiatan;
 
-        // Logika Pengambilan Dana Berjenjang
+        
         if ($targetRt !== null && $targetRw !== null) {
-            // Kas RT Tertentu (Lingkup RT)
+            
             Keuangan::create([
                 'tipe' => 'PENGELUARAN',
                 'jumlah' => $totalBiaya,
@@ -200,9 +193,9 @@ class KegiatanController extends Controller
                 'created_by_user_id' => $user->id,
             ]);
         } elseif ($targetRw !== null) {
-            // Kas RW Tertentu (Lingkup RW)
+            
             $rtList = Warga::where('rw', $targetRw)
-                ->whereNotNull('rt') // Hanya RT yang terdaftar
+                ->whereNotNull('rt') 
                 ->select('rt')
                 ->distinct()
                 ->pluck('rt')
@@ -211,15 +204,15 @@ class KegiatanController extends Controller
 
             $rtCount = count($rtList);
             if ($rtCount === 0) {
-                // Jika tidak ada RT terdaftar, dana dianggap diambil dari Kas RW (RT null)
-                $rtList = ['000']; // Default RT untuk Kas RW Umum
+                
+                $rtList = ['000']; 
                 $costPerRt = $totalBiaya;
             } else {
                 $costPerRt = $totalBiaya / $rtCount;
             }
 
             foreach ($rtList as $rt) {
-                // Catat pengeluaran di masing-masing kas RT
+                
                 Keuangan::create([
                     'tipe' => 'PENGELUARAN',
                     'jumlah' => $costPerRt,
@@ -231,7 +224,7 @@ class KegiatanController extends Controller
                 ]);
             }
         } else {
-            // Kas Desa (Lingkup Umum)
+            
             Keuangan::create([
                 'tipe' => 'PENGELUARAN',
                 'jumlah' => $totalBiaya,
