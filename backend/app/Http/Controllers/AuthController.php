@@ -15,13 +15,8 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    /**
-     * Registrasi Warga Baru.
-     * Ini adalah logic yang cukup kompleks karena membuat 3 data sekaligus:
-     * 1. Keluarga (jika belum ada)
-     * 2. Warga (sebagai Kepala Keluarga)
-     * 3. User (akun untuk login)
-     */
+
+
     public function register(Request $request)
     {
         $validatedData = $request->validate([
