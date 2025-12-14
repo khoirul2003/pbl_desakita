@@ -6,12 +6,12 @@ import 'package:frontend/models/iuran_model.dart';
 import 'package:frontend/screens/placeholder_screen.dart';
 import 'package:frontend/screens/admin/tambah_iuran_screen.dart';
 import 'package:frontend/screens/admin/edit_iuran_screen.dart';
-import 'package:frontend/screens/admin/detail_iuran_screen.dart'; 
-import 'dart:async'; // <<< DITAMBAHKAN UNTUK DEBOUNCE
+// 1. IMPOR DETAIL IURAN SCREEN
+import 'package:frontend/screens/admin/detail_iuran_screen.dart'; // <--- PASTIKAN PATH INI BENAR
 
 // --- DEFINISI WARNA PROSCAN ---
-const Color _primaryColor = Color(0xFF0E2F60); 
-const Color _accentColor = Color(0xFF3C486B); 
+const Color _primaryColor = Color(0xFF0E2F60); // Biru Tua (Digunakan untuk Header & Indikator)
+const Color _accentColor = Color(0xFF3C486B); // Aksen Biru/Abu
 
 class ManajemenIuranScreen extends StatefulWidget {
   const ManajemenIuranScreen({super.key});
@@ -32,33 +32,15 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     decimalDigits: 0,
   );
 
-  static const Color _cardIndicator = _primaryColor;
-  Timer? _debounce; // <<< BARU: Timer untuk debounce
+  // --- WARNA TEMA (Disesuaikan) ---
+  // static const Color _accentColor = Color(0xFF3C486B); // Diambil dari atas
+  static const Color _cardIndicator = _primaryColor; // Menggunakan warna Primary (Biru Tua)
 
   @override
   void initState() {
     super.initState();
     _fetchIuran();
   }
-  
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _debounce?.cancel(); // <<< PASTIKAN TIMER DIBATALKAN
-    super.dispose();
-  }
-
-  // <<< FUNGSI DEBOUNCE UNTUK SEARCH BAR >>>
-  void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
-    // Tunda pemanggilan fetch selama 500ms
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _fetchIuran(search: query);
-    });
-  }
-  // <<< AKHIR FUNGSI DEBOUNCE >>>
-
 
   Future<void> _fetchIuran({String? search}) async {
     if (!mounted) return;
@@ -69,8 +51,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
 
     final apiService = context.read<ApiService>();
     try {
-      // Perhatikan bahwa parameter 'search' sudah dikirimkan di sini
-      final iuran = await apiService.getManajemenIuran(search: search); 
+      final iuran = await apiService.getManajemenIuran(search: search);
       if (!mounted) return;
       setState(() {
         _iuranList = iuran;
@@ -114,6 +95,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     }
   }
 
+  // --- FUNGSI BARU: NAVIGASI KE DETAIL IURAN ---
   void _goToDetailIuran(Iuran iuran) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -171,16 +153,18 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     }
   }
 
+  // --- HEADER BARU YANG DIMODIFIKASI ---
   Widget _buildHeader() {
     return Container(
+      // Padding atas disesuaikan
       padding: EdgeInsets.fromLTRB(
         20, 
-        MediaQuery.of(context).padding.top + 8,
+        MediaQuery.of(context).padding.top + 8, // Mengambil padding sistem dan menambahkan 8
         20, 
         16
       ),
       decoration: const BoxDecoration(
-        color: _primaryColor, 
+        color: _primaryColor, // Menggunakan warna Primary
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -189,12 +173,13 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Judul halaman: DIBUNGKUS DENGAN CENTER
           Center(
             child: const Text(
               "Halaman Iuran",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 20, 
+                fontSize: 20, // Ukuran font disesuaikan
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -209,7 +194,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
             ),
             child: TextField(
               controller: _searchController,
-              onChanged: _onSearchChanged, // <<< MENGGUNAKAN FUNGSI DEBOUNCE
+              onChanged: (query) => _fetchIuran(search: query),
               decoration: InputDecoration(
                 hintText: "Cari jenis iuran...",
                 prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
@@ -252,8 +237,9 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
+        // MODIFIKASI ONTAP UNTUK NAVIGASI KE DETAIL
         onTap: () {
-          _goToDetailIuran(iuran); 
+          _goToDetailIuran(iuran); // <--- Memanggil fungsi navigasi baru
         },
         child: Stack(
           children: [
@@ -274,6 +260,8 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                 children: [
                   CircleAvatar(
                     radius: 22,
+                    // Mengganti warna latar belakang avatar menjadi _primaryColor.withOpacity(0.1) jika diperlukan, 
+                    // saat ini menggunakan _accentColor yang nilainya mirip.
                     backgroundColor: _accentColor.withOpacity(0.1), 
                     child: Icon(
                       iuran.tipe == 'PER_KELUARGA'
@@ -343,7 +331,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
                 ],
               ),
             ),
-            // INDIKATOR SISI KIRI
+            // INDIKATOR SISI KIRI MENGGUNAKAN WARNA PRIMARY
             Positioned(
               left: 0,
               top: 8,
@@ -351,7 +339,7 @@ class _ManajemenIuranScreenState extends State<ManajemenIuranScreen> {
               child: Container(
                 width: 6,
                 decoration: BoxDecoration(
-                  color: _cardIndicator, 
+                  color: _cardIndicator, // Menggunakan Biru Tua
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     bottomLeft: Radius.circular(12),
