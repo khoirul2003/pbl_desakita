@@ -14,34 +14,35 @@ use Illuminate\Validation\Rule;
 
 class AcaraController extends Controller
 {
-    /**
-     * Tampilkan daftar acara, ter-filter berdasarkan role.
-     * Endpoint: GET /api/v1/acara
-     */
+
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Acara::query()->with('pembuat'); // Memuat user yang membuat acara
+        $query = Acara::query()->with('pembuat');
 
-        // Logika Filter Otorisasi (Sama seperti KegiatanController)
+        if ($user->isAdmin()) {
+            return $query->latest('tanggal_mulai')->paginate(1000);
+        }
+
         $warga = $user->warga;
         if ($warga) {
             $query->where(function ($q) use ($warga) {
-                $q->whereNull('rt') // Acara level desa
-                    ->orWhere('rw', $warga->rw) // Acara level RW
+
+                $q->whereNull('rt')
+                    ->orWhere('rw', $warga->rw)
                     ->orWhere(function ($q2) use ($warga) {
-                        $q2->where('rt', $warga->rt)->where('rw', $warga->rw); // Acara level RT
+                        $q2->where('rt', $warga->rt)->where('rw', $warga->rw);
                     });
             });
         }
 
-        // Filter Pencarian
         if ($request->has('search')) {
             $query->where('nama_acara', 'like', '%' . $request->input('search') . '%');
         }
 
         return $query->latest('tanggal_mulai')->paginate(1000);
     }
+
 
     /**
      * Simpan (buat) acara baru. (Admin, RW, RT)
@@ -62,7 +63,7 @@ class AcaraController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'rt' => 'nullable|string|max:3',
             'rw' => 'nullable|string|max:3',
-            'total_biaya' => 'required|numeric|min:0', // Biaya untuk pendanaan otomatis
+            'total_biaya' => 'required|numeric|min:0',
         ]);
 
         if ($validated->fails()) {
@@ -73,17 +74,17 @@ class AcaraController extends Controller
         $totalBiaya = $data['total_biaya'];
         $data['created_by_user_id'] = $user->id;
 
-        // Otorisasi lingkup penambahan data
-        if ($user->isRt() && ($data['rt'] != $user->warga->rt || $data['rw'] != $user->warga->rw)) {
-            return response()->json(['message' => 'RT hanya bisa membuat acara di lingkup RT-nya sendiri.'], 403);
-        }
+
+
+
+
 
         DB::beginTransaction();
         try {
-            // 1. Buat Acara
+
             $acara = Acara::create($data);
 
-            // 2. Catat Pengeluaran Kas Otomatis
+
             if ($totalBiaya > 0) {
                 $this->processFundAllocation($acara, $totalBiaya, $user);
             }
@@ -102,7 +103,7 @@ class AcaraController extends Controller
      */
     public function show(Acara $acara)
     {
-        // Otorisasi Tampilan (Sama dengan index)
+
         $user = Auth::user();
         $warga = $user->warga;
 
@@ -142,8 +143,8 @@ class AcaraController extends Controller
             return response()->json(['errors' => $validated->errors()], 422);
         }
 
-        // TODO: Anda mungkin ingin membuat LOGIKA UNTUK MEREVERSE PENGELUARAN LAMA 
-        // DAN MEMPROSES PENGELUARAN BARU jika total_biaya berubah.
+
+
 
         $acara->update($validated->validated());
 
@@ -156,12 +157,10 @@ class AcaraController extends Controller
      */
     public function destroy(Acara $acara)
     {
-        if (!Auth::user()->isAdmin()) {
+        $user = Auth::user();
+        if (!$user->isAdmin() && !$user->isRt() && !$user->isRw()) {
             return response()->json(['message' => 'Akses ditolak. Hanya Admin.'], 403);
         }
-
-        // TODO: Tambahkan LOGIKA untuk MENGEMBALIKAN DANA ke kas RT/RW
-        // yang terlibat sebelum menghapus.
 
         $acara->delete();
         return response()->json(null, 204);
@@ -176,11 +175,11 @@ class AcaraController extends Controller
         $targetRt = $event->rt;
         $targetRw = $event->rw;
         $currentDate = now();
-        // Fallback jika Acara Model tidak memiliki nama_kegiatan
+
         $eventName = $event->nama_acara ?? "Acara/Kegiatan ID: {$event->id}";
 
         if ($targetRt !== null && $targetRw !== null) {
-            // Kas RT Tertentu (Lingkup RT)
+
             Keuangan::create([
                 'tipe' => 'PENGELUARAN',
                 'jumlah' => $totalBiaya,
@@ -191,7 +190,7 @@ class AcaraController extends Controller
                 'created_by_user_id' => $user->id,
             ]);
         } elseif ($targetRw !== null) {
-            // Kas RW Tertentu (Lingkup RW)
+
             $rtList = Warga::where('rw', $targetRw)
                 ->select('rt')
                 ->distinct()
@@ -218,7 +217,7 @@ class AcaraController extends Controller
                 ]);
             }
         } else {
-            // Kas Desa (Lingkup Umum)
+
             Keuangan::create([
                 'tipe' => 'PENGELUARAN',
                 'jumlah' => $totalBiaya,

@@ -155,13 +155,12 @@ class KegiatanController extends Controller
      */
     public function destroy(Kegiatan $kegiatan)
     {
-        if (!Auth::user()->isAdmin()) {
+        $user = Auth::user();
+        if (!$user->isAdmin() && !$user->isRt() && !$user->isRw()) {
             return response()->json(['message' => 'Akses ditolak. Hanya Admin.'], 403);
         }
-
-
-
         $kegiatan->delete();
+
         return response()->json(null, 204);
     }
 

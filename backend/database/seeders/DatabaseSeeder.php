@@ -8,7 +8,10 @@ use App\Models\Warga;
 use App\Models\User;
 use App\Models\Iuran;
 use App\Models\Wallet;
-use App\Models\Transaction;
+use App\Models\Keuangan;
+use App\Models\Kegiatan;
+use App\Models\Acara;
+use App\Models\TagihanIuran;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,29 +22,23 @@ class DatabaseSeeder extends Seeder
     {
         $command = $this->command;
 
-        // ------------------------------------
-        // 0. RESET DAN PERSIAPAN
-        // ------------------------------------
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
         Warga::truncate();
         Keluarga::truncate();
         User::truncate();
         Iuran::truncate();
-        \App\Models\TagihanIuran::truncate();
-        \App\Models\Keuangan::truncate();
-        \App\Models\Kegiatan::truncate();
-        \App\Models\Acara::truncate();
+        TagihanIuran::truncate();
+        Keuangan::truncate();
+        Kegiatan::truncate();
+        Acara::truncate();
         Wallet::truncate();
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         DB::transaction(function () use ($command) {
-
-            // ------------------------------------
-            // 1. DATA ADMIN (4 AKUN)
-            // ------------------------------------
             $adminAccounts = [];
+            // Create 4 Admin accounts
             for ($i = 1; $i <= 4; $i++) {
                 $kk = str_pad($i, 16, '0', STR_PAD_LEFT);
                 $nik = str_pad($i, 16, '1', STR_PAD_LEFT);
@@ -80,224 +77,148 @@ class DatabaseSeeder extends Seeder
                 $adminAccounts[] = $user;
                 $command->info("Akun Admin {$i} dibuat: {$email}");
             }
-            $adminUser = $adminAccounts[0]; // Jadikan Admin 1 sebagai user default untuk Keuangan
 
-            // ------------------------------------
-            // 2. AKUN RW 01
-            // ------------------------------------
-            $keluargaRW01 = Keluarga::create([
-                'no_kk' => '3201010101000005',
-                'alamat' => 'Jl. Balai gmail No. 1',
-                'rt' => '001',
-                'rw' => '001',
-            ]);
-            $wargaRW01 = Warga::create([
-                'nik' => '3201010101900005',
-                'nama_lengkap' => 'Bapak RW 01',
-                'tempat_lahir' => 'Jakarta',
-                'tanggal_lahir' => '1970-01-01',
-                'jenis_kelamin' => 'L',
-                'alamat_ktp' => 'Jl. Balai gmail No. 1',
-                'agama' => 'Islam',
-                'status_perkawinan' => 'Kawin',
-                'pekerjaan' => 'PNS',
-                'rt' => '001',
-                'rw' => '001',
-                'keluarga_id' => $keluargaRW01->id,
-                'status_dalam_keluarga' => 'KEPALA_KELUARGA',
-            ]);
-            $keluargaRW01->update(['kepala_keluarga_id' => $wargaRW01->id]);
-            $userRW01 = User::create([
-                'email' => 'rw01@gmail.com',
-                'password' => Hash::make('password'),
-                'role' => 'rw',
-                'warga_id' => $wargaRW01->id,
-            ]);
-            $command->info('Akun RW 01 dibuat: rw01@gmail.com');
+            // Create RW, RT, Warga, Iuran, Tagihan, Keuangan, Kegiatan, Acara
+            for ($rw = 1; $rw <= 4; $rw++) {
+                $keluargaRW = Keluarga::create([
+                    'no_kk' => "32010101010000{$rw}",
+                    'alamat' => "Alamat RW {$rw}",
+                    'rt' => '000',
+                    'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                ]);
+                $wargaRW = Warga::create([
+                    'nik' => "32010101019000{$rw}",
+                    'nama_lengkap' => "Bapak RW {$rw}",
+                    'tempat_lahir' => 'Jakarta',
+                    'tanggal_lahir' => '1970-01-01',
+                    'jenis_kelamin' => 'L',
+                    'alamat_ktp' => "Alamat RW {$rw}",
+                    'agama' => 'Islam',
+                    'status_perkawinan' => 'Kawin',
+                    'pekerjaan' => 'PNS',
+                    'rt' => '000',
+                    'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                    'keluarga_id' => $keluargaRW->id,
+                    'status_dalam_keluarga' => 'KEPALA_KELUARGA',
+                ]);
+                $keluargaRW->update(['kepala_keluarga_id' => $wargaRW->id]);
+                $userRW = User::create([
+                    'email' => "rw{$rw}@gmail.com",
+                    'password' => Hash::make('password'),
+                    'role' => 'rw',
+                    'warga_id' => $wargaRW->id,
+                ]);
+                $command->info("Akun RW {$rw} dibuat: rw{$rw}@gmail.com");
 
+                for ($rt = 1; $rt <= 4; $rt++) {
+                    // Create RT
+                    $keluargaRT = Keluarga::create([
+                        'no_kk' => "32010101010000{$rw}{$rt}",
+                        'alamat' => "Alamat RT {$rt} RW {$rw}",
+                        'rt' => str_pad($rt, 3, '0', STR_PAD_LEFT),
+                        'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                    ]);
 
-            // ------------------------------------
-            // 3. AKUN RT 001
-            // ------------------------------------
-            $keluargaRT01 = Keluarga::create([
-                'no_kk' => '3201010101000006',
-                'alamat' => 'Jl. Gang RT 01 No. 1',
-                'rt' => '001',
-                'rw' => '001',
-            ]);
-            $wargaRT01 = Warga::create([
-                'nik' => '3201010101900006',
-                'nama_lengkap' => 'Bapak RT 001',
-                'tempat_lahir' => 'Bandung',
-                'tanggal_lahir' => '1980-01-01',
-                'jenis_kelamin' => 'L',
-                'alamat_ktp' => 'Jl. Gang RT 01 No. 1',
-                'agama' => 'Islam',
-                'status_perkawinan' => 'Kawin',
-                'pekerjaan' => 'Wiraswasta',
-                'rt' => '001',
-                'rw' => '001',
-                'keluarga_id' => $keluargaRT01->id,
-                'status_dalam_keluarga' => 'KEPALA_KELUARGA',
-            ]);
-            $keluargaRT01->update(['kepala_keluarga_id' => $wargaRT01->id]);
-            $userRT01 = User::create([
-                'email' => 'rt01@gmail.com',
-                'password' => Hash::make('password'),
-                'role' => 'rt',
-                'warga_id' => $wargaRT01->id,
-            ]);
-            $command->info('Akun RT 001 dibuat: rt01@gmail.com');
+                    for ($wargaIndex = 1; $wargaIndex <= 10; $wargaIndex++) {
+                        // Create Warga for each RT
+                        $nik = "32010101019000{$rw}{$rt}{$wargaIndex}";
+                        $nama = "Warga {$wargaIndex} RT {$rt} RW {$rw}";
+                        $warga = Warga::create([
+                            'nik' => $nik,
+                            'nama_lengkap' => $nama,
+                            'tempat_lahir' => 'Bandung',
+                            'tanggal_lahir' => '1990-01-01',
+                            'jenis_kelamin' => 'L',
+                            'alamat_ktp' => "Alamat RT {$rt} RW {$rw}",
+                            'agama' => 'Islam',
+                            'status_perkawinan' => 'Kawin',
+                            'pekerjaan' => 'Wiraswasta',
+                            'rt' => str_pad($rt, 3, '0', STR_PAD_LEFT),
+                            'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                            'keluarga_id' => $keluargaRT->id,
+                            'status_dalam_keluarga' => 'KEPALA_KELUARGA',
+                        ]);
+                    }
 
+                    // Create Iuran for each RT
+                    for ($iuranIndex = 1; $iuranIndex <= 10; $iuranIndex++) {
+                        $iuran = Iuran::create([
+                            'nama_iuran' => "Iuran RT {$rt} RW {$rw} - {$iuranIndex}",
+                            'jumlah' => 25000 * $iuranIndex,
+                            'tipe' => 'PER_KELUARGA',
+                            'rt' => str_pad($rt, 3, '0', STR_PAD_LEFT),
+                            'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                        ]);
 
-            // ------------------------------------
-            // 4. WARGA BIASA (RT 001)
-            // ------------------------------------
-            $keluargaWarga1 = Keluarga::create([
-                'no_kk' => '3201010101000007',
-                'alamat' => 'Jl. Gang RT 01 No. 10',
-                'rt' => '001',
-                'rw' => '001',
-            ]);
-            $warga1 = Warga::create([
-                'nik' => '3201010101900007',
-                'nama_lengkap' => 'Budi Gunawan',
-                'tempat_lahir' => 'Medan',
-                'tanggal_lahir' => '1990-01-01',
-                'jenis_kelamin' => 'L',
-                'alamat_ktp' => 'Jl. Gang RT 01 No. 10',
-                'agama' => 'Islam',
-                'status_perkawinan' => 'Kawin',
-                'pekerjaan' => 'Programmer',
-                'rt' => '001',
-                'rw' => '001',
-                'keluarga_id' => $keluargaWarga1->id,
-                'status_dalam_keluarga' => 'KEPALA_KELUARGA',
-            ]);
-            $keluargaWarga1->update(['kepala_keluarga_id' => $warga1->id]);
-            $userWarga1 = User::create([
-                'email' => 'budi@gmail.com',
-                'password' => Hash::make('password'),
-                'role' => 'warga',
-                'warga_id' => $warga1->id,
-            ]);
+                        foreach ($keluargaRT->anggota as $keluargaMember) {
+                            TagihanIuran::create([
+                                'iuran_id' => $iuran->id,
+                                'keluarga_id' => $keluargaMember->keluarga_id,
+                                'periode_bulan' => now()->month,
+                                'periode_tahun' => now()->year,
+                                'jumlah_bayar' => $iuran->jumlah,
+                                'status_pembayaran' => 'BELUM_BAYAR',
+                            ]);
+                        }
+                    }
 
-            Warga::create([
-                'nik' => '3201010101900008',
-                'nama_lengkap' => 'Siti Aminah',
-                'tempat_lahir' => 'Medan',
-                'tanggal_lahir' => '1992-01-01',
-                'jenis_kelamin' => 'P',
-                'alamat_ktp' => 'Jl. Gang RT 01 No. 10',
-                'agama' => 'Islam',
-                'status_perkawinan' => 'Kawin',
-                'pekerjaan' => 'Ibu Rumah Tangga',
-                'rt' => '001',
-                'rw' => '001',
-                'keluarga_id' => $keluargaWarga1->id,
-                'status_dalam_keluarga' => 'ISTRI',
-            ]);
-            $command->info('Akun Warga (Budi & Siti) dibuat: budi@gmail.com');
+                    // Create Keuangan for each RT
+                    Keuangan::create([
+                        'tipe' => 'PEMASUKAN',
+                        'jumlah' => 500000,
+                        'keterangan' => 'Dana kas awal RT',
+                        'tanggal' => now(),
+                        'rt' => str_pad($rt, 3, '0', STR_PAD_LEFT),
+                        'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                        'created_by_user_id' => $userRW->id,
+                    ]);
+                    Keuangan::create([
+                        'tipe' => 'PENGELUARAN',
+                        'jumlah' => 100000,
+                        'keterangan' => 'Beli sapu untuk kerja bakti',
+                        'tanggal' => now(),
+                        'rt' => str_pad($rt, 3, '0', STR_PAD_LEFT),
+                        'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                        'created_by_user_id' => $userRW->id,
+                    ]);
 
+                    // Create Kegiatan and Acara for each RT
+                    Kegiatan::create([
+                        'nama_kegiatan' => "Kerja Bakti RT {$rt} RW {$rw}",
+                        'deskripsi' => "Membersihkan selokan dan taman RT {$rt} RW {$rw}.",
+                        'tanggal_mulai' => now()->addDays(7),
+                        'tanggal_selesai' => now()->addDays(7)->addHours(3),
+                        'lokasi' => "Lingkungan RT {$rt} RW {$rw}",
+                        'rt' => str_pad($rt, 3, '0', STR_PAD_LEFT),
+                        'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                        'created_by_user_id' => $userRW->id,
+                    ]);
+                    Acara::create([
+                        'nama_acara' => "Lomba 17an RW {$rw}",
+                        'deskripsi' => "Perlombaan merayakan hari kemerdekaan.",
+                        'tanggal_mulai' => now()->addDays(30),
+                        'tanggal_selesai' => now()->addDays(30)->addHours(8),
+                        'lokasi' => "Lapangan Utama RW {$rw}",
+                        'rt' => null,
+                        'rw' => str_pad($rw, 3, '0', STR_PAD_LEFT),
+                        'created_by_user_id' => $userRW->id,
+                    ]);
 
-            // ------------------------------------
-            // 6. IURAN, KEUANGAN, KEGIATAN, & ACARA
-            // ------------------------------------
+                    $command->info("Iuran, Keuangan, Kegiatan, and Acara for RT {$rt} RW {$rw} created.");
+                }
+            }
 
-            $iuranSampahRT01 = Iuran::create([
-                'nama_iuran' => 'Iuran Sampah RT 001',
-                'jumlah' => 25000,
-                'tipe' => 'PER_KELUARGA',
-                'rt' => '001',
-                'rw' => '001',
-            ]);
-            $iuranKeamananRW01 = Iuran::create([
-                'nama_iuran' => 'Iuran Keamanan RW 01',
-                'jumlah' => 50000,
-                'tipe' => 'PER_KELUARGA',
-                'rt' => null,
-                'rw' => '001',
-            ]);
-
-            \App\Models\TagihanIuran::create([
-                'iuran_id' => $iuranSampahRT01->id,
-                'keluarga_id' => $keluargaWarga1->id,
-                'periode_bulan' => now()->month,
-                'periode_tahun' => now()->year,
-                'jumlah_bayar' => $iuranSampahRT01->jumlah,
-                'status_pembayaran' => 'BELUM_BAYAR',
-            ]);
-            \App\Models\TagihanIuran::create([
-                'iuran_id' => $iuranKeamananRW01->id,
-                'keluarga_id' => $keluargaWarga1->id,
-                'periode_bulan' => now()->month,
-                'periode_tahun' => now()->year,
-                'jumlah_bayar' => $iuranKeamananRW01->jumlah,
-                'status_pembayaran' => 'BELUM_BAYAR',
-            ]);
-            $command->info('Tagihan dibuat untuk Budi.');
-
-            // Keuangan RT 001
-            \App\Models\Keuangan::create([
-                'tipe' => 'PEMASUKAN',
-                'jumlah' => 500000,
-                'keterangan' => 'Dana kas awal RT 001',
-                'tanggal' => now(),
-                'rt' => '001',
-                'rw' => '001',
-                'created_by_user_id' => $userRT01->id,
-            ]);
-            \App\Models\Keuangan::create([
-                'tipe' => 'PENGELUARAN',
-                'jumlah' => 100000,
-                'keterangan' => 'Beli sapu untuk kerja bakti',
-                'tanggal' => now(),
-                'rt' => '001',
-                'rw' => '001',
-                'created_by_user_id' => $userRT01->id,
-            ]);
-
-            // Kegiatan & Acara
-            \App\Models\Kegiatan::create([
-                'nama_kegiatan' => 'Kerja Bakti RT 001',
-                'deskripsi' => 'Membersihkan selokan dan taman RT 001.',
-                'tanggal_mulai' => now()->addDays(7),
-                'tanggal_selesai' => now()->addDays(7)->addHours(3),
-                'lokasi' => 'Lingkungan RT 001',
-                'rt' => '001',
-                'rw' => '001',
-                'created_by_user_id' => $userRT01->id,
-            ]);
-            \App\Models\Acara::create([
-                'nama_acara' => 'Lomba 17an RW 01',
-                'deskripsi' => 'Perlombaan merayakan hari kemerdekaan.',
-                'tanggal_mulai' => now()->addDays(30),
-                'tanggal_selesai' => now()->addDays(30)->addHours(8),
-                'lokasi' => 'Lapangan Utama RW 01',
-                'rt' => null,
-                'rw' => '001',
-                'created_by_user_id' => $userRW01->id,
-            ]);
-            $command->info('Data iuran, keuangan, kegiatan, & acara dibuat.');
-
-
-            // ------------------------------------
-            // 7. BUAT WALLET UNTUK SEMUA WARGA/USER
-            // ------------------------------------
+            // Create Wallet for each warga
             $allWarga = Warga::all();
             $counter = 1;
             foreach ($allWarga as $warga) {
-                // Cek apakah user terkait ada (hanya buat wallet jika ada akun login)
                 $user = User::where('warga_id', $warga->id)->first();
-
                 if ($user) {
-                    // Buat nomor akun Desapay (misal: format 00001)
                     $accountNumber = str_pad($counter, 5, '0', STR_PAD_LEFT);
-
                     Wallet::create([
                         'warga_id' => $warga->id,
                         'desapay_account_number' => $accountNumber,
-                        'balance' => ($user->role == 'warga' ? 100000.00 : 500000.00), // Warga biasa saldo 100rb, pengelola 500rb
+                        'balance' => ($user->role == 'warga' ? 100000.00 : 500000.00),
                     ]);
                     $counter++;
                 }

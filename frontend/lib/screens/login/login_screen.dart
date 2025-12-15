@@ -211,13 +211,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: const Icon(Icons.face_retouching_natural, color: Colors.white, size: 32),
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    TextButton(
-                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                      child: const Text("Belum punya akun? Daftar", style: TextStyle(color: Colors.white70)),
-                    ),
                     const SizedBox(height: 30),
+
+                    
+                    
                   ],
                 ),
               ),
