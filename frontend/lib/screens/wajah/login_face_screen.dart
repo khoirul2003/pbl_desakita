@@ -31,9 +31,10 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
     super.initState();
     _initCamera();
 
-    _pulseController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 2))
-          ..repeat(reverse: true);
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
 
     _pulseAnimation = Tween<double>(begin: 0.92, end: 1.03).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
@@ -141,7 +142,6 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
     }
   }
 
-  /// 🔵 Overlay Scanner Light (Neon Blue 0xFF0E2F60)
   Widget _buildScanOverlay() {
     return Positioned.fill(
       child: IgnorePointer(
@@ -195,7 +195,6 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
           children: [
             const SizedBox(height: 20),
 
-            /// HEADER
             Text(
               "FACE ID",
               style: TextStyle(
@@ -244,7 +243,6 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
                                       ),
                                     ),
 
-                              /// Overlay scanner neon
                               _buildScanOverlay(),
                             ],
                           ),
@@ -259,14 +257,14 @@ class _LoginFaceScreenState extends State<LoginFaceScreen>
             Expanded(
               flex: 2,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 10,
+                ),
                 child: Column(
                   children: [
                     if (isLoading)
-                      const CircularProgressIndicator(
-                        color: Color(0xFF0E2F60),
-                      ),
+                      const CircularProgressIndicator(color: Color(0xFF0E2F60)),
 
                     const SizedBox(height: 20),
 

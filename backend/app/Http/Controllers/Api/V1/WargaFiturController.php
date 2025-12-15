@@ -97,7 +97,7 @@ class WargaFiturController extends Controller
         }
 
 
-        if ($tagihan->status_pembayaran == 'LUNAS' || $tagihan->status_pembayaran == 'PENDING') {
+        if ($tagihan->status_pembayaran == 'LUNAS') {
             return response()->json(['message' => 'Tagihan ini sudah lunas atau sedang dalam proses pembayaran.'], 422);
         }
 
@@ -105,7 +105,7 @@ class WargaFiturController extends Controller
         $snapToken = 'dummy-snap-token-' . $orderId;
 
         $tagihan->update([
-            'status_pembayaran' => 'PENDING',
+            'status_pembayaran' => 'LUNAS',
             'payment_gateway_order_id' => $orderId
         ]);
 

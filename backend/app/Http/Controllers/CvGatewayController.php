@@ -46,7 +46,7 @@ class CvGatewayController extends Controller
 
     public function checkLiveness(Request $request)
     {
-        // Pastikan field 'files' ada
+
         if (!$request->hasFile('files')) {
             return response()->json([
                 'message' => 'File frames tidak ditemukan'
@@ -55,7 +55,7 @@ class CvGatewayController extends Controller
 
         $files = $request->file('files');
 
-        // Periksa jika file yang diterima adalah array atau objek koleksi
+
         if (is_array($files) || $files instanceof \Illuminate\Support\Collection) {
             // Validasi minimal 5 frame
             if (count($files) < 5) {
@@ -64,7 +64,7 @@ class CvGatewayController extends Controller
                 ], 422);
             }
         } else {
-            // Jika hanya satu file, masukkan dalam array untuk pemrosesan lebih lanjut
+
             $files = [$files];
         }
 
@@ -86,7 +86,7 @@ class CvGatewayController extends Controller
                 $response->status()
             );
         } catch (\Exception $e) {
-            // Menambahkan logging error dengan detail lebih lengkap
+     
             \Log::error('Check Liveness Gateway Error', [
                 'error' => $e->getMessage(),
                 'response' => $e->getResponse()->body() ?? 'No response body'
